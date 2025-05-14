@@ -1,0 +1,10 @@
+{
+  "title": "OpenWRT Control",
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenWRT Device Setup"
+      }
+    }
+  }
+}

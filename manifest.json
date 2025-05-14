@@ -1,0 +1,9 @@
+{
+  "domain": "openwrt_control",
+  "name": "OpenWRT Control",
+  "version": "1.0.0",
+  "documentation": "https://github.com/izipuho/OpenWRT_control",
+  "requirements": ["paramiko"],
+  "codeowners": ["@izipuho"],
+  "config_flow": true
+}
