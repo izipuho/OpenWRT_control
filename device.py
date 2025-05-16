@@ -1,13 +1,26 @@
-from .ssh_client import ssh_command
+import paramiko
+from .const import SSH_KEY_PATH
 
-class Device:
-    def __init__(self, ip, device_type, os, key_path="/config/ssh/id_rsa"):
-        self.ip = ip
-        self.device_type = device_type
-        self.os = os
-        self.key_path = key_path
+def get_device_info(ip):
+    try:
+        key = paramiko.Ed25519Key(filename=SSH_KEY_PATH)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(ip, username="root", pkey=key, timeout=10)
 
-    def get_state(self, command=None):
-        if not command:
-            command = "uptime" if self.os.lower() == "linux" else "echo 'Unknown OS'"
-        return ssh_command(self.ip, command, self.key_path)
+        stdin, stdout, _ = ssh.exec_command("uname -n && cat /etc/openwrt_version")
+        lines = stdout.read().decode().splitlines()
+        ssh.close()
+
+        return {
+            "hostname": lines[0],
+            "os_version": lines[1],
+            "online": True
+        }
+    except Exception as e:
+        return {
+            "hostname": "Unknown",
+            "os_version": "Unavailable",
+            "online": False
+        }
+
