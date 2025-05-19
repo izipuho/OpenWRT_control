@@ -1,9 +1,10 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.platforms import async_forward_entry_setups
+from homeassistant.helpers.entry_platform import async_forward_entry_setups, async_unload_platforms
+
 from .const import DOMAIN
 
-PLATFORMS = ["sensor", "button"]
+PLATFORMS = ["sensor"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
@@ -12,7 +13,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    from homeassistant.helpers.platforms import async_unload_platforms
     await async_unload_platforms(hass, entry, PLATFORMS)
     hass.data[DOMAIN].pop(entry.entry_id)
     return True
+
