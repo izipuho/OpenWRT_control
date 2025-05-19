@@ -1,11 +1,5 @@
-"""
-This entity appears in Home Assistant and when triggered, it executes your remote script (e.g., sh /etc/openwrt-update.sh via SSH):
-"""
-
 from homeassistant.components.update import UpdateEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.const import STATE_UNKNOWN
-
 from .const import DOMAIN, SSH_KEY_PATH
 import paramiko
 
@@ -22,18 +16,17 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     @property
     def installed_version(self):
-        return self.coordinator.data.get("os_version", STATE_UNKNOWN)
+        return self.coordinator.data.get("os_version")
 
     @property
     def latest_version(self):
-        # Placeholder — you'd call your TOH parser script here
         return "PLACEHOLDER_VERSION"
 
     @property
     def available(self):
         return self.coordinator.data.get("online", False)
 
-    async def async_install(self, version: str, backup: bool, **kwargs):
+    async def async_install(self, version, backup, **kwargs):
         await self.hass.async_add_executor_job(self._run_update)
 
     def _run_update(self):
@@ -42,10 +35,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.ip, username="root", pkey=key, timeout=10)
-
-            # Replace this command with your actual update script path
             ssh.exec_command("sh /etc/openwrt-update.sh")
             ssh.close()
         except Exception as e:
-            print(f"Update trigger failed: {e}")
+            print(f"Update failed: {e}")
 

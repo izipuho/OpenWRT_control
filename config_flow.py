@@ -1,10 +1,3 @@
-"""
-This reads available config types from config_types.yaml
-Uses test_ssh_connection() from ssh_client.py to verify connectivity
-Stores device IP as the unique ID
-Uses async_get_options_flow() to support future options editing
-"""
-
 import yaml
 import voluptuous as vol
 
@@ -12,13 +5,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import (
-    DOMAIN,
-    CONF_IP,
-    CONF_CONFIG_TYPE,
-    CONFIG_TYPES_FILE,
-    SSH_KEY_PATH,
-)
+from .const import DOMAIN, CONF_IP, CONF_CONFIG_TYPE, CONFIG_TYPES_FILE
 from .ssh_client import test_ssh_connection
 
 
@@ -37,21 +24,12 @@ class OpenWRTConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             ip = user_input[CONF_IP]
-            config_type = user_input[CONF_CONFIG_TYPE]
-
-            success = await self.hass.async_add_executor_job(
-                test_ssh_connection, ip
-            )
-
+            success = await self.hass.async_add_executor_job(test_ssh_connection, ip)
             if success:
                 await self.async_set_unique_id(ip)
                 self._abort_if_unique_id_configured()
-
-                return self.async_create_entry(
-                    title=f"OpenWRT {ip}", data=user_input
-                )
-            else:
-                errors["base"] = "cannot_connect"
+                return self.async_create_entry(title=f"OpenWRT {ip}", data=user_input)
+            errors["base"] = "cannot_connect"
 
         schema = vol.Schema({
             vol.Required(CONF_IP): str,

@@ -1,22 +1,33 @@
 from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.core import HomeAssistant
+from .ssh_client import get_device_info
+from .const import DOMAIN
+import logging
 
-from .device import get_device_info
+_LOGGER = logging.getLogger(__name__)
 
 class OpenWRTDataUpdateCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, config: dict):
-        self.ip = config["ip"]
-        self.config_type = config["config_type"]
-        update_interval = timedelta(minutes=5)
-
+    def __init__(self, hass, entry):
+        self.ip = entry.data["ip"]
         super().__init__(
             hass,
             _LOGGER,
-            name=f"OpenWRT Updater {self.ip}",
-            update_interval=update_interval
+            name=f"{DOMAIN}_{self.ip}",
+            update_interval=timedelta(minutes=5),
         )
 
     async def _async_update_data(self):
-        return await self.hass.async_add_executor_job(get_device_info, self.ip)
+        try:
+            hostname, os_version = await self.hass.async_add_executor_job(get_device_info, self.ip)
+            return {
+                "hostname": hostname,
+                "os_version": os_version,
+                "online": True
+            }
+        except Exception:
+            return {
+                "hostname": None,
+                "os_version": None,
+                "online": False
+            }
 

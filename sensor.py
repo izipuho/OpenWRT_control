@@ -1,30 +1,21 @@
 from homeassistant.helpers.entity import Entity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from .device import Device
+from .const import DOMAIN
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    config = entry.data
-    device = Device(
-        config["ip"],
-        config["device_type"],
-        config["os"],
-        config.get("key_path", "/config/ssh/id_rsa")
-    )
-    async_add_entities([OpenWRTSensor(device)])
+async def async_setup_entry(hass, entry, async_add_entities):
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([
+        OpenWRTSensor(coordinator, "IP", entry.data["ip"]),
+        OpenWRTSensor(coordinator, "Config Type", entry.data["config_type"]),
+        OpenWRTSensor(coordinator, "Current OS", coordinator.data.get("os_version")),
+        OpenWRTSensor(coordinator, "Status", "Online" if coordinator.data.get("online") else "Offline"),
+    ])
 
 class OpenWRTSensor(Entity):
-    def __init__(self, device):
-        self._device = device
-        self._state = None
-
-    @property
-    def name(self):
-        return f"{self._device.device_type} ({self._device.ip})"
+    def __init__(self, coordinator, name, value):
+        self._attr_name = name
+        self._state = value
 
     @property
     def state(self):
         return self._state
 
-    def update(self):
-        self._state = self._device.get_state()
