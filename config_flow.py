@@ -24,6 +24,7 @@ class OpenWRTConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             ip = user_input[CONF_IP]
+            config_type = user_input[CONF_CONFIG_TYPE]
             success = await self.hass.async_add_executor_job(test_ssh_connection, ip)
             if success:
                 await self.async_set_unique_id(ip)
