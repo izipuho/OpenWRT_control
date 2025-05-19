@@ -1,0 +1,53 @@
+import logging
+import requests
+from homeassistant.core import HomeAssistant
+
+_LOGGER = logging.getLogger(__name__)
+
+TOH_URL = "https://openwrt.org/toh.json"
+
+
+class TOH:
+    def __init__(self, hass: HomeAssistant):
+        self.hass = hass
+        self._toh_data = None
+        self.version = ""
+        self.target = ""
+        self.subtarget = ""
+
+    async def fetch(self):
+        """Fetch and cache TOH data asynchronously."""
+
+        def blocking_fetch():
+            response = requests.get(TOH_URL, timeout=10)
+            response.raise_for_status()
+            return response.json()
+
+        try:
+            self._toh_data = await self.hass.async_add_executor_job(blocking_fetch)
+        except Exception as e:
+            _LOGGER.error("Failed to fetch TOH data: %s", e)
+            self._toh_data = None
+            return None
+        else:
+            return self._toh_data
+
+    def get_device_info(self, openwrt_devid: str) -> None:
+        """Extract available OS version for given openwrt device id from cached TOH data."""
+        if not self._toh_data:
+            return
+
+        try:
+            target_col = self._toh_data["columns"].index("target")
+            subtarget_col = self._toh_data["columns"].index("subtarget")
+            version_col = self._toh_data["columns"].index("supportedcurrentrel")
+
+            for dev in self._toh_data["entries"]:
+                if dev[0] == openwrt_devid:
+                    self.version = dev[version_col]
+                    self.target = dev[target_col]
+                    self.subtarget = dev[subtarget_col]
+                    break
+        except Exception as e:
+            _LOGGER.error("Error parsing TOH data: %s", e)
+

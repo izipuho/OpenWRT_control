@@ -5,6 +5,7 @@
   "documentation": "https://github.com/izipuho/OpenWRT_control",
   "dependencies": [],
   "codeowners": ["@izipuho"],
-  "requirements": ["paramiko"],
+  "requirements": ["paramiko", "requests"],
   "config_flow": true
 }
+
