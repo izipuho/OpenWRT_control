@@ -1,10 +1,9 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.platforms import async_forward_entry_setups
-
 from .const import DOMAIN
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "button"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
