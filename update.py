@@ -35,7 +35,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.ip, username="root", pkey=key, timeout=10)
-            ssh.exec_command("sh /etc/openwrt-update.sh")
+            #ssh.exec_command("sh /etc/openwrt-update.sh")
+            ssh.exec_command("uname -n")
             ssh.close()
         except Exception as e:
             print(f"Update failed: {e}")

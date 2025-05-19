@@ -1,5 +1,5 @@
 import paramiko
-from .const import SSH_KEY_PATH
+from .const import SSH_KEY_PATH, INFO_COMMAND
 
 def test_ssh_connection(ip):
     try:
@@ -18,7 +18,7 @@ def get_device_info(ip):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(ip, username="root", pkey=key, timeout=10)
 
-    stdin, stdout, _ = ssh.exec_command("uname -n; cat /etc/openwrt_version")
+    stdin, stdout, stderr = ssh.exec_command(INFO_COMMAND)
     hostname = stdout.readline().strip()
     os_version = stdout.readline().strip()
     ssh.close()
