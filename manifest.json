@@ -2,8 +2,9 @@
   "domain": "openwrt_updater",
   "name": "OpenWRT Updater",
   "version": "1.0.0",
-  "requirements": ["paramiko", "pyyaml"],
-  "codeowners": ["@your-github-username"],
-  "iot_class": "local_polling",
+  "documentation": "https://github.com/izipuho/OpenWRT_control",
+  "dependencies": [],
+  "codeowners": ["@izipuho"],
+  "requirements": ["paramiko"],
   "config_flow": true
 }
