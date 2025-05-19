@@ -1,0 +1,6 @@
+- name: TP-Link Archer C7 v5
+  id: tplink_archer-c7-v5
+- name: Linksys WRT3200ACM
+  id: linksys_wrt3200acm
+- name: zip-turris
+  id: turris:turris_turris_omnia
