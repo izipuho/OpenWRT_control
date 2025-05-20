@@ -10,34 +10,39 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    data = config_entry.data
-    ip = data.get("ip")
-    config_type = data.get("config_type")
+    devices = config_entry.data.get("devices", [])
 
-    coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
+    entities = []
+    for device in devices:
+        ip = device["ip"]
+        config_type = device["config_type"]
 
-    hass.data[DOMAIN][config_entry.entry_id] = {
-        "coordinator": coordinator,
-        "ip": ip,
-        "config_type": config_type,
-    }
+        coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
 
-    entities = [
-        StaticOpenWRTSensor(
-            coordinator, ip, "IP Address", ip, EntityCategory.DIAGNOSTIC
-        ),
-        StaticOpenWRTSensor(
-            coordinator, ip, "Config Type", config_type, EntityCategory.DIAGNOSTIC
-        ),
-        DynamicOpenWRTSensor(coordinator, ip, "Device Name", "hostname"),
-        DynamicOpenWRTSensor(coordinator, ip, "Current OS Version", "os_version"),
-        DynamicOpenWRTSensor(
-            coordinator, ip, "Status", "status", device_class="connectivity"
-        ),
-        DynamicOpenWRTSensor(
-            coordinator, ip, "Available OS Version", "available_os_version"
-        ),
-    ]
+        entities.extend(
+            [
+                StaticOpenWRTSensor(
+                    coordinator, ip, "IP Address", ip, EntityCategory.DIAGNOSTIC
+                ),
+                StaticOpenWRTSensor(
+                    coordinator,
+                    ip,
+                    "Config Type",
+                    config_type,
+                    EntityCategory.DIAGNOSTIC,
+                ),
+                DynamicOpenWRTSensor(coordinator, ip, "Device Name", "hostname"),
+                DynamicOpenWRTSensor(
+                    coordinator, ip, "Current OS Version", "os_version"
+                ),
+                DynamicOpenWRTSensor(
+                    coordinator, ip, "Status", "status", device_class="connectivity"
+                ),
+                DynamicOpenWRTSensor(
+                    coordinator, ip, "Available OS Version", "available_os_version"
+                ),
+            ]
+        )
 
     async_add_entities(entities, update_before_add=True)
 
@@ -50,10 +55,20 @@ class StaticOpenWRTSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
         self._attr_native_value = value
         self._attr_entity_category = entity_category
+        self._ip = ip
 
     @property
     def should_poll(self):
         return False
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self._ip)},
+            "name": f"OpenWRT Device {self._ip}",
+            "manufacturer": "OpenWRT",
+            "model": "Router",
+        }
 
 
 class DynamicOpenWRTSensor(CoordinatorEntity, SensorEntity):
@@ -63,6 +78,7 @@ class DynamicOpenWRTSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
         self._key = key
         self._attr_device_class = device_class
+        self._ip = ip
 
     @property
     def native_value(self):
@@ -73,4 +89,13 @@ class DynamicOpenWRTSensor(CoordinatorEntity, SensorEntity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self._ip)},
+            "name": f"OpenWRT Device {self._ip}",
+            "manufacturer": "OpenWRT",
+            "model": "Router",
+        }
 
