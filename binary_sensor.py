@@ -4,14 +4,11 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import OpenWRTDataCoordinator
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -26,24 +23,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
         entities.extend(
             [
-                OpenWRTSensor(
+                OpenWRTBinarySensor(
                     coordinator,
                     ip,
-                    "IP Address",
-                    static_value=ip,
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                ),
-                OpenWRTSensor(
-                    coordinator,
-                    ip,
-                    "Config Type",
-                    static_value=config_type,
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                ),
-                OpenWRTSensor(coordinator, ip, "Device Name", key="hostname"),
-                OpenWRTSensor(coordinator, ip, "Current OS Version", key="os_version"),
-                OpenWRTSensor(
-                    coordinator, ip, "Available OS Version", key="available_os_version"
+                    "Status",
+                    "status",
+                    BinarySensorDeviceClass.CONNECTIVITY,
                 ),
             ]
         )
@@ -51,43 +36,32 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities, update_before_add=True)
 
 
-class OpenWRTSensor(CoordinatorEntity, SensorEntity):
+class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
     def __init__(
         self,
         coordinator,
         ip: str,
         name: str,
-        *,
-        key=None,
-        static_value=None,
-        device_class=None,
-        entity_category: EntityCategory = None,
+        key: str,
+        device_class: BinarySensorDeviceClass,
     ):
         super().__init__(coordinator)
         self._ip = ip
         self._name = name
         self._key = key
-        self._static_value = static_value
         self._attr_name = f"{name} ({ip})"
         self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
         self._attr_device_class = device_class
-        self._attr_entity_category = entity_category
 
     @property
-    def native_value(self):
-        if self._key:
-            return (
-                self.coordinator.data.get(self._key) if self.coordinator.data else None
-            )
-        return self._static_value
+    def is_on(self):
+        if self.coordinator.data is None:
+            return False
+        return self.coordinator.data.get(self._key) == "online"
 
     @property
     def available(self):
-        return self.coordinator.last_update_success if self._key else True
-
-    @property
-    def should_poll(self):
-        return False
+        return self.coordinator.last_update_success
 
     @property
     def device_info(self):
