@@ -31,20 +31,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     ip,
                     "IP Address",
                     static_value=ip,
-                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
                 OpenWRTSensor(
                     coordinator,
                     ip,
                     "Config Type",
                     static_value=config_type,
-                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
                 OpenWRTSensor(coordinator, ip, "Device Name", key="hostname"),
-                OpenWRTSensor(coordinator, ip, "Current OS Version", key="os_version"),
-                OpenWRTSensor(
-                    coordinator, ip, "Available OS Version", key="available_os_version"
-                ),
+                # OpenWRTSensor(coordinator, ip, "Current OS Version", key="current_os_version"),
+                # OpenWRTSensor(coordinator, ip, "Available OS Version", key="available_os_version"),
             ]
         )
 

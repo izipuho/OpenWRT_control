@@ -29,6 +29,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     "Status",
                     "status",
                     BinarySensorDeviceClass.CONNECTIVITY,
+                    EntityCategory.DIAGNOSTIC,
                 ),
             ]
         )
@@ -44,6 +45,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         name: str,
         key: str,
         device_class: BinarySensorDeviceClass,
+        entity_category: EntityCategory = None,
     ):
         super().__init__(coordinator)
         self._ip = ip
@@ -52,6 +54,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_name = f"{name} ({ip})"
         self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
         self._attr_device_class = device_class
+        self._attr_entity_category = entity_category
 
     @property
     def is_on(self):

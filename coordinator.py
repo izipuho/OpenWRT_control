@@ -11,7 +11,7 @@ from .const import CONFIG_TYPES_PATH, KEY_PATH
 import yaml
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = timedelta(minutes=5)
+SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDataCoordinator(DataUpdateCoordinator):
@@ -60,7 +60,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         else:
             return {
                 "hostname": hostname,
-                "os_version": os_version,
+                "current_os_version": os_version,
                 "status": "online" if status else "offline",
                 "available_os_version": self.toh.version,
             }
