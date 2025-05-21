@@ -4,11 +4,11 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 
-def _connect_ssh(ip, key_path):
+def _connect_ssh(ip, key_path, username: str = "root"):
     key = paramiko.Ed25519Key.from_private_key_file(key_path)
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(ip, username="root", pkey=key, timeout=5)
+    client.connect(ip, username=username, pkey=key, timeout=5)
     return client
 
 
@@ -48,14 +48,18 @@ def get_os_version(ip, key_path):
         return None
 
 
-def run_update_script():
+def trigger_update(ip, key_path):
     try:
-        client = _connect_ssh("10.8.25.20")
-        stdin, stdout, stderr = client.exec_command("uname")
+        client = _connect_ssh("10.8.25.20", key_path, username="zip")
+        stdin, stdout, stderr = client.exec_command(
+            f'echo "update {ip}" > /tmp/integration_test'
+        )
         output = stdout.read().decode().strip()
         client.close()
-        return output
+        _LOGGER.info("Trying to update %s", ip)
     except Exception as e:
         _LOGGER.error("Failed to run update script: %s", e)
         return None
+    else:
+        return output
 
