@@ -7,7 +7,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "binary_sensor", "update"]
+PLATFORMS = ["text", "binary_sensor", "update", "select"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
