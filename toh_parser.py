@@ -14,6 +14,7 @@ class TOH:
         self.version = ""
         self.target = ""
         self.subtarget = ""
+        self.snapshot_url = ""
 
     async def fetch(self):
         """Fetch and cache TOH data asynchronously."""
@@ -41,13 +42,16 @@ class TOH:
             target_col = self._toh_data["columns"].index("target")
             subtarget_col = self._toh_data["columns"].index("subtarget")
             version_col = self._toh_data["columns"].index("supportedcurrentrel")
+            snapshot_url_col = self._toh_data["columns"].index("firmwareopenwrtsnapshotupgradeurl")
 
             for dev in self._toh_data["entries"]:
                 if dev[0] == openwrt_devid:
                     self.version = dev[version_col]
                     self.target = dev[target_col]
                     self.subtarget = dev[subtarget_col]
+                    self.snapshot_url = dev[snapshot_url_col][0]
                     break
         except Exception as e:
             _LOGGER.error("Error parsing TOH data: %s", e)
+
 

@@ -63,5 +63,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "current_os_version": os_version,
                 "status": "online" if status else "offline",
                 "available_os_version": self.toh.version,
+                "openwrt_devid": openwrt_devid,
+                "snapshot_url": self.toh.snapshot_url,
             }
 

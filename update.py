@@ -61,7 +61,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
 
         async def update_callback(ip):
-            await hass.async_add_executor_job(trigger_update, ip, ssh_key_path)
+            await hass.async_add_executor_job(trigger_update, ip, ssh_key_path, True, coordinator.data.get("snapshot_url"))
 
         entities.extend(
             [
@@ -70,4 +70,5 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     async_add_entities(entities, update_before_add=True)
+
 

@@ -36,6 +36,20 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     key="hostname",
                     entity_icon="mdi:router-network",
                 ),
+                OpenWRTText(
+                    coordinator,
+                    ip,
+                    "OpenWRT device id",
+                    key="openwrt_devid",
+                    entity_icon="mdi:router-network",
+                ),
+                OpenWRTText(
+                    coordinator,
+                    ip,
+                    "Snapshot URL",
+                    key="snapshot_url",
+                    entity_icon="mdi:router-network",
+                ),
             ]
         )
 
@@ -87,4 +101,3 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
     @property
     def should_poll(self):
         return False
-
