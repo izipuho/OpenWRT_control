@@ -15,7 +15,7 @@ SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDataCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool):
+    def __init__(self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool = True):
         super().__init__(
             hass, _LOGGER, name="OpenWRT Updater", update_interval=SCAN_INTERVAL
         )
