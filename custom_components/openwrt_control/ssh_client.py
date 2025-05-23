@@ -5,6 +5,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _connect_ssh(ip, key_path, username: str = "root"):
+    _LOGGER.info("Trying to connect to %s@%s with key %s", username, ip, key_path)
     key = paramiko.Ed25519Key.from_private_key_file(key_path)
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -30,7 +31,7 @@ def get_hostname(ip, key_path):
         client.close()
         return name
     except Exception as e:
-        _LOGGER.error("SSH hostname fetch failed: %s", e)
+        _LOGGER.error("SSH hostname fetch failed: %s, %s", ip, e)
         return None
 
 
@@ -48,18 +49,32 @@ def get_os_version(ip, key_path):
         return None
 
 
-def trigger_update(ip, key_path):
-    try:
-        client = _connect_ssh("10.8.25.20", key_path, username="zip")
-        stdin, stdout, stderr = client.exec_command(
-            f'echo "update {ip}" > /tmp/integration_test'
-        )
-        output = stdout.read().decode().strip()
-        client.close()
-        _LOGGER.info("Trying to update %s", ip)
-    except Exception as e:
-        _LOGGER.error("Failed to run update script: %s", e)
-        return None
+def trigger_update(ip, key_path, is_simple:bool = True, url:str = None):
+    if is_simple:
+        try:
+            update_command = f"curl {url} --output /tmp/o.bin && mv /tmp/o.bin /tmp/owrt.bin"
+            _LOGGER.info("Trying to update %s", ip, update_command)
+            client = _connect_ssh(ip, key_path)
+            stdin, stdout, stderr = client.exec_command(update_command)
+            output = stdout.read().decode().strip()
+            client.close()
+        except Exception as e:
+            _LOGGER.error("Failed to run update script: %s", e)
+            return None
+        else:
+            return output
     else:
-        return output
+        try:
+            client = _connect_ssh("10.8.25.20", key_path, username="zip")
+            stdin, stdout, stderr = client.exec_command(
+                f'echo "update {ip}" > /tmp/integration_test'
+            )
+            output = stdout.read().decode().strip()
+            client.close()
+            _LOGGER.info("Trying to update %s", ip)
+        except Exception as e:
+            _LOGGER.error("Failed to run update script: %s", e)
+            return None
+        else:
+            return output
 

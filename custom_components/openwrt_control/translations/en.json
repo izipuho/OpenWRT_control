@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add OpenWRT Device",
+        "description": "Enter the details of your OpenWRT device.",
+        "data": {
+          "ip": "IP Address",
+          "config_type": "Config Type",
+	  "is_simple": "Support simple update",
+	  "add_another": "Add anoter device"
+        }
+      }
+    },
+    "error": {
+      "invalid_ip": "Invalid IP address"
+    }
+  }
+}
