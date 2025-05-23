@@ -6,6 +6,7 @@
   "dependencies": [],
   "codeowners": ["@izipuho"],
   "requirements": ["paramiko", "requests"],
-  "config_flow": true
+  "config_flow": true,
+  "translations": ["translations/en.json"]
 }
 

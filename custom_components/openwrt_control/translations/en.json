@@ -1,0 +1,15 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "ip": "IP Address",
+          "config_type": "Config Type",
+	  "is_simple": "Support simple update",
+	  "add_another": "Add anoter device"
+        }
+      }
+    }
+  }
+}
+

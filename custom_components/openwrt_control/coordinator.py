@@ -15,12 +15,13 @@ SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDataCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, ip: str, config_type: str):
+    def __init__(self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool):
         super().__init__(
             hass, _LOGGER, name="OpenWRT Updater", update_interval=SCAN_INTERVAL
         )
         self.ip = ip
         self.config_type = config_type
+        self.is_simple = is_simple
         self.toh = TOH(hass)
 
         # Load config_types.yaml
@@ -63,7 +64,6 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "current_os_version": os_version,
                 "status": "online" if status else "offline",
                 "available_os_version": self.toh.version,
-                "openwrt_devid": openwrt_devid,
-                "snapshot_url": self.toh.snapshot_url,
+                "is_simple": self.is_simple
             }
 

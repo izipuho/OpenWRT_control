@@ -47,8 +47,9 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required("ip"): str,
+                    vol.Required("ip"): vol.IPvAnyAddress(),
                     vol.Required("config_type"): vol.In(config_types),
+                    vol.Required("is_simple", default=True): bool,
                     vol.Optional("add_another", default=False): bool,
                 }
             ),
