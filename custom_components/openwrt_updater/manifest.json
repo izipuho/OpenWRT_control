@@ -1,11 +1,11 @@
 {
   "domain": "openwrt_updater",
   "name": "OpenWRT Updater",
-  "version": "0.3.0",
-  "documentation": "https://github.com/izipuho/OpenWRT_control",
-  "dependencies": [],
   "codeowners": ["@izipuho"],
-  "requirements": ["paramiko", "requests"],
   "config_flow": true,
-  "iot_class": "local_polling"
+  "dependencies": [],
+  "documentation": "https://github.com/izipuho/OpenWRT_control",
+  "iot_class": "local_polling",
+  "requirements": ["paramiko", "requests"],
+  "version": "0.3.0"
 }
