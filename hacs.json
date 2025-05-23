@@ -4,6 +4,8 @@
   "domain": "openwrt_control",
   "zip_release": false,
   "filename": "custom_components/openwrt_control/manifest.json",
-  "render_readme": true
+  "render_readme": true,
+  "homeassistant": "2025.5.2",
+  "iot_class": "local_polling"
 }
 
