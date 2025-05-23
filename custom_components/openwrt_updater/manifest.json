@@ -7,6 +7,6 @@
   "codeowners": ["@izipuho"],
   "requirements": ["paramiko", "requests"],
   "config_flow": true,
-  "translations": ["translations/en.json", "translations/ru.json"],
+  "translations": {"en": "translations/en.json", "ru": "translations/ru.json"},
   "iot_class": "local_polling"
 }
