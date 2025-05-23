@@ -1,7 +1,7 @@
 {
   "domain": "openwrt_updater",
   "name": "OpenWRT Updater",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "documentation": "https://github.com/izipuho/OpenWRT_control",
   "dependencies": [],
   "codeowners": ["@izipuho"],
