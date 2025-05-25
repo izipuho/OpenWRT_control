@@ -24,11 +24,10 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         self.is_simple = is_simple
         self.toh = TOH(hass)
 
-        # Load config_types.yaml
-        self._config_types = self._load_config_types()
+        self._config_types = {}
         self.ssh_key_path = hass.config.path(KEY_PATH)
 
-    def _load_config_types(self):
+    async def _load_config_types(self):
         try:
             with open(self.hass.config.path(CONFIG_TYPES_PATH), "r") as f:
                 return yaml.safe_load(f)
@@ -36,8 +35,14 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Failed to load config_types.yaml: %s", e)
             return {}
 
+    async def async_initialize(self):
+        #self._config_types = await self.hass.async_add_executor_job(self._load_config_types)
+        self._config_types = await self._load_config_types()
+
+
     async def _async_update_data(self):
         try:
+            self._config_types = await self._load_config_types()
             hostname = await self.hass.async_add_executor_job(
                 get_hostname, self.ip, self.ssh_key_path
             )
