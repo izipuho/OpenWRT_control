@@ -8,7 +8,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ class OpenWRTSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
         self._attr_device_class = device_class
         self._attr_entity_category = entity_category
+        self._attr_device_info = get_device_info(ip)
 
     @property
     def native_value(self):
@@ -84,13 +85,4 @@ class OpenWRTSensor(CoordinatorEntity, SensorEntity):
     @property
     def should_poll(self):
         return False
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self._ip)},
-            "name": f"OpenWRT {self._ip}",
-            "manufacturer": "OpenWRT",
-            "model": "Router",
-        }
 
