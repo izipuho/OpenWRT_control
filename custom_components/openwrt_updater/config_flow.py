@@ -6,6 +6,7 @@ import yaml
 from homeassistant.config_entries import ConfigFlow
 
 from .const import CONFIG_TYPES_PATH, DOMAIN
+from .config_loader import load_config_types
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,21 +16,10 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         self.devices = []
-
-    async def _load_config_types(self):
-        def read_yaml():
-            try:
-                path = self.hass.config.path(CONFIG_TYPES_PATH)
-                with open(path, "r") as f:
-                    return yaml.safe_load(f)
-            except Exception as e:
-                _LOGGER.error("Failed to load config_types.yaml: %s", e)
-                return {}
-
-        config_types = await self.hass.async_add_executor_job(read_yaml)
-        return {key: value.get("name", key) for key, value in config_types.items()}
+        self.config_types_path = hass.config.path(CONFIG_TYPES_PATH)
 
     async def async_step_user(self, user_input=None):
+        config_types = await self.hass.async_add_executor_job(load_config_types, self.config_types_path)
         errors = {}
         if user_input is not None:
             self.devices.append(user_input)
