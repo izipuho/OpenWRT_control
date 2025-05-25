@@ -6,7 +6,7 @@ from homeassistant.components.update import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import OpenWRTDataCoordinator
 from .ssh_client import trigger_update
-from .const import DOMAIN, KEY_PATH
+from .const import DOMAIN, KEY_PATH, get_device_info
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
@@ -14,13 +14,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         super().__init__(coordinator)
         self._ip = ip
         self._attr_name = f"Firmware Update ({ip})"
-        self._attr_unique_id = f"{ip}_firmware_update"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._ip)},
-            "name": f"OpenWRT {self._ip}",
-            "manufacturer": "OpenWRT",
-            "model": "Router",
-        }
+        self._attr_unique_id = f"{ip}_firmware"
+        self._attr_device_info = get_device_info(ip)
         self._update_callback = update_callback
         self._attr_supported_features = UpdateEntityFeature.INSTALL
         self._attr_device_class = UpdateDeviceClass.FIRMWARE

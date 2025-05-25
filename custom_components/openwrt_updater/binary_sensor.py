@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 
@@ -55,12 +55,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
         self._attr_device_class = device_class
         self._attr_entity_category = entity_category
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._ip)},
-            "name": f"OpenWRT {self._ip}",
-            "manufacturer": "OpenWRT",
-            "model": "Router",
-        }
+        self._attr_device_info = get_device_info(ip)
 
     @property
     def is_on(self):

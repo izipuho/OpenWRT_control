@@ -7,6 +7,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from .ssh_client import get_hostname, get_os_version, test_ssh_connection
 from .toh_parser import TOH
 from .const import CONFIG_TYPES_PATH, KEY_PATH
+from .config_loader import load_config_types
 
 import yaml
 
@@ -24,20 +25,13 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         self.is_simple = is_simple
         self.toh = TOH(hass)
 
-        # Load config_types.yaml
-        self._config_types = self._load_config_types()
+        self._config_types = {}
         self.ssh_key_path = hass.config.path(KEY_PATH)
-
-    def _load_config_types(self):
-        try:
-            with open(self.hass.config.path(CONFIG_TYPES_PATH), "r") as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            _LOGGER.error("Failed to load config_types.yaml: %s", e)
-            return {}
+        self.config_types_path = hass.config.path(CONFIG_TYPES_PATH)
 
     async def _async_update_data(self):
         try:
+            config_types = await self.hass.async_add_executor_job(load_config_types, self.config_types_path)
             hostname = await self.hass.async_add_executor_job(
                 get_hostname, self.ip, self.ssh_key_path
             )
@@ -49,7 +43,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
             )
 
             # Get TOH data
-            openwrt_devid = self._config_types.get(self.config_type, {}).get(
+            openwrt_devid = config_types.get(self.config_type, {}).get(
                 "openwrt-devid"
             )
             await self.toh.fetch()

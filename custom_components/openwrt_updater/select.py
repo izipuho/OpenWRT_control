@@ -5,7 +5,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CONFIG_TYPES_PATH
+from .const import DOMAIN, CONFIG_TYPES_PATH, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -85,12 +85,7 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         self._key_to_name = key_to_name or {}
         self._attr_options = list(self._key_to_name.values())
         # self._attr_current_option = self._key_to_name(self._current_key)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._ip)},
-            "name": f"OpenWRT {self._ip}",
-            "manufacturer": "OpenWRT",
-            "model": "Router",
-        }
+        self._attr_device_info = get_device_info(ip)
 
     @property
     def current_option(self):

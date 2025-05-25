@@ -3,6 +3,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import OpenWRTDataCoordinator  # Your coordinator class
+from .options_flow import OpenWRTOptionsFlowHandler
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,3 +40,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
+async def async_get_options_flow(config_entry):
+    return OpenWRTOptionsFlowHandler(config_entry)
