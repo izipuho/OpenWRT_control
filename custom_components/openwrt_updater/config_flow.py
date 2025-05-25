@@ -16,10 +16,10 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         self.devices = []
-        self.config_types_path = hass.config.path(CONFIG_TYPES_PATH)
 
     async def async_step_user(self, user_input=None):
-        config_types = await self.hass.async_add_executor_job(load_config_types, self.config_types_path)
+        config_types_path = self.hass.config.path(CONFIG_TYPES_PATH)
+        config_types = await self.hass.async_add_executor_job(load_config_types, config_types_path)
         errors = {}
         if user_input is not None:
             self.devices.append(user_input)
@@ -31,14 +31,12 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
                 data={"devices": self.devices},
             )
 
-        config_types = await self._load_config_types()
-
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
                     vol.Required("ip"): str,
-                    vol.Required("config_type"): vol.In(config_types),
+                    vol.Required("config_type"): vol.In(sorted(config_types.keys())),
                     vol.Required("is_simple", default=True): bool,
                     vol.Optional("add_another", default=False): bool,
                 }
