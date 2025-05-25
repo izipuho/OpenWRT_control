@@ -14,7 +14,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         super().__init__(coordinator)
         self._ip = ip
         self._attr_name = f"Firmware Update ({ip})"
-        self._attr_unique_id = f"{ip}_firmware_update"
+        self._attr_unique_id = f"{ip}_firmware"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, self._ip)},
             "name": f"OpenWRT {self._ip}",
