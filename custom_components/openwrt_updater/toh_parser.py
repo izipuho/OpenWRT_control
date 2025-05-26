@@ -1,5 +1,9 @@
+"""Provide ssh utils."""
+
 import logging
+
 import requests
+
 from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
@@ -8,7 +12,10 @@ TOH_URL = "https://openwrt.org/toh.json"
 
 
 class TOH:
-    def __init__(self, hass: HomeAssistant):
+    """OpenWRT Table of Hardware."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize TOH class."""
         self.hass = hass
         self._toh_data = None
         self.version = ""
@@ -42,7 +49,9 @@ class TOH:
             target_col = self._toh_data["columns"].index("target")
             subtarget_col = self._toh_data["columns"].index("subtarget")
             version_col = self._toh_data["columns"].index("supportedcurrentrel")
-            snapshot_url_col = self._toh_data["columns"].index("firmwareopenwrtsnapshotupgradeurl")
+            snapshot_url_col = self._toh_data["columns"].index(
+                "firmwareopenwrtsnapshotupgradeurl"
+            )
 
             for dev in self._toh_data["entries"]:
                 if dev[0] == openwrt_devid:
@@ -53,5 +62,3 @@ class TOH:
                     break
         except Exception as e:
             _LOGGER.error("Error parsing TOH data: %s", e)
-
-

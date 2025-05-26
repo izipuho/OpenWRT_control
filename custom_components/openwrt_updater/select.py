@@ -1,32 +1,26 @@
+"""Select entities declaration."""
+
 import logging
-import yaml
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CONFIG_TYPES_PATH, get_device_info
+from .config_loader import load_config_types
+from .const import CONFIG_TYPES_PATH, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
 
-    def load_config_types():
-        try:
-            path = hass.config.path(CONFIG_TYPES_PATH)
-            with open(path, "r") as f:
-                config_types = yaml.safe_load(f)
-            # return list(config_data.keys())
-        except Exception as e:
-            _LOGGER.error("Failed to load config_types.yaml: %s", e)
-            return []
-        else:
-            return config_types  # {key: value.get("name", key) for key, value in config_types.items()}
-
-    config_type_options = await hass.async_add_executor_job(load_config_types)
+    config_types_path = hass.config.path(CONFIG_TYPES_PATH)
+    config_type_options = await hass.async_add_executor_job(
+        load_config_types, config_types_path
+    )
     name_to_key = {v["name"]: k for k, v in config_type_options.items()}
     key_to_name = {k: v["name"] for k, v in config_type_options.items()}
 
@@ -45,7 +39,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     "Config Type",
                     static_value=config_type,
                     entity_icon="mdi:cog",
-                    # options=list(name_to_key.keys()),
                     entity_category=EntityCategory.CONFIG,
                     name_to_key=name_to_key,
                     key_to_name=key_to_name,
@@ -57,20 +50,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class OpenWRTSelect(CoordinatorEntity, SelectEntity):
+    """Select entities declaration."""
+
     def __init__(
         self,
         coordinator,
         ip: str,
         name: str,
-        # key=None,
         *,
-        static_value=None,
-        entity_icon: str = None,
-        options=None,
-        entity_category: EntityCategory = None,
+        static_value: str | None = None,
+        entity_icon: str | None = None,
+        entity_category: EntityCategory | None = None,
         name_to_key: dict[str, str],
         key_to_name: dict[str, str],
-    ):
+    ) -> None:
+        """Initialize select entity."""
         super().__init__(coordinator)
         self._ip = ip
         self._name = name
@@ -99,15 +93,19 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
     def available(self):
         return True
 
-    async def async_select_option(self, selected_name: str):
-        # store the key based on user selection
-        selected_key = self._name_to_key.get(selected_name)
-        if selected_key:
-            _LOGGER.debug(
-                "Selected option for %s: %s (%s)", self._ip, selected_name, selected_key
-            )
-            self._current_key = selected_key
-            self.async_write_ha_state()
-        else:
-            _LOGGER.warning("Selected unknown option: %s", selected_name)
 
+# async def async_select_option(self, selected_option: str):
+#    """Asyncronious select option definition."""
+#    # store the key based on user selection
+#    selected_key = self._name_to_key.get(selected_option)
+#    if selected_key:
+#        _LOGGER.debug(
+#            "Selected option for %s: %s (%s)",
+#            self._ip,
+#            selected_option,
+#            selected_key,
+#        )
+#        self._current_key = selected_key
+#        self.async_write_ha_state()
+#    else:
+#        _LOGGER.warning("Selected unknown option: %s", selected_option)
