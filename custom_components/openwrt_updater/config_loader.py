@@ -1,13 +1,18 @@
-import yaml
+"""Provide functions for load config types from YAML."""
+
 import logging
 from pathlib import Path
+
+import yaml
+
 from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def load_config_types(config_path: str) -> dict:
-    config_path = Path(config_path)
     """Load configuration types from a YAML file."""
+    config_path = Path(config_path)
     try:
         with config_path.open("r", encoding="utf-8") as file:
             return yaml.safe_load(file) or {}
@@ -20,4 +25,3 @@ def load_config_types(config_path: str) -> dict:
     except Exception as err:
         _LOGGER.exception("Unexpected error loading config from %s", config_path)
         raise HomeAssistantError(f"Error loading config from {config_path}") from err
-

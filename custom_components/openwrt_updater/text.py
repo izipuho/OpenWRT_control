@@ -1,16 +1,19 @@
+"""Text entities declaration."""
+
 import logging
 
 from homeassistant.components.text import TextEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, get_device_info
+from .const import get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
 
     entities = []
@@ -43,18 +46,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class OpenWRTText(CoordinatorEntity, TextEntity):
+    """Text entities declaration."""
+
     def __init__(
         self,
         coordinator,
         ip: str,
         name: str,
         *,
-        key=None,
-        static_value=None,
-        device_class=None,
-        entity_category: EntityCategory = None,
-        entity_icon: str = None,
-    ):
+        key: str | None = None,
+        static_value: str | None = None,
+        device_class: str | None = None,
+        entity_category: EntityCategory | None = None,
+        entity_icon: str | None = None,
+    ) -> None:
+        """Initialize text entity."""
         super().__init__(coordinator)
         self._ip = ip
         self._name = name
@@ -69,6 +75,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     @property
     def native_value(self):
+        """Return entity native value."""
         if self._key:
             return (
                 self.coordinator.data.get(self._key) if self.coordinator.data else None
@@ -77,8 +84,5 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     @property
     def available(self):
+        """Return availability status."""
         return self.coordinator.last_update_success if self._key else True
-
-    @property
-    def should_poll(self):
-        return False

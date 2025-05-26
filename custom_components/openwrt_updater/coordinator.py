@@ -1,22 +1,28 @@
-import logging
+"""Coordinator class for updating entites."""
+
 from datetime import timedelta
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import logging
+
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .config_loader import load_config_types
+from .const import CONFIG_TYPES_PATH, KEY_PATH
 from .ssh_client import get_hostname, get_os_version, test_ssh_connection
 from .toh_parser import TOH
-from .const import CONFIG_TYPES_PATH, KEY_PATH
-from .config_loader import load_config_types
-
-import yaml
 
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDataCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool = True):
+    """Coordinator class for updating entites."""
+
+    def __init__(
+        self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool = True
+    ):
+        """Initialize coorinator class."""
         super().__init__(
             hass, _LOGGER, name="OpenWRT Updater", update_interval=SCAN_INTERVAL
         )
@@ -31,7 +37,9 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            config_types = await self.hass.async_add_executor_job(load_config_types, self.config_types_path)
+            config_types = await self.hass.async_add_executor_job(
+                load_config_types, self.config_types_path
+            )
             hostname = await self.hass.async_add_executor_job(
                 get_hostname, self.ip, self.ssh_key_path
             )
@@ -43,9 +51,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
             )
 
             # Get TOH data
-            openwrt_devid = config_types.get(self.config_type, {}).get(
-                "openwrt-devid"
-            )
+            openwrt_devid = config_types.get(self.config_type, {}).get("openwrt-devid")
             await self.toh.fetch()
             self.toh.get_device_info(openwrt_devid)
 
@@ -58,6 +64,5 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "current_os_version": os_version,
                 "status": "online" if status else "offline",
                 "available_os_version": self.toh.version,
-                "is_simple": self.is_simple
+                "is_simple": self.is_simple,
             }
-

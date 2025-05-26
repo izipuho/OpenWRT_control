@@ -1,16 +1,23 @@
+"""Updater entity declaration."""
+
 from homeassistant.components.update import (
+    UpdateDeviceClass,
     UpdateEntity,
     UpdateEntityFeature,
-    UpdateDeviceClass,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import KEY_PATH, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 from .ssh_client import trigger_update
-from .const import DOMAIN, KEY_PATH, get_device_info
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
-    def __init__(self, coordinator, ip, update_callback):
+    """Updater entity declaration."""
+
+    def __init__(self, coordinator, ip, update_callback) -> None:
+        """Initialize updater entity."""
         super().__init__(coordinator)
         self._ip = ip
         self._attr_name = f"Firmware Update ({ip})"
@@ -22,10 +29,12 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     @property
     def installed_version(self):
+        """Return installed version."""
         return self.coordinator.data.get("current_os_version")
 
     @property
     def latest_version(self):
+        """Return available version."""
         return self.coordinator.data.get("available_os_version")
 
     @property
@@ -33,18 +42,16 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         return self.coordinator.last_update_success
 
     @property
-    def title(self):
-        return f"OpenWRT {self._ip}"
-
-    @property
     def entity_picture(self):
         return None
 
     async def async_install(self, version: str | None, backup: bool, **kwargs):
+        """Call update function."""
         await self._update_callback(self._ip)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+    """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
     ssh_key_path = hass.config.path(KEY_PATH)
 
@@ -56,7 +63,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
 
         async def update_callback(ip):
-            await hass.async_add_executor_job(trigger_update, ip, ssh_key_path, True, coordinator.data.get("snapshot_url"))
+            await hass.async_add_executor_job(
+                trigger_update,
+                ip,
+                ssh_key_path,
+                True,
+                coordinator.data.get("snapshot_url"),
+            )
 
         entities.extend(
             [
@@ -65,5 +78,3 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
 
     async_add_entities(entities, update_before_add=True)
-
-
