@@ -41,9 +41,9 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     def available(self):
         return self.coordinator.last_update_success
 
-    # @property
-    # def title(self):
-    #    return f"OpenWRT {self._ip}"
+    @property
+    def entity_picture(self):
+        return None
 
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
