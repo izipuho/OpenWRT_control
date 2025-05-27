@@ -38,7 +38,9 @@ You can define config types in `config_types.yaml` like this:
 zip-3200:
   openwrt-devid: linksys:linksys_wrt3200acm
   name: WRT3200-ACM
+```
 
 ## Dashboards
 
 I wanted a glance view of my whole landscape, so I'm trying to use button-card for it. You can find template for it in `extra_files/button-card-template.yaml`. It's in early pre-alfa, but I still want to share it. Maybe someone will modify it for a better view.
+![Button card example.](/extra_files/button-card-example.png)
