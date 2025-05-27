@@ -1,0 +1,48 @@
+button_card_templates:
+  openwrt_updater:
+    variables:
+      ip: null
+    show_name: false
+    show_icon: true
+    show_state: false
+    styles:
+      grid:
+        - grid-template-areas: '"name i" "versions update"'
+        - grid-template-rows: 1fr 1fr
+        - grid-template-columns: 3fr 1fr
+      state:
+        - font-size: 35px
+        - justify-self: start
+        - padding-left: 20px
+      card:
+        - padding-bottom: 0
+    entity: |
+      [[[ return 'binary_sensor.status_' + (variables.ip || 'unknown_ip') ]]]
+    custom_fields:
+      name: |
+        [[[
+          let n = 'text.device_name_' + variables.ip;
+          let i = 'text.ip_address_' + variables.ip;
+          let name = states[n]?.state
+          let ip = states[i]?.state
+          return `<b>${name}</b><br>${ip}`;
+        ]]]
+      update:
+        card:
+          type: button
+          entity: |
+            [[[ return 'update.firmware_update_' + variables.ip ]]]
+          show_name: false
+          show_icon: true
+          icon_height: 50px
+          card_mod:
+            style: |
+              ha-card {
+                border: none;
+              }
+      versions: |
+        [[[
+          let e = 'update.firmware_update_' + variables.ip;
+          let a = states[e]?.attributes;
+          return `<b>Current:</b> ${a?.installed_version || 'N/A'}<br><b>Latest:</b> ${a?.latest_version || 'N/A'}`;
+        ]]]
