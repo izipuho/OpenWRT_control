@@ -16,6 +16,13 @@ button_card_templates:
         - padding-left: 20px
       card:
         - padding-bottom: 0
+      custom_fields:
+        name:
+          - text-align: left
+          - font-size-adjust: 0.5
+        versions:
+          - text-align: right
+          - font-size-adjust: 0.3
     entity: |
       [[[ return 'binary_sensor.status_' + (variables.ip || 'unknown_ip') ]]]
     custom_fields:
@@ -44,5 +51,5 @@ button_card_templates:
         [[[
           let e = 'update.firmware_update_' + variables.ip;
           let a = states[e]?.attributes;
-          return `<b>Current:</b> ${a?.installed_version || 'N/A'}<br><b>Latest:</b> ${a?.latest_version || 'N/A'}`;
+          return `<b>C:</b> ${a?.installed_version || 'N/A'}<br><b>L:</b> ${a?.latest_version || 'N/A'}`;
         ]]]
