@@ -38,7 +38,7 @@ button_card_templates:
         card:
           type: button
           entity: |
-            [[[ return 'update.firmware_update_' + variables.ip ]]]
+            [[[ return 'update.firmware_' + variables.ip ]]]
           show_name: false
           show_icon: true
           icon_height: 50px
