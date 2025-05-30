@@ -1,5 +1,7 @@
 """Binary sensor declaration."""
 
+import logging
+
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -11,32 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
-
-async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
-    devices = config_entry.data.get("devices", [])
-
-    entities = []
-    for device in devices:
-        ip = device["ip"]
-        config_type = device["config_type"]
-
-        coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
-
-        entities.extend(
-            [
-                OpenWRTBinarySensor(
-                    coordinator,
-                    ip,
-                    "Status",
-                    "status",
-                    BinarySensorDeviceClass.CONNECTIVITY,
-                    EntityCategory.DIAGNOSTIC,
-                ),
-            ]
-        )
-
-    async_add_entities(entities, update_before_add=True)
+_LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
@@ -44,7 +21,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: OpenWRTDataCoordinator,
         ip: str,
         name: str,
         key: str,
@@ -53,14 +30,22 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
     ) -> None:
         """Initialize binary sensor class."""
         super().__init__(coordinator)
+
+        # device properties
         self._ip = ip
         self._name = name
+        self._attr_device_info = get_device_info(ip)
+
+        # base entity properties
         self._key = key
         self._attr_name = f"{name} ({ip})"
-        self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
-        self._attr_device_class = device_class
+        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
         self._attr_entity_category = entity_category
-        self._attr_device_info = get_device_info(ip)
+
+        # specific entity properties
+        self._attr_device_class = device_class
+
+        _LOGGER.debug(repr(self))
 
     @property
     def is_on(self):
@@ -73,3 +58,46 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
     def available(self):
         """Return last successfull update."""
         return self.coordinator.last_update_success
+
+    def __repr__(self):
+        """Repesent the object."""
+        repr_str = f"\nName: {self.name}"
+        repr_str += f"\n\tClass: {self.device_class}"
+        repr_str += f"\n\tValue: {self.is_on}"
+        repr_str += f"\n\tCat: {self.entity_category}"
+        return repr_str
+
+
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+    """Asyncronious entry setup."""
+    devices = config_entry.data.get("devices", [])
+
+    entities = []
+    for device in devices:
+        ip = device["ip"]
+        config_type = device["config_type"]
+
+        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
+
+        entities.extend(
+            [
+                OpenWRTBinarySensor(
+                    coordinator,
+                    ip,
+                    "Status",
+                    "status",
+                    BinarySensorDeviceClass.CONNECTIVITY,
+                    EntityCategory.DIAGNOSTIC,
+                ),
+                OpenWRTBinarySensor(
+                    coordinator,
+                    ip,
+                    "Simple update",
+                    "is_simple",
+                    BinarySensorDeviceClass.LOCK,
+                    EntityCategory.DIAGNOSTIC,
+                ),
+            ]
+        )
+
+    async_add_entities(entities, update_before_add=True)
