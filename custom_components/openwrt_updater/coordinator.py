@@ -1,4 +1,5 @@
 """Coordinator class for updating entites."""
+##TODO refactor from device to config
 
 from datetime import timedelta
 import logging
@@ -17,18 +18,24 @@ SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDataCoordinator(DataUpdateCoordinator):
-    """Coordinator class for updating entites."""
+    """Coordinator class for updating device data."""
 
     def __init__(
-        self, hass: HomeAssistant, ip: str, config_type: str, is_simple: bool = True
-    ):
+        self,
+        hass: HomeAssistant,
+        config_entry,
+        ip: str,
+        config_type: str,
+        is_simple: bool = True,
+    ) -> None:
         """Initialize coorinator class."""
         super().__init__(
             hass, _LOGGER, name="OpenWRT Updater", update_interval=SCAN_INTERVAL
         )
+        self.config_entry = config_entry
         self.ip = ip
         self.config_type = config_type
-        self.is_simple = is_simple
+        # self.is_simple = is_simple
         self.toh = TOH(hass)
 
         self._config_types = {}
@@ -64,5 +71,5 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "current_os_version": os_version,
                 "status": "online" if status else "offline",
                 "available_os_version": self.toh.version,
-                "is_simple": self.is_simple,
+                "snapshot_url": self.toh.snapshot_url,
             }

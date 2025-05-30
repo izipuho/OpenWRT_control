@@ -1,4 +1,6 @@
 """Select entities declaration."""
+# TODO persist state
+# TODO prettify select (name instead code)
 
 import logging
 
@@ -13,6 +15,89 @@ from .coordinator import OpenWRTDataCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+class OpenWRTSelect(CoordinatorEntity, SelectEntity):
+    """Select entities declaration."""
+
+    def __init__(
+        self,
+        coordinator: OpenWRTDataCoordinator,
+        entry,
+        device,
+        ip: str,
+        name: str,
+        *,
+        current_value: str | None = None,
+        entity_icon: str | None = None,
+        entity_category: EntityCategory | None = None,
+        config_type_options: list[str],
+    ) -> None:
+        """Initialize select entity."""
+        super().__init__(coordinator)
+        self.coordinator = coordinator
+        # device properties
+        self._ip = ip
+        self._name = name
+        self._attr_device_info = get_device_info(ip)
+        self.entry = entry
+        self.device = device
+
+        # base entry properties
+        self._attr_name = f"{name} ({ip})"
+        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
+        self._attr_icon = entity_icon
+        self._attr_entity_category = entity_category
+
+        # specific entry properties
+        self._current_value = current_value
+        ##self._attr_has_entity_name = True
+        self._attr_options = sorted(config_type_options.keys())
+
+        # dunno
+        self._attr_available = True
+        self._attr_should_poll = False
+
+        # helpers
+        self._config_type_options = config_type_options
+
+        _LOGGER.debug(repr(self))
+
+    @property
+    def current_option(self):
+        """Return current option."""
+        data = self.coordinator.data or {}
+        return data.get(self._ip, {}).get("config_type", self._current_value)
+
+    async def async_select_option(self, option: str) -> None:
+        """Select option."""
+        self._attr_current_option = option
+
+        # update in memory coordinator
+        if self._ip in self.coordinator.data:
+            self.coordinator.data[self._ip]["config_type"] = option
+        else:
+            self.coordinator.data[self._ip] = {"config_type": option}
+
+        # update config entry
+        entry = self.coordinator.config_entry
+        devices = entry.options.get("devices", [])
+        for device in devices:
+            if device["ip"] == self._ip:
+                device["config_type"] = option
+                break
+
+        self.hass.config_entries.async_update_entry(entry, options={"devices": devices})
+
+        self.async_write_ha_state()
+
+    def __repr__(self):
+        """Repesent the object."""
+        repr_str = f"\nName: {self.name}"
+        repr_str += f"\n\tClass: {self.device_class}"
+        repr_str += f"\n\tValue: {self._current_value}"
+        repr_str += f"\n\tCat: {self.entity_category}"
+        return repr_str
+
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
@@ -21,91 +106,28 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     config_type_options = await hass.async_add_executor_job(
         load_config_types, config_types_path
     )
-    name_to_key = {v["name"]: k for k, v in config_type_options.items()}
-    key_to_name = {k: v["name"] for k, v in config_type_options.items()}
 
     entities = []
     for device in devices:
         ip = device["ip"]
         config_type = device["config_type"]
 
-        coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
+        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
 
         entities.extend(
             [
                 OpenWRTSelect(
                     coordinator,
+                    config_entry,
+                    device,
                     ip,
                     "Config Type",
-                    static_value=config_type,
+                    current_value=config_type,
                     entity_icon="mdi:cog",
                     entity_category=EntityCategory.CONFIG,
-                    name_to_key=name_to_key,
-                    key_to_name=key_to_name,
+                    config_type_options=config_type_options,
                 ),
             ]
         )
 
     async_add_entities(entities, update_before_add=True)
-
-
-class OpenWRTSelect(CoordinatorEntity, SelectEntity):
-    """Select entities declaration."""
-
-    def __init__(
-        self,
-        coordinator,
-        ip: str,
-        name: str,
-        *,
-        static_value: str | None = None,
-        entity_icon: str | None = None,
-        entity_category: EntityCategory | None = None,
-        name_to_key: dict[str, str],
-        key_to_name: dict[str, str],
-    ) -> None:
-        """Initialize select entity."""
-        super().__init__(coordinator)
-        self._ip = ip
-        self._name = name
-        self._attr_name = f"{name} ({ip})"
-        self._attr_unique_id = f"{ip}_{name.lower().replace(' ', '_')}"
-        # self._key = key
-        self._attr_icon = entity_icon
-        self._attr_entity_category = entity_category
-        self._current_key = static_value
-        self._attr_has_entity_name = True
-        self._name_to_key = name_to_key or {}
-        self._key_to_name = key_to_name or {}
-        self._attr_options = list(self._key_to_name.values())
-        # self._attr_current_option = self._key_to_name(self._current_key)
-        self._attr_device_info = get_device_info(ip)
-
-    @property
-    def current_option(self):
-        return self._key_to_name.get(self._current_key)
-
-    @property
-    def should_poll(self):
-        return False
-
-    @property
-    def available(self):
-        return True
-
-
-# async def async_select_option(self, selected_option: str):
-#    """Asyncronious select option definition."""
-#    # store the key based on user selection
-#    selected_key = self._name_to_key.get(selected_option)
-#    if selected_key:
-#        _LOGGER.debug(
-#            "Selected option for %s: %s (%s)",
-#            self._ip,
-#            selected_option,
-#            selected_key,
-#        )
-#        self._current_key = selected_key
-#        self.async_write_ha_state()
-#    else:
-#        _LOGGER.warning("Selected unknown option: %s", selected_option)
