@@ -63,7 +63,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Repesent the object."""
         repr_str = f"\nName: {self.name}"
         repr_str += f"\n\tClass: {self.device_class}"
-        repr_str += f"\n\tValue: {self.native_value}"
+        repr_str += f"\n\tValue: {self.is_on}"
         repr_str += f"\n\tCat: {self.entity_category}"
         return repr_str
 
