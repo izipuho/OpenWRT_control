@@ -1,6 +1,4 @@
 """Initialize OpenWRT Updater integration."""
-##TODO prettify select (name instead code)
-##TODO validate IP
 
 import logging
 
@@ -12,8 +10,7 @@ from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# PLATFORMS = ["binary_sensor", "select", "switch", "text", "update"]
-PLATFORMS = ["binary_sensor", "text", "update"]
+PLATFORMS = ["binary_sensor", "select", "switch", "text", "update"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -23,8 +20,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = OpenWRTDataCoordinator(
         hass,
         entry,
-        entry.data["devices"][0]["ip"],
-        entry.data["devices"][0]["config_type"],
     )
 
     # Initial refresh — must be awaited here before loading platforms

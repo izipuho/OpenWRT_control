@@ -59,7 +59,7 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         # helpers
         self._config_type_options = config_type_options
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.warning(repr(self))
 
     @property
     def current_option(self):
@@ -101,6 +101,7 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     config_types_path = hass.config.path(CONFIG_TYPES_PATH)
     config_type_options = await hass.async_add_executor_job(
@@ -111,8 +112,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for device in devices:
         ip = device["ip"]
         config_type = device["config_type"]
-
-        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
 
         entities.extend(
             [

@@ -46,7 +46,7 @@ class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
         # specific entity properties
         self._attr_is_on = device.get("is_simple", state)
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.warning(repr(self))
 
     def turn_on(self, **kwargs):
         """Turn on handler."""
@@ -96,14 +96,11 @@ class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
-
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
     entities = []
     for device in devices:
         ip = device["ip"]
-        config_type = device["config_type"]
         state = device["is_simple"]
-
-        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
 
         entities.extend(
             [
