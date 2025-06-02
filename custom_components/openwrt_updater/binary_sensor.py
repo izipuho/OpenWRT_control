@@ -45,7 +45,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         # specific entity properties
         self._attr_device_class = device_class
 
-        _LOGGER.warning(repr(self))
+        _LOGGER.debug(repr(self))
 
     @property
     def is_on(self) -> bool:

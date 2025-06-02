@@ -1,14 +1,15 @@
 """Simple update declaration."""
 ##TODO persist state
 
+import logging
+
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import get_device_info
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,10 +28,12 @@ class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
     ) -> None:
         """Initialize simple update class."""
         # helpers
-        entry = coordinator.config_entry
-        devices = entry.options.get("devices", [])
-        device = next((d for d in devices if d.get("ip") == ip), {})
+        self.entry = coordinator.config_entry
+        self.devices = self.entry.data.get("devices", [])
+        device = next((d for d in self.devices if d.get("ip") == ip), {})
         self._key = key
+        _LOGGER.error("Entry: %s", self.entry)
+
 
         super().__init__(coordinator)
         # device properties
@@ -46,42 +49,31 @@ class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
         # specific entity properties
         self._attr_is_on = device.get("is_simple", state)
 
-        _LOGGER.warning(repr(self))
-
-    def turn_on(self, **kwargs):
-        """Turn on handler."""
-        self._attr_is_on = True
-        self.async_write_ha_state()
-
-    def turn_off(self, **kwargs):
-        """Turn off handler."""
-        self._attr_is_on = False
-        self.async_write_ha_state()
+        _LOGGER.debug(repr(self))
 
     async def async_turn_on(self, **kwargs):
         """Turn on."""
-        self.turn_on()
+        self._attr_is_on = True
+        self.async_write_ha_state()
+        await self._set_simple_update(self._attr_is_on)
 
     async def async_turn_off(self, **kwargs):
         """Turn off."""
-        self.turn_off()
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        await self._set_simple_update(self._attr_is_on)
 
     async def _set_simple_update(self, value: bool):
-        self._attr_is_on = value
-        self.async_write_ha_state()
-
         # Persist the state in config entry options
-        entry = self.coordinator.config_entry
-        devices = entry.options.get("devices", [])
-        new_devices = []
+        updated_device = []
 
-        for d in devices:
+        for d in self.devices:
             if d.get("ip") == self._ip:
                 d["is_simple"] = value
-            new_devices.append(d)
+            updated_device.append(d)
 
         self.hass.config_entries.async_update_entry(
-            entry, options={"devices": new_devices}
+            self.entry, options={"devices": updated_device}
         )
 
     def __repr__(self):
@@ -97,6 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
     coordinator = OpenWRTDataCoordinator(hass, config_entry)
+
     entities = []
     for device in devices:
         ip = device["ip"]

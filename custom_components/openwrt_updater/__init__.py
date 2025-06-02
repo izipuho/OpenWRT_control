@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["binary_sensor", "select", "switch", "text", "update"]
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""
     _LOGGER.debug("Entry data: %s", entry.data)

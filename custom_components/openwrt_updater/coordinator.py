@@ -39,6 +39,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         devices = self.config_entry.data.get("devices", [])
         coordinator = {}
         for device in devices:
+            _LOGGER.debug("Device: %s", device)
             ip = device["ip"]
             config_type = device["config_type"]
             try:
@@ -71,5 +72,5 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                     "available_os_version": self.toh.version,
                     "snapshot_url": self.toh.snapshot_url,
                 }
-        _LOGGER.warning(coordinator)
+        _LOGGER.debug("Coordinator: %s", coordinator)
         return coordinator

@@ -44,7 +44,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
         self._attr_icon = entity_icon
         self._attr_entity_category = entity_category
-        _LOGGER.warning(repr(self))
+        _LOGGER.debug(repr(self))
 
     @property
     def native_value(self):
@@ -74,13 +74,11 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
     for device in devices:
         ip = device["ip"]
-        config_type = device["config_type"]
-
-        coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
         entities.extend(
             [

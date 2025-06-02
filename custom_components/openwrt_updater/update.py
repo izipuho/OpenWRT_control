@@ -85,11 +85,15 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     @property
     def installed_version(self):
         """Return installed version."""
+        if self.coordinator.data is None:
+            return "unavailable"
         return self.coordinator.data.get(self._ip).get("current_os_version")
 
     @property
     def latest_version(self):
         """Return available version."""
+        if self.coordinator.data is None:
+            return "unavailable"
         return self.coordinator.data.get(self._ip).get("available_os_version")
 
     @property
@@ -116,9 +120,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
     ssh_key_path = hass.config.path(KEY_PATH)
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     async def update_callback(ip):
         def get_is_simple(entity_id: str) -> bool:

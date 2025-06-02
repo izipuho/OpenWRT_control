@@ -29,11 +29,16 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         current_value: str | None = None,
         entity_icon: str | None = None,
         entity_category: EntityCategory | None = None,
-        config_type_options: list[str],
+        config_types: list[str],
     ) -> None:
         """Initialize select entity."""
         super().__init__(coordinator)
-        self.coordinator = coordinator
+        # helpers
+        # self.coordinator = coordinator
+        self.entry = coordinator.config_entry
+        self.devices = self.entry.data.get("devices", [])
+        self._config_types = config_types
+
         # device properties
         self._ip = ip
         self._name = name
@@ -50,21 +55,16 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         # specific entry properties
         self._current_value = current_value
         ##self._attr_has_entity_name = True
-        self._attr_options = sorted(config_type_options.keys())
-
-        # dunno
+        self._attr_options = sorted(config_types.keys())
         self._attr_available = True
         self._attr_should_poll = False
 
-        # helpers
-        self._config_type_options = config_type_options
-
-        _LOGGER.warning(repr(self))
+        _LOGGER.debug(repr(self))
 
     @property
     def current_option(self):
         """Return current option."""
-        data = self.coordinator.data or {}
+        data = self.coordinator.config_entry.data or {}
         return data.get(self._ip, {}).get("config_type", self._current_value)
 
     async def async_select_option(self, option: str) -> None:
@@ -72,20 +72,22 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         self._attr_current_option = option
 
         # update in memory coordinator
-        if self._ip in self.coordinator.data:
-            self.coordinator.data[self._ip]["config_type"] = option
-        else:
-            self.coordinator.data[self._ip] = {"config_type": option}
+        # if self._ip in self.entry.data:
+        #    self.entry.data[self._ip]["config_type"] = option
+        # else:
+        #    self.entry.data[self._ip] = {"config_type": option}
 
-        # update config entry
-        entry = self.coordinator.config_entry
-        devices = entry.options.get("devices", [])
-        for device in devices:
-            if device["ip"] == self._ip:
-                device["config_type"] = option
+        # Persist the state in config entry options
+        updated_device = []
+        for d in self.devices:
+            if d.get("ip") == self._ip:
+                d["config_type"] = option
                 break
+            updated_device.append(d)
 
-        self.hass.config_entries.async_update_entry(entry, options={"devices": devices})
+        self.hass.config_entries.async_update_entry(
+            self.entry, options={"devices": updated_device}
+        )
 
         self.async_write_ha_state()
 
@@ -104,7 +106,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     config_types_path = hass.config.path(CONFIG_TYPES_PATH)
-    config_type_options = await hass.async_add_executor_job(
+    config_types = await hass.async_add_executor_job(
         load_config_types, config_types_path
     )
 
@@ -124,7 +126,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     current_value=config_type,
                     entity_icon="mdi:cog",
                     entity_category=EntityCategory.CONFIG,
-                    config_type_options=config_type_options,
+                    config_types=config_types,
                 ),
             ]
         )
