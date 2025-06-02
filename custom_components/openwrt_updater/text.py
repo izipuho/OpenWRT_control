@@ -51,7 +51,9 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         """Return entity native value."""
         if self._key:
             self.value = (
-                self.coordinator.data.get(self._key) if self.coordinator.data else None
+                self.coordinator.data.get(self._ip).get(self._key)
+                if self.coordinator.data
+                else None
             )
         else:
             self.value = self._static_value
@@ -65,20 +67,18 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
     def __repr__(self):
         """Represent the object."""
         repr_str = f"\nName: {self.name}"
-        repr_str += f"\n\tValue: {self.native_value}"
+        repr_str += f"\n\tValue: {self.value}"
         return repr_str
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
     for device in devices:
         ip = device["ip"]
-        config_type = device["config_type"]
-
-        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
 
         entities.extend(
             [
@@ -103,14 +103,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     key="snapshot_url",
                     entity_icon="mdi:link",
                     entity_category=EntityCategory.DIAGNOSTIC,
-                ),
-                OpenWRTText(
-                    coordinator,
-                    ip,
-                    "Config type",
-                    entity_icon="mdi:cog",
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                    static_value=config_type,
                 ),
             ]
         )

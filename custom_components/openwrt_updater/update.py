@@ -85,12 +85,16 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     @property
     def installed_version(self):
         """Return installed version."""
-        return self.coordinator.data.get("current_os_version")
+        if self.coordinator.data is None:
+            return "unavailable"
+        return self.coordinator.data.get(self._ip).get("current_os_version")
 
     @property
     def latest_version(self):
         """Return available version."""
-        return self.coordinator.data.get("available_os_version")
+        if self.coordinator.data is None:
+            return "unavailable"
+        return self.coordinator.data.get(self._ip).get("available_os_version")
 
     @property
     def available(self):
@@ -116,32 +120,29 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
     ssh_key_path = hass.config.path(KEY_PATH)
+    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
+
+    async def update_callback(ip):
+        def get_is_simple(entity_id: str) -> bool:
+            update_type_entity_state = hass.states.get(entity_id).state
+            return {"on": True, "off": False}.get(update_type_entity_state.lower())
+
+        update_type_entity_id = f"switch.simple_update_{ip.replace('.', '_')}"
+
+        await hass.async_add_executor_job(
+            trigger_update,
+            hass,
+            ip,
+            ssh_key_path,
+            get_is_simple(update_type_entity_id),
+        )
+
     for device in devices:
-        ip = device["ip"]
-        config_type = device["config_type"]
-
-        coordinator = OpenWRTDataCoordinator(hass, config_entry, ip, config_type)
-
-        async def update_callback(ip, config_type: str = config_type):
-            def get_is_simple(entity_id: str) -> bool:
-                update_type_entity_state = hass.states.get(entity_id).state
-                return {"on": True, "off": False}.get(update_type_entity_state.lower())
-
-            update_type_entity_id = f"switch.simple_update_{ip.replace('.', '_')}"
-
-            await hass.async_add_executor_job(
-                trigger_update,
-                hass,
-                ip,
-                ssh_key_path,
-                get_is_simple(update_type_entity_id),
-            )
-
         entities.extend(
             [
-                OpenWRTUpdateEntity(coordinator, ip, update_callback),
+                OpenWRTUpdateEntity(coordinator, device["ip"], update_callback),
             ]
         )
 
