@@ -7,9 +7,9 @@ button_card_templates:
     show_state: false
     styles:
       grid:
-        - grid-template-areas: '"name i" "versions update"'
+        - grid-template-areas: '"name name name i" "update simple versions versions"'
+        - grid-template-columns: 1fr 1fr 1fr 1fr
         - grid-template-rows: 1fr 1fr
-        - grid-template-columns: 3fr 1fr
       state:
         - font-size: 35px
         - justify-self: start
@@ -20,9 +20,11 @@ button_card_templates:
         name:
           - text-align: left
           - font-size-adjust: 0.5
+          - padding: 5px
         versions:
           - text-align: right
           - font-size-adjust: 0.3
+          - padding: 5px
     entity: |
       [[[ return 'binary_sensor.status_' + (variables.ip || 'unknown_ip') ]]]
     custom_fields:
@@ -34,6 +36,19 @@ button_card_templates:
           let ip = states[i]?.state
           return `<b>${name}</b><br>${ip}`;
         ]]]
+      simple:
+        card:
+          type: button
+          entity: |
+            [[[ return 'switch.simple_update_' + variables.ip ]]]
+          show_name: false
+          show_icon: true
+          icon_height: 50px
+          card_mod:
+            style: |
+              ha-card {
+                border: none;
+              }
       update:
         card:
           type: button
@@ -49,7 +64,7 @@ button_card_templates:
               }
       versions: |
         [[[
-          let e = 'update.firmware_update_' + variables.ip;
+          let e = 'update.firmware_' + variables.ip;
           let a = states[e]?.attributes;
           return `<b>C:</b> ${a?.installed_version || 'N/A'}<br><b>L:</b> ${a?.latest_version || 'N/A'}`;
         ]]]
