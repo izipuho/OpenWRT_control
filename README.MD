@@ -7,16 +7,16 @@ This Home Assistant integration allows you to monitor and control OpenWRT-based 
 - **Device Discovery**: Register OpenWRT routers via config flow.
 - **Update Entity**: See available firmware updates and trigger upgrades.
 - **Select Entity**: Change configuration type dynamically.
+- **Switch Entity**: Change update type: simple or custom.
 - **Text Entity**: Get IP, hostname, and OS version info.
 - **Binary Sensor**: Monitor device status (online/offline).
-- **Sensors**: Not used. Made in early steps of integration.
 
 ## Installation
 
 ### HACS (Recommended)
 1. Add this repository as a custom integration:
    - HACS → Integrations → 3-dot menu → Custom Repositories
-   - URL: `https://github.com/YOUR_USERNAME/openwrt_control`
+   - URL: `https://github.com/izipuho/openwrt_control`
    - Category: Integration
 2. Install “OpenWRT Control”.
 3. Restart Home Assistant.
