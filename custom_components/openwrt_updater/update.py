@@ -1,6 +1,8 @@
 """Updater entity declaration."""
+# TODO Turn on simple update. Now it only copies firmware and I guess it's wrong one.
 
 import logging
+import subprocess
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -19,20 +21,22 @@ _LOGGER = logging.getLogger(__name__)
 
 def trigger_update(
     hass: HomeAssistant,
-    ip: str,
+    device: dict,  # ip: str,
     key_path: str,
-    is_simple: bool = True,
 ):
     """Trigger update of the remote device."""
+    ip = device["ip"]
+    is_simple = device.get("simple_update", True)
+    is_force = device.get("force_update", False)
     if is_simple:
         url_entity = f"text.snapshot_url_{ip.replace('.', '_')}"
         url = hass.states.get(url_entity).state
         try:
-            update_command = f'echo "{ip}. Simple update: {is_simple}. URL: {url}" > /tmp/integration_test'
-            # update_command = (
-            #    f"curl {url} --output /tmp/o.bin && mv /tmp/o.bin /tmp/owrt.bin"
-            # )
-            # _LOGGER.info("Trying to update %s with %s", ip, update_command)
+            _LOGGER.warning("Trying to simple update %s", ip)
+            # update_command = f'echo "{ip}. Simple update: {is_simple}. URL: {url}" > /tmp/integration_test'
+            update_command = f"curl {url} --output /tmp/owrt.bin"
+            if is_force:
+                update_command += " && mv /tmp/owrt.bin /tmp/ooooooo.bin"
             client = _connect_ssh(ip, key_path)
             stdin, stdout, stderr = client.exec_command(update_command)
             output = stdout.read().decode().strip()
@@ -43,22 +47,17 @@ def trigger_update(
         else:
             return output
     else:
-        config_type_entity = f"select.config_type_{ip.replace('.', '_')}"
-        _LOGGER.warning("Trying to get state of %s", config_type_entity)
-        config_type = hass.states.get(config_type_entity).state
+        config_type = device["config_type"]
+        update_command = f"cd /home/zip/OpenWrt-builder && make C={config_type} {'install' if is_force else 'copy'}"
+        master_node = "zip@10.8.25.20"
         try:
-            update_command = f'echo "{ip}. Simple update: {is_simple}. Config: {config_type}" > /tmp/integration_test'
-            # client = _connect_ssh("10.8.25.20", key_path, username="zip")
-            client = _connect_ssh(ip, key_path)
-            stdin, stdout, stderr = client.exec_command(update_command)
-            output = stdout.read().decode().strip()
-            client.close()
-            # _LOGGER.info("Trying to update %s", ip)
+            ssh_command = ["ssh", "-A", master_node, update_command]
+            output = subprocess.run(ssh_command, check=True)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
             return None
         else:
-            return output
+            return output.returncode
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
@@ -67,6 +66,10 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     def __init__(self, coordinator, ip, update_callback) -> None:
         """Initialize updater entity."""
         super().__init__(coordinator)
+        # helpers
+        self.entry = coordinator.config_entry
+        self.devices = self.entry.data.get("devices", [])
+        self.device = next((d for d in self.devices if d.get("ip") == ip), {})
         # device properties
         self._ip = ip
         self._attr_device_info = get_device_info(ip)
@@ -79,6 +82,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         self._update_callback = update_callback
         self._attr_supported_features = UpdateEntityFeature.INSTALL
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
+        self._attr_extra_state_attributes = {"force": False}
 
         _LOGGER.debug(repr(self))
 
@@ -108,7 +112,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
-        await self._update_callback(self._ip)
+        await self._update_callback(self.device)
 
     def __repr__(self):
         """Represent the object."""
@@ -124,20 +128,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
 
-    async def update_callback(ip):
+    async def update_callback(device):
         def get_is_simple(entity_id: str) -> bool:
             update_type_entity_state = hass.states.get(entity_id).state
             return {"on": True, "off": False}.get(update_type_entity_state.lower())
 
-        update_type_entity_id = f"switch.simple_update_{ip.replace('.', '_')}"
-
-        await hass.async_add_executor_job(
-            trigger_update,
-            hass,
-            ip,
-            ssh_key_path,
-            get_is_simple(update_type_entity_id),
-        )
+        await hass.async_add_executor_job(trigger_update, hass, device, ssh_key_path)
 
     for device in devices:
         entities.extend(
