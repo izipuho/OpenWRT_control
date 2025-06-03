@@ -36,7 +36,7 @@ def trigger_update(
             # update_command = f'echo "{ip}. Simple update: {is_simple}. URL: {url}" > /tmp/integration_test'
             update_command = f"curl {url} --output /tmp/owrt.bin"
             if is_force:
-                update_command += " && mv /tmp/owrt.bin /tmp/ooooooo.bin"
+                update_command += " && sysupgrade -v /tmp/owrt.bin"
             client = _connect_ssh(ip, key_path)
             stdin, stdout, stderr = client.exec_command(update_command)
             output = stdout.read().decode().strip()
@@ -113,6 +113,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
         await self._update_callback(self.device)
+        await self.coordinator.async_request_refresh()
 
     def __repr__(self):
         """Represent the object."""

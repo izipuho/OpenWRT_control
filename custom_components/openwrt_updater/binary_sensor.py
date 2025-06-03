@@ -25,7 +25,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         ip: str,
         name: str,
         key: str,
-        device_class: BinarySensorDeviceClass,
+        device_class: BinarySensorDeviceClass = None,
         entity_category: EntityCategory = None,
     ) -> None:
         """Initialize binary sensor class."""
@@ -52,7 +52,8 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device status."""
         if self.coordinator.data is None:
             return False
-        return self.coordinator.data.get(self._ip).get(self._key) == "online"
+        # return self.coordinator.data.get(self._ip).get(self._key) == "on"
+        return self.coordinator.data.get(self._ip).get(self._key)
 
     @property
     def available(self):
@@ -83,8 +84,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     ip,
                     "Status",
                     "status",
-                    BinarySensorDeviceClass.CONNECTIVITY,
-                    EntityCategory.DIAGNOSTIC,
+                    device_class=BinarySensorDeviceClass.CONNECTIVITY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
+                OpenWRTBinarySensor(
+                    coordinator,
+                    ip,
+                    "Firmware downloaded",
+                    "firmware_downloaded",
+                    device_class=BinarySensorDeviceClass.OCCUPANCY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ]
         )

@@ -9,7 +9,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .config_loader import load_config_types
 from .const import CONFIG_TYPES_PATH, KEY_PATH
-from .ssh_client import get_hostname, get_os_version, test_ssh_connection
+from .ssh_client import (
+    check_firmware_file,
+    get_hostname,
+    get_os_version,
+    test_ssh_connection,
+    get_device_info,
+)
 from .toh_parser import TOH
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,14 +52,13 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 config_types = await self.hass.async_add_executor_job(
                     load_config_types, self.config_types_path
                 )
-                hostname = await self.hass.async_add_executor_job(
-                    get_hostname, ip, self.ssh_key_path
-                )
-                os_version = await self.hass.async_add_executor_job(
-                    get_os_version, ip, self.ssh_key_path
-                )
-                status = await self.hass.async_add_executor_job(
-                    test_ssh_connection, ip, self.ssh_key_path
+                (
+                    firmware_downloaded,
+                    hostname,
+                    os_version,
+                    status,
+                ) = await self.hass.async_add_executor_job(
+                    get_device_info, ip, self.ssh_key_path
                 )
 
                 # Get TOH data
@@ -68,9 +73,12 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 coordinator[ip] = {
                     "hostname": hostname,
                     "current_os_version": os_version,
-                    "status": "online" if status else "offline",
+                    # "status": "on" if status else "off",
+                    "status": status,
                     "available_os_version": self.toh.version,
                     "snapshot_url": self.toh.snapshot_url,
+                    # "firmware_downloaded": "on" if firmware_downloaded else "off",
+                    "firmware_downloaded": firmware_downloaded,
                 }
-        _LOGGER.debug("Coordinator: %s", coordinator)
+        _LOGGER.warning("Coordinator: %s", coordinator)
         return coordinator

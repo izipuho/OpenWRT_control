@@ -17,43 +17,31 @@ def _connect_ssh(ip, key_path, username: str = "root"):
     return client
 
 
-def test_ssh_connection(ip, key_path):
-    """Test ssh connection."""
+def get_device_info(ip, key_path):
+    """Get device info: status, hostname, os version, firmware file presence."""
+    firmware_file_command = (
+        "ls /tmp/*wrt*.bin 2>/dev/null | grep -q . && echo True || echo False"
+    )
+    os_version_command = (
+        "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
+    )
+    hostname_command = "cat /proc/sys/kernel/hostname"
     try:
         client = _connect_ssh(ip, key_path)
-        client.close()
-    except Exception as e:
-        _LOGGER.error("SSH test failed: %s", e)
-        return False
-    else:
-        return True
-
-
-def get_hostname(ip, key_path):
-    """Return hostname pulled over ssh."""
-    try:
-        client = _connect_ssh(ip, key_path)
-        stdin, stdout, stderr = client.exec_command("cat /proc/sys/kernel/hostname")
-        name = stdout.read().decode().strip()
-        client.close()
-    except Exception as e:
-        _LOGGER.error("SSH hostname fetch failed: %s, %s", ip, e)
-        return None
-    else:
-        return name
-
-
-def get_os_version(ip, key_path):
-    """Return current OS version pulled over ssh."""
-    try:
-        client = _connect_ssh(ip, key_path)
-        stdin, stdout, stderr = client.exec_command(
-            "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
+        firmware_downloaded = (
+            client.exec_command(firmware_file_command)[1].read().decode().strip()
         )
-        version = stdout.read().decode().strip()
+        _LOGGER.warning("Firmware downloaded %s: %s", ip, firmware_downloaded)
+        os_version = client.exec_command(os_version_command)[1].read().decode().strip()
+        hostname = client.exec_command(hostname_command)[1].read().decode().strip()
         client.close()
     except Exception as e:
         _LOGGER.error("SSH OS version fetch failed: %s", e)
-        return None
+        return None, None, None, False
     else:
-        return version
+        return (
+            True if firmware_downloaded == "True" else False,
+            hostname,
+            os_version,
+            True,
+        )
