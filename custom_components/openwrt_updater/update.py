@@ -32,7 +32,7 @@ def trigger_update(
         url_entity = f"text.snapshot_url_{ip.replace('.', '_')}"
         url = hass.states.get(url_entity).state
         try:
-            _LOGGER.warning("Trying to simple update %s", ip)
+            _LOGGER.debug("Trying to simple update %s", ip)
             # update_command = f'echo "{ip}. Simple update: {is_simple}. URL: {url}" > /tmp/integration_test'
             update_command = f"curl {url} --output /tmp/owrt.bin"
             if is_force:
@@ -68,8 +68,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         super().__init__(coordinator)
         # helpers
         self.entry = coordinator.config_entry
-        self.devices = self.entry.data.get("devices", [])
-        self.device = next((d for d in self.devices if d.get("ip") == ip), {})
+        self.devices = self.entry.options.get("devices", {})
+        self.device = self.entry.options.get("devices", []).get("ip", {})
         # device properties
         self._ip = ip
         self._attr_device_info = get_device_info(ip)
@@ -91,14 +91,14 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         """Return installed version."""
         if self.coordinator.data is None:
             return "unavailable"
-        return self.coordinator.data.get(self._ip).get("current_os_version")
+        return self.coordinator.data.get("current_os_version")
 
     @property
     def latest_version(self):
         """Return available version."""
         if self.coordinator.data is None:
             return "unavailable"
-        return self.coordinator.data.get(self._ip).get("available_os_version")
+        return self.coordinator.data.get("available_os_version")
 
     @property
     def available(self):
@@ -123,9 +123,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.data.get("devices", [])
+    devices = config_entry.options.get("devices", [])
     ssh_key_path = hass.config.path(KEY_PATH)
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
 
@@ -136,10 +135,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
         await hass.async_add_executor_job(trigger_update, hass, device, ssh_key_path)
 
-    for device in devices:
+    for ip, device in devices.items():
+        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
         entities.extend(
             [
-                OpenWRTUpdateEntity(coordinator, device["ip"], update_callback),
+                OpenWRTUpdateEntity(coordinator, ip, update_callback),
             ]
         )
 

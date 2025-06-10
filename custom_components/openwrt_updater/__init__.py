@@ -10,23 +10,32 @@ from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["binary_sensor", "select", "switch", "text", "update"]
+PLATFORMS = [
+    "binary_sensor",
+    "button",
+    # "select",
+    "switch",
+    "text",
+    "update",
+]
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""
-    _LOGGER.debug("Entry data: %s", entry.data)
-
-    coordinator = OpenWRTDataCoordinator(
-        hass,
-        entry,
+    _LOGGER.warning(
+        "Entry data init: %s\nEntry options init: %s", entry.data, entry.options
     )
 
-    # Initial refresh — must be awaited here before loading platforms
-    await coordinator.async_config_entry_first_refresh()
-
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {"devices": entry.data.get("devices", [])}
-    # hass.data[DOMAIN][entry.entry_id] = {"coodinator": coordinator}
+    hass.data[DOMAIN][entry.entry_id] = {}
+
+    devices = entry.options.get("devices", {})
+
+    for ip, device in devices.items():
+        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
+        # Initial refresh — must be awaited here before loading platforms
+        await coordinator.async_config_entry_first_refresh()
+        hass.data[DOMAIN][entry.entry_id][ip] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

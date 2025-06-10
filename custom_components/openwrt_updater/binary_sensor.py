@@ -53,7 +53,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         if self.coordinator.data is None:
             return False
         # return self.coordinator.data.get(self._ip).get(self._key) == "on"
-        return self.coordinator.data.get(self._ip).get(self._key)
+        return self.coordinator.data.get(self._key)
 
     @property
     def available(self):
@@ -70,13 +70,11 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.data.get("devices", [])
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
+    devices = config_entry.options.get("devices", {})
 
     entities = []
-    for device in devices:
-        ip = device["ip"]
-
+    for ip, device in devices.items():
+        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
         entities.extend(
             [
                 OpenWRTBinarySensor(

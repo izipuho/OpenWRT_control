@@ -1,4 +1,6 @@
 """Configuration flow description."""
+##TODO prettify select (name instead code)
+##TODO validate IP
 
 import logging
 
@@ -17,7 +19,8 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize config flow class."""
-        self.devices = []
+        self.data = []
+        self.options = {}
 
     async def async_step_user(self, user_input=None):
         """Asyncronious user step."""
@@ -27,13 +30,23 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         errors = {}
         if user_input is not None:
-            self.devices.append(user_input)
+            # self.devices[user_input["ip"]] = user_input
+            # self.devices[user_input["ip"]] = {user_input}
+            # self.data[user_input["ip"]] = {"ip": user_input["ip"]}
+            self.data.append(user_input["ip"])
+            self.options[user_input["ip"]] = {
+                "ip": user_input["ip"],
+                "config_type": user_input["config_type"],
+                "simple_update": user_input["simple_update"],
+                "force_update": user_input["force_update"],
+            }
             if user_input.get("add_another"):
                 return await self.async_step_user()
-            _LOGGER.debug("Create device with data: %s", self.devices)
+            _LOGGER.debug("Create device with data: %s", user_input)
             return self.async_create_entry(
-                title=f"OpenWRT updater {self.devices[0]['ip']}",
-                data={"devices": self.devices},
+                title=f"OpenWRT updater {user_input['ip']}",
+                data={"devices": self.data},
+                options={"devices": self.options},
             )
 
         return self.async_show_form(
@@ -42,7 +55,8 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required("ip"): str,
                     vol.Required("config_type"): vol.In(sorted(config_types.keys())),
-                    vol.Required("is_simple", default=True): bool,
+                    vol.Required("simple_update", default=True): bool,
+                    vol.Required("force_update", default=False): bool,
                     vol.Optional("add_another", default=False): bool,
                 }
             ),
