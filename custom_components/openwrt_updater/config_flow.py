@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 
-from .config_loader import load_config_types
+from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

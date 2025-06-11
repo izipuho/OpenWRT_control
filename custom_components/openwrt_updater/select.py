@@ -8,7 +8,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .config_loader import load_config_types
+from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 

@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .config_loader import load_config_types
+from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, DOMAIN, KEY_PATH
 from .ssh_client import get_device_info
 from .toh_parser import TOH
