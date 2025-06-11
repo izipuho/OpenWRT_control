@@ -7,8 +7,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, DOMAIN, KEY_PATH
+from .helpers import load_config_types
 from .ssh_client import get_device_info
 from .toh_parser import TOH
 
@@ -23,16 +23,19 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         self,
         hass: HomeAssistant,
         ip: str,
-        config_type: str,
-        # config_entry,
+        # config_type: str,
     ) -> None:
         """Initialize coorinator class."""
         super().__init__(
             hass, _LOGGER, name=f"OpenWRT Updater ({ip})", update_interval=SCAN_INTERVAL
         )
-        # self.config_entry = config_entry
-        self.ip = ip
-        self.config_type = config_type
+        self._ip = ip
+        # self.config_type = config_type
+        self.config_type = (
+            self.config_entry.options.get("devices", {})
+            .get(self._ip, {})
+            .get("config_type", None)
+        )
         self.toh = TOH(hass)
 
         self._config_types = {}
@@ -51,7 +54,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 os_version,
                 status,
             ) = await self.hass.async_add_executor_job(
-                get_device_info, self.ip, self.ssh_key_path
+                get_device_info, self._ip, self.ssh_key_path
             )
 
             # Get TOH data
@@ -74,4 +77,8 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "firmware_downloaded": firmware_downloaded,
             }
         _LOGGER.debug("Coordinator: %s", coordinator)
+        _LOGGER.debug(
+            "HAss data: %s", self.hass.data[DOMAIN][self.config_entry.entry_id]
+        )
+        self.hass.data[DOMAIN][self.config_entry.entry_id][self._ip].update(coordinator)
         return coordinator

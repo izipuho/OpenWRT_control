@@ -1,6 +1,6 @@
 """Configuration flow description."""
-##TODO prettify select (name instead code)
-##TODO validate IP
+# TODO prettify select (name instead code)
+# TODO validate IP
 
 import logging
 
@@ -8,8 +8,8 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 
-from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, DOMAIN
+from .helpers import load_config_types
 
 _LOGGER = logging.getLogger(__name__)
 

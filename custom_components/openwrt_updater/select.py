@@ -1,16 +1,16 @@
 """Select entities declaration."""
-# TODO persist state
 # TODO prettify select (name instead code)
 
 import logging
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .helpers import load_config_types
 from .const import CONFIG_TYPES_PATH, get_device_info
 from .coordinator import OpenWRTDataCoordinator
+from .helpers import load_config_types, load_device_option, save_device_option
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         device,
         ip: str,
         name: str,
+        key: str,
         *,
         current_value: str | None = None,
         entity_icon: str | None = None,
@@ -34,10 +35,10 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         """Initialize select entity."""
         super().__init__(coordinator)
         # helpers
-        # self.coordinator = coordinator
         self.entry = coordinator.config_entry
         self.devices = self.entry.data.get("devices", [])
         self._config_types = config_types
+        self._key = key
 
         # device properties
         self._ip = ip
@@ -54,7 +55,9 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
 
         # specific entry properties
         self._current_value = current_value
-        ##self._attr_has_entity_name = True
+        # self._attr_current_option = load_device_option(
+        #    self.coordinator.config_entry, self._ip, self._key, current_value
+        # )
         self._attr_options = sorted(config_types.keys())
         self._attr_available = True
         self._attr_should_poll = False
@@ -64,31 +67,22 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
     @property
     def current_option(self):
         """Return current option."""
-        data = self.coordinator.config_entry.data or {}
-        return data.get(self._ip, {}).get("config_type", self._current_value)
+        return load_device_option(
+            self.coordinator.config_entry, self._ip, self._key, self._current_value
+        )
 
     async def async_select_option(self, option: str) -> None:
         """Select option."""
         self._attr_current_option = option
-
-        # update in memory coordinator
-        # if self._ip in self.entry.data:
-        #    self.entry.data[self._ip]["config_type"] = option
-        # else:
-        #    self.entry.data[self._ip] = {"config_type": option}
-
-        # Persist the state in config entry options
-        updated_device = []
-        for d in self.devices:
-            if d.get("ip") == self._ip:
-                d["config_type"] = option
-                break
-            updated_device.append(d)
-
-        self.hass.config_entries.async_update_entry(
-            self.entry, options={"devices": updated_device}
+        self._current_value = option
+        _LOGGER.debug("Select option: %s", option)
+        save_device_option(
+            self.hass,
+            self.coordinator.config_entry,
+            self._ip,
+            self._key,
+            option,
         )
-
         self.async_write_ha_state()
 
     def __repr__(self):
@@ -100,7 +94,7 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         return repr_str
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.options.get("devices", {})
 
@@ -110,10 +104,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     )
 
     entities = []
-    for ip in devices:
-        device = devices[ip]
-        config_type = devices[ip]["config_type"]
-        coordinator = OpenWRTDataCoordinator(hass, ip, config_type)
+    for ip, device in devices.items():
+        config_type = device["config_type"]
+        coordinator = OpenWRTDataCoordinator(hass, ip)
 
         entities.extend(
             [
@@ -123,6 +116,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     device,
                     ip,
                     "Config Type",
+                    "config_type",
                     current_value=config_type,
                     entity_icon="mdi:cog",
                     entity_category=EntityCategory.CONFIG,

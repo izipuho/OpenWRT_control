@@ -70,11 +70,11 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.options.get("devices", {})
+    devices = config_entry.data.get("devices", {})
 
     entities = []
-    for ip, device in devices.items():
-        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
+    for ip in devices:
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTBinarySensor(

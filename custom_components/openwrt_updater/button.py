@@ -1,5 +1,4 @@
 """Simple update declaration."""
-# TODO get state from device
 
 import logging
 
@@ -49,11 +48,6 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         """Handle button press."""
         await self.coordinator.async_config_entry_first_refresh()
         _LOGGER.warning(
-            "DEBUG coordinator for %s: %s",
-            self._ip,
-            self.coordinator,
-        )
-        _LOGGER.warning(
             "DEBUG coordinator data for %s: %s",
             self._ip,
             self.coordinator.data,
@@ -61,17 +55,13 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         _LOGGER.warning(
             "DEBUG entry options for %s: %s",
             self._ip,
-            self._device,
+            self.coordinator.config_entry.options.get("devices", {}).get(self._ip, {}),
         )
-        """
         _LOGGER.warning(
             "DEBUG HAss data for %s: %s",
             self._ip,
-            self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["devices"][
-                self._ip
-            ],
+            self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id][self._ip],
         )
-        """
 
     def __repr__(self):
         """Repesent the object."""
@@ -86,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
     for ip, device in devices.items():
-        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTButton(

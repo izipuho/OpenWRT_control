@@ -31,12 +31,11 @@ def get_device_info(ip, key_path):
         firmware_downloaded = (
             client.exec_command(firmware_file_command)[1].read().decode().strip()
         )
-        _LOGGER.warning("Firmware downloaded %s: %s", ip, firmware_downloaded)
         os_version = client.exec_command(os_version_command)[1].read().decode().strip()
         hostname = client.exec_command(hostname_command)[1].read().decode().strip()
         client.close()
     except Exception as e:
-        _LOGGER.error("SSH OS version fetch failed: %s", e)
+        _LOGGER.error("Device info over SSH fetch failed: %s", e)
         return None, None, None, False
     else:
         return (

@@ -4,6 +4,7 @@ import logging
 
 from homeassistant.components.text import TextEntity
 from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import get_device_info
@@ -68,13 +69,13 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         return repr_str
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.options.get("devices", [])
+    devices = config_entry.data.get("devices", [])
 
     entities = []
-    for ip, device in devices.items():
-        coordinator = OpenWRTDataCoordinator(hass, ip, device["config_type"])
+    for ip in devices:
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTText(
@@ -90,14 +91,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     "Device Name",
                     key="hostname",
                     entity_icon="mdi:router-network",
-                ),
-                OpenWRTText(
-                    coordinator,
-                    ip,
-                    "Snapshot URL",
-                    key="snapshot_url",
-                    entity_icon="mdi:link",
-                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ]
         )
