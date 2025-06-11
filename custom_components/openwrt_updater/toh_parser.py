@@ -1,4 +1,4 @@
-"""Provide ssh utils."""
+"""Provide TOH parser."""
 
 import logging
 
@@ -6,9 +6,9 @@ import requests
 
 from homeassistant.core import HomeAssistant
 
-_LOGGER = logging.getLogger(__name__)
+from .const import TOH_URL
 
-TOH_URL = "https://openwrt.org/toh.json"
+_LOGGER = logging.getLogger(__name__)
 
 
 class TOH:

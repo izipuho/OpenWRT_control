@@ -25,7 +25,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         ip: str,
         name: str,
         key: str,
-        device_class: BinarySensorDeviceClass,
+        device_class: BinarySensorDeviceClass = None,
         entity_category: EntityCategory = None,
     ) -> None:
         """Initialize binary sensor class."""
@@ -52,7 +52,8 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device status."""
         if self.coordinator.data is None:
             return False
-        return self.coordinator.data.get(self._ip).get(self._key) == "online"
+        # return self.coordinator.data.get(self._ip).get(self._key) == "on"
+        return self.coordinator.data.get(self._key)
 
     @property
     def available(self):
@@ -69,13 +70,11 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.data.get("devices", [])
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
+    devices = config_entry.data.get("devices", {})
 
     entities = []
-    for device in devices:
-        ip = device["ip"]
-
+    for ip in devices:
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTBinarySensor(
@@ -83,8 +82,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     ip,
                     "Status",
                     "status",
-                    BinarySensorDeviceClass.CONNECTIVITY,
-                    EntityCategory.DIAGNOSTIC,
+                    device_class=BinarySensorDeviceClass.CONNECTIVITY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
+                OpenWRTBinarySensor(
+                    coordinator,
+                    ip,
+                    "Firmware downloaded",
+                    "firmware_downloaded",
+                    device_class=BinarySensorDeviceClass.OCCUPANCY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ]
         )

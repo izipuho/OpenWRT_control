@@ -7,8 +7,9 @@
         "data": {
           "ip": "IP Address",
           "config_type": "Config Type",
-	  "is_simple": "Support simple update",
-	  "add_another": "Add anoter device"
+          "simple_update": "Support simple update",
+          "force_update": "Force update",
+          "add_another": "Add anoter device"
         }
       }
     },

@@ -1,10 +1,10 @@
 """Text entities declaration."""
-##TODO move config type back to select
 
 import logging
 
 from homeassistant.components.text import TextEntity
 from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import get_device_info
@@ -35,13 +35,13 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(ip)
+        self._attr_device_info = get_device_info(self._ip)
 
         # base entity properties
         self._key = key
         self._static_value = static_value
-        self._attr_name = f"{name} ({ip})"
-        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
+        self._attr_name = f"{name} ({self._ip})"
+        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_icon = entity_icon
         self._attr_entity_category = entity_category
         _LOGGER.debug(repr(self))
@@ -51,9 +51,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         """Return entity native value."""
         if self._key:
             self.value = (
-                self.coordinator.data.get(self._ip).get(self._key)
-                if self.coordinator.data
-                else None
+                self.coordinator.data.get(self._key) if self.coordinator.data else None
             )
         else:
             self.value = self._static_value
@@ -71,15 +69,13 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         return repr_str
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
-    for device in devices:
-        ip = device["ip"]
-
+    for ip in devices:
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTText(
@@ -95,14 +91,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     "Device Name",
                     key="hostname",
                     entity_icon="mdi:router-network",
-                ),
-                OpenWRTText(
-                    coordinator,
-                    ip,
-                    "Snapshot URL",
-                    key="snapshot_url",
-                    entity_icon="mdi:link",
-                    entity_category=EntityCategory.DIAGNOSTIC,
                 ),
             ]
         )

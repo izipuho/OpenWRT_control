@@ -1,80 +1,95 @@
 """Simple update declaration."""
-##TODO persist state
 
 import logging
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, get_device_info
+from .const import get_device_info
 from .coordinator import OpenWRTDataCoordinator
+from .helpers import load_device_option, save_device_option
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
+class OpenWRTSwitch(CoordinatorEntity, SwitchEntity, RestoreEntity):
     """OpenWRT simple update class."""
 
     def __init__(
         self,
-        coordinator: OpenWRTDataCoordinator,
+        coordinator,
         ip: str,
         name: str,
         key: str,
-        state: bool,
+        default_state: bool = False,
         entity_category: EntityCategory = None,
     ) -> None:
         """Initialize simple update class."""
-        # helpers
-        self.entry = coordinator.config_entry
-        self.devices = self.entry.data.get("devices", [])
-        device = next((d for d in self.devices if d.get("ip") == ip), {})
-        self._key = key
-        _LOGGER.error("Entry: %s", self.entry)
-
-
         super().__init__(coordinator)
+        # helpers
+        self._key = key
+        self._default_state = default_state
+
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(ip)
+        self._attr_device_info = get_device_info(self._ip)
 
         # base entity properties
-        self._attr_name = f"{name} ({ip})"
-        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
+        self._attr_name = f"{self._name} ({self._ip})"
+        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_entity_category = entity_category
 
         # specific entity properties
-        self._attr_is_on = device.get("is_simple", state)
+        self._attr_is_on = load_device_option(
+            self.coordinator.config_entry, self._ip, self._key, self._default_state
+        )
 
         _LOGGER.debug(repr(self))
+
+    async def async_added_to_hass(self):
+        """Persist changes. Dunno how."""
+        await super().async_added_to_hass()
+        self._attr_is_on = load_device_option(
+            self.coordinator.config_entry, self._ip, self._key, self._default_state
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return is-on value."""
+        return self._attr_is_on
+
+    def _load_state(self) -> bool:
+        """Load the switch state from config_entry options."""
+        switch_states = self.coordinator.config_entry.options.get("switch_states", {})
+        return switch_states.get(self._ip, {}).get(self._key, self._default_state)
 
     async def async_turn_on(self, **kwargs):
         """Turn on."""
         self._attr_is_on = True
+        save_device_option(
+            self.hass,
+            self.coordinator.config_entry,
+            self._ip,
+            self._key,
+            self._attr_is_on,
+        )
         self.async_write_ha_state()
-        await self._set_simple_update(self._attr_is_on)
 
     async def async_turn_off(self, **kwargs):
         """Turn off."""
         self._attr_is_on = False
-        self.async_write_ha_state()
-        await self._set_simple_update(self._attr_is_on)
-
-    async def _set_simple_update(self, value: bool):
-        # Persist the state in config entry options
-        updated_device = []
-
-        for d in self.devices:
-            if d.get("ip") == self._ip:
-                d["is_simple"] = value
-            updated_device.append(d)
-
-        self.hass.config_entries.async_update_entry(
-            self.entry, options={"devices": updated_device}
+        save_device_option(
+            self.hass,
+            self.coordinator.config_entry,
+            self._ip,
+            self._key,
+            self._attr_is_on,
         )
+        self.async_write_ha_state()
 
     def __repr__(self):
         """Repesent the object."""
@@ -88,22 +103,27 @@ class OpenWRTSimpleUpdate(CoordinatorEntity, SwitchEntity):
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.data.get("devices", [])
-    coordinator = OpenWRTDataCoordinator(hass, config_entry)
 
     entities = []
-    for device in devices:
-        ip = device["ip"]
-        state = device["is_simple"]
-
+    for ip in devices:
+        coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
-                OpenWRTSimpleUpdate(
-                    coordinator,
-                    ip,
-                    "Simple update",
-                    "is_simple",
-                    state,
-                    EntityCategory.CONFIG,
+                OpenWRTSwitch(
+                    coordinator=coordinator,
+                    ip=ip,
+                    name="Simple update",
+                    key="simple_update",
+                    default_state=True,
+                    entity_category=EntityCategory.CONFIG,
+                ),
+                OpenWRTSwitch(
+                    coordinator=coordinator,
+                    ip=ip,
+                    name="Force update",
+                    key="force_update",
+                    default_state=False,
+                    entity_category=EntityCategory.CONFIG,
                 ),
             ]
         )
