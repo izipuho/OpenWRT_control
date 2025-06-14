@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 def trigger_update(
     hass: HomeAssistant,
     entry_id,
-    device: dict,  # ip: str,
+    device: dict,
     key_path: str,
 ):
     """Trigger update of the remote device."""
@@ -56,8 +56,11 @@ def trigger_update(
         )
         master_node = "zip@10.8.25.20"
         try:
-            ssh_command = ["ssh", "-A", master_node, update_command]
-            output = subprocess.run(ssh_command, check=True)
+            _LOGGER.debug("Trying to update %s with %s.", ip, update_command)
+            master = _connect_ssh(master_node.split("@")[1], key_path, username=master_node.split("@")[0])
+            stdin, update, stderr = master.exec_command(update_command)
+            output = update.read().decode().strip()
+            _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
             return None
