@@ -21,8 +21,6 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
     def __init__(
         self,
         coordinator: OpenWRTDataCoordinator,
-        entry,
-        device,
         ip: str,
         name: str,
         key: str,
@@ -35,21 +33,17 @@ class OpenWRTSelect(CoordinatorEntity, SelectEntity):
         """Initialize select entity."""
         super().__init__(coordinator)
         # helpers
-        self.entry = coordinator.config_entry
-        self.devices = self.entry.data.get("devices", [])
         self._config_types = config_types
         self._key = key
 
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(ip)
-        self.entry = entry
-        self.device = device
+        self._attr_device_info = get_device_info(self._ip)
 
         # base entry properties
-        self._attr_name = f"{name} ({ip})"
-        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{ip}"
+        self._attr_name = f"{name} ({self._ip})"
+        self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_icon = entity_icon
         self._attr_entity_category = entity_category
 
@@ -112,8 +106,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             [
                 OpenWRTSelect(
                     coordinator,
-                    config_entry,
-                    device,
                     ip,
                     "Config Type",
                     "config_type",
