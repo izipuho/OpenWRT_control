@@ -52,7 +52,7 @@ def trigger_update(
         config_type = hass.data[DOMAIN][entry_id][ip]["config_type"]
         update_strategy = "install" if is_force else "copy"
         update_command = (
-            f"cd {updater_location} && make C={config_type} {update_strategy}"
+            f"cd {updater_location} && make C={config_type} HOST={ip} {update_strategy}"
         )
         master_node = "zip@10.8.25.20"
         try:
