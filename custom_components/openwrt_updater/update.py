@@ -65,7 +65,7 @@ def trigger_update(
             _LOGGER.error("Failed to run update script: %s", e)
             return None
         else:
-            return output.returncode
+            return output
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
