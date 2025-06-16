@@ -28,8 +28,16 @@ def trigger_update(
     _LOGGER.debug("Updating device: %s", device)
     ip = device["ip"]
     _LOGGER.debug("Updating device with HAss data: %s", hass.data[DOMAIN][entry_id][ip])
+    firmware_file = hass.data[DOMAIN][entry_id][ip]["firmware_file"]
     is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
+    if firmware_file and is_force:
+        _LOGGER.warning("Trying to update %s with local file %s", ip, firmware_file)
+        client = _connect_ssh(ip, key_path)
+        stdin, stdout, stderr = client.exec_command(f"sysupgrade -v {firmware_file}")
+        output = stdout.read().decode().strip()
+        client.close()
+        return output
     if is_simple:
         url = hass.data[DOMAIN][entry_id][ip]["snapshot_url"]
         try:

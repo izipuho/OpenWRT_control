@@ -49,6 +49,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 load_config_types, self.config_types_path
             )
             (
+                firmware_file,
                 firmware_downloaded,
                 hostname,
                 os_version,
@@ -75,6 +76,7 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
                 "snapshot_url": self.toh.snapshot_url,
                 # "firmware_downloaded": "on" if firmware_downloaded else "off",
                 "firmware_downloaded": firmware_downloaded,
+                "firmware_file": firmware_file,
             }
         _LOGGER.debug("Coordinator: %s", coordinator)
         _LOGGER.debug(

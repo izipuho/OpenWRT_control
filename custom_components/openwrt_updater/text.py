@@ -92,6 +92,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     key="hostname",
                     entity_icon="mdi:router-network",
                 ),
+                OpenWRTText(
+                    coordinator,
+                    ip,
+                    "Firmware File",
+                    key="firmware_file",
+                    entity_icon="mdi:router-network",
+                ),
             ]
         )
 

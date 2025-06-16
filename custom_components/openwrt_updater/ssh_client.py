@@ -20,7 +20,7 @@ def _connect_ssh(ip, key_path, username: str = "root"):
 def get_device_info(ip, key_path):
     """Get device info: status, hostname, os version, firmware file presence."""
     firmware_file_command = (
-        "ls /tmp/*wrt*.bin 2>/dev/null | grep -q . && echo True || echo False"
+        "ls /tmp/*wrt*.bin 2>/dev/null"
     )
     os_version_command = (
         "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
@@ -28,18 +28,21 @@ def get_device_info(ip, key_path):
     hostname_command = "cat /proc/sys/kernel/hostname"
     try:
         client = _connect_ssh(ip, key_path)
-        firmware_downloaded = (
+        firmware_file = (
             client.exec_command(firmware_file_command)[1].read().decode().strip()
         )
+        if len(firmware_file.split()) > 1:
+            firmware_file = False
         os_version = client.exec_command(os_version_command)[1].read().decode().strip()
         hostname = client.exec_command(hostname_command)[1].read().decode().strip()
         client.close()
     except Exception as e:
         _LOGGER.error("Device info over SSH fetch failed: %s", e)
-        return None, None, None, False
+        return None, None, None, None, False
     else:
         return (
-            True if firmware_downloaded == "True" else False,
+            firmware_file,
+            True if firmware_file else False,
             hostname,
             os_version,
             True,
