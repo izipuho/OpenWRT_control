@@ -1,14 +1,29 @@
 """Initialize OpenWRT Updater integration."""
 
 import logging
+import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(DOMAIN, default={}): vol.Schema(
+                {
+                    vol.Optional("master_node", default="zip@10.8.25.20"): cv.string,
+                    vol.Optional("builder_location", default="/home/zip/OpenWrt-bulder/"): cv.string,
+                    vol.Optional("ssh_key_path", default="/config/ssh_keys/id_ed25519"): cv.string,
+                }
+            )
+        },
+        extra=vol.ALLOW_EXTRA
+)
 
 PLATFORMS = [
     "binary_sensor",
@@ -19,6 +34,18 @@ PLATFORMS = [
     "update",
 ]
 
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Этот хук вызывается первым, при старте HA, для всех YAML-настроек."""
+    # Берём из parsed configuration.yaml ваш раздел, или {} по умолчанию
+    yaml_conf = config.get(DOMAIN, {})
+
+    # Сохраняем YAML-параметры в hass.data[DOMAIN]
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN]["config"] = yaml_conf
+
+    # Не создаём import-flow: просто читаем и храним — всё
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""

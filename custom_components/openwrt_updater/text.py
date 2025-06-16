@@ -7,7 +7,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import get_device_info
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,15 +88,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 OpenWRTText(
                     coordinator,
                     ip,
-                    "Device Name",
-                    key="hostname",
-                    entity_icon="mdi:router-network",
+                    "Master node",
+                    static_value=hass.data.get(DOMAIN, {}).get("config", {}).get("master_node", ''),
+                    entity_icon="mdi:ip-network",
                 ),
                 OpenWRTText(
                     coordinator,
                     ip,
-                    "Firmware File",
-                    key="firmware_file",
+                    "Device Name",
+                    key="hostname",
                     entity_icon="mdi:router-network",
                 ),
             ]

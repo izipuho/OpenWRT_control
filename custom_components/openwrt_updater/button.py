@@ -62,6 +62,10 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
             self._ip,
             self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id][self._ip],
         )
+        _LOGGER.warning(
+            "DEBUG HAss config: %s",
+            self.hass.data[DOMAIN]["config"],
+        )
 
     def __repr__(self):
         """Repesent the object."""

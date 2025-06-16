@@ -26,6 +26,7 @@ def trigger_update(
 ):
     """Trigger update of the remote device."""
     _LOGGER.debug("Updating device: %s", device)
+    conf = hass.data.get(DOMAIN, {}).get("config", {})
     ip = device["ip"]
     _LOGGER.debug("Updating device with HAss data: %s", hass.data[DOMAIN][entry_id][ip])
     firmware_file = hass.data[DOMAIN][entry_id][ip]["firmware_file"]
@@ -56,13 +57,13 @@ def trigger_update(
         else:
             return output
     else:
-        updater_location = "/home/zip/OpenWrt-builder"
+        builder_location = conf["builder_location"]
         config_type = hass.data[DOMAIN][entry_id][ip]["config_type"]
         update_strategy = "install" if is_force else "copy"
         update_command = (
-            f"cd {updater_location} && make C={config_type} HOST={ip} {update_strategy}"
+            f"cd {builder_location} && make C={config_type} HOST={ip} {update_strategy}"
         )
-        master_node = "zip@10.8.25.20"
+        master_node = conf["master_node"]
         try:
             _LOGGER.debug("Trying to update %s with %s.", ip, update_command)
             master = _connect_ssh(master_node.split("@")[1], key_path, username=master_node.split("@")[0])
