@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
-from .ssh_client import _connect_ssh
+from .ssh_client import OpenWRTSSH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,9 +34,9 @@ def trigger_update(
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
     if firmware_file and is_force:
         _LOGGER.warning("Trying to update %s with local file %s", ip, firmware_file)
-        client = _connect_ssh(ip, key_path)
-        stdin, stdout, stderr = client.exec_command(f"sysupgrade -v {firmware_file}")
-        output = stdout.read().decode().strip()
+        client = _OpenWRTSSH(ip, key_path)
+        client.connect()
+        output = client.exec_command(f"sysupgrade -v {firmware_file}")
         client.close()
         return output
     if is_simple:
@@ -47,9 +47,9 @@ def trigger_update(
             update_command = f"curl {url} --output /tmp/owrt.bin"
             if is_force:
                 update_command += " && sysupgrade -v /tmp/owrt.bin"
-            client = _connect_ssh(ip, key_path)
-            stdin, stdout, stderr = client.exec_command(update_command)
-            output = stdout.read().decode().strip()
+            client = _OpenWRTSSH(ip, key_path)
+            client.connect()
+            output = client.exec_command(update_command)
             client.close()
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
@@ -66,9 +66,9 @@ def trigger_update(
         master_node = conf["master_node"]
         try:
             _LOGGER.debug("Trying to update %s with %s.", ip, update_command)
-            master = _connect_ssh(master_node.split("@")[1], key_path, username=master_node.split("@")[0])
-            stdin, update, stderr = master.exec_command(update_command)
-            output = update.read().decode().strip()
+            master = OpenWRTSSH(hostname=master_node.split("@")[1], key_path=key_path, username=master_node.split("@")[0])
+            master.connect()
+            output = master.exec_command(update_command)
             _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)

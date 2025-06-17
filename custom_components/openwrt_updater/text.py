@@ -88,13 +88,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 OpenWRTText(
                     coordinator,
                     ip,
-                    "Master node",
-                    static_value=hass.data.get(DOMAIN, {}).get("config", {}).get("master_node", ''),
-                    entity_icon="mdi:ip-network",
-                ),
-                OpenWRTText(
-                    coordinator,
-                    ip,
                     "Device Name",
                     key="hostname",
                     entity_icon="mdi:router-network",
