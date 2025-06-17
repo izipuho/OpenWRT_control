@@ -6,7 +6,7 @@ import requests
 
 from homeassistant.core import HomeAssistant
 
-from .const import TOH_URL
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ class TOH:
         """Fetch and cache TOH data asynchronously."""
 
         def blocking_fetch():
-            response = requests.get(TOH_URL, timeout=10)
+            toh_url = self.hass.data.get(DOMAIN, {}).get("config", {}).get("TOH_url", "")
+            response = requests.get(toh_url, timeout=10)
             response.raise_for_status()
             return response.json()
 
@@ -41,7 +42,7 @@ class TOH:
             return self._toh_data
 
     def get_device_info(self, openwrt_devid: str) -> None:
-        """Extract available OS version for given openwrt device id from cached TOH data."""
+        """Extract info for given openwrt device id from cached TOH data."""
         if not self._toh_data:
             return
 

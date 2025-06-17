@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 
-from .const import CONFIG_TYPES_PATH, DOMAIN
+from .const import DOMAIN
 from .helpers import load_config_types
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,15 +24,12 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         """Asyncronious user step."""
-        config_types_path = self.hass.config.path(CONFIG_TYPES_PATH)
+        config_types_path = self.hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
         config_types = await self.hass.async_add_executor_job(
             load_config_types, config_types_path
         )
         errors = {}
         if user_input is not None:
-            # self.devices[user_input["ip"]] = user_input
-            # self.devices[user_input["ip"]] = {user_input}
-            # self.data[user_input["ip"]] = {"ip": user_input["ip"]}
             self.data.append(user_input["ip"])
             self.options[user_input["ip"]] = {
                 "ip": user_input["ip"],

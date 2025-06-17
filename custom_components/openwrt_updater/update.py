@@ -11,7 +11,7 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, KEY_PATH, get_device_info
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 from .ssh_client import _connect_ssh
 
@@ -141,7 +141,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.options.get("devices", [])
-    ssh_key_path = hass.config.path(KEY_PATH)
+    ssh_key_path = hass.data.get(DOMAIN, {}).get("config", {}).get("ssh_key_path", "")
 
     entities = []
 

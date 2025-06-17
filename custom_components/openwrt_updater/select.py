@@ -8,7 +8,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONFIG_TYPES_PATH, get_device_info
+from .const import DOMAIN, get_device_info
 from .coordinator import OpenWRTDataCoordinator
 from .helpers import load_config_types, load_device_option, save_device_option
 
@@ -92,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     """Asyncronious entry setup."""
     devices = config_entry.options.get("devices", {})
 
-    config_types_path = hass.config.path(CONFIG_TYPES_PATH)
+    config_types_path = hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
     config_types = await hass.async_add_executor_job(
         load_config_types, config_types_path
     )
