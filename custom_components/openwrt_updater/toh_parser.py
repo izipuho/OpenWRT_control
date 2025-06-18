@@ -2,7 +2,7 @@
 
 import logging
 
-import requests
+import httpx
 
 from homeassistant.core import HomeAssistant
 
@@ -24,28 +24,29 @@ class TOH:
         self.snapshot_url = ""
 
     async def fetch(self):
-        """Fetch and cache TOH data asynchronously."""
-
-        def blocking_fetch():
-            toh_url = self.hass.data.get(DOMAIN, {}).get("config", {}).get("TOH_url", "")
-            response = requests.get(toh_url, timeout=10)
-            response.raise_for_status()
-            return response.json()
-
-        try:
-            self._toh_data = await self.hass.async_add_executor_job(blocking_fetch)
-        except Exception as e:
-            _LOGGER.error("Failed to fetch TOH data: %s", e)
-            self._toh_data = None
-            return None
-        else:
-            return self._toh_data
+        """Fetch TOH data from openwrt.org using HA's HTTP session."""
+        toh_url = self.hass.data.get(DOMAIN, {}).get("config", {}).get("TOH_url", "")
+        headers = {
+            "User-Agent": "curl/8.12.1",
+            "Accept": "*/*",
+        }
+        async with httpx.AsyncClient(http2=True, timeout=5.0) as client:
+            try:
+                response = await client.get(toh_url)
+                response.raise_for_status()
+            except httpx.HTTPError as err:
+                _LOGGER.error("TOH HTTPx: %s", err)
+                self._toh_data = None
+            except Exception as e:
+                _LOGGER.error("Failed to fetch TOH data: %s", e)
+                self._toh_data = None
+            else:
+                self._toh_data = response.json()
 
     def get_device_info(self, openwrt_devid: str) -> None:
         """Extract info for given openwrt device id from cached TOH data."""
         if not self._toh_data:
             return
-
         try:
             target_col = self._toh_data["columns"].index("target")
             subtarget_col = self._toh_data["columns"].index("subtarget")
