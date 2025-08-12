@@ -1,7 +1,7 @@
-# OpenWRT Control
+# OpenWRT Updater
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
-This Home Assistant integration allows you to monitor and control OpenWRT-based routers over SSH. It supports checking OS version, verifying available updates, and triggering firmware updates remotely. It also lets you set device-specific configurations through selectable options.
+This Home Assistant integration allows you to monitor and update OpenWRT-based routers over SSH. It supports checking OS version, verifying available updates, and triggering firmware updates remotely. It also lets you set device-specific configurations through selectable options.
 
 ## Features
 
@@ -17,9 +17,9 @@ Monitor device status (online/offline).
 
 ## Installation
 
-1. Install “OpenWRT Control” from default HACS repository or copy `custom_components/openwrt_control` to your `config/custom_components` directory.
+1. Install “OpenWRT Updater” from default HACS repository or copy `custom_components/openwrt_updater` to your `config/custom_components` directory.
 2. Restart Home Assistant.
-3. Go to Settings → Devices & Services → Integrations → Add Integration → Search for “OpenWRT Control”.
+3. Go to Settings → Devices & Services → Integrations → Add Integration → Search for “OpenWRT Updater”.
 
 ## Configuration
 
