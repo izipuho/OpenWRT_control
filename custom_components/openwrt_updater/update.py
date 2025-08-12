@@ -1,7 +1,6 @@
 """Updater entity declaration."""
 
 import logging
-import subprocess
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -34,7 +33,7 @@ def trigger_update(
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
     if firmware_file and is_force:
         _LOGGER.warning("Trying to update %s with local file %s", ip, firmware_file)
-        client = _OpenWRTSSH(ip, key_path)
+        client = OpenWRTSSH(ip, key_path)
         client.connect()
         output = client.exec_command(f"sysupgrade -v {firmware_file}")
         client.close()
@@ -47,7 +46,7 @@ def trigger_update(
             update_command = f"curl {url} --output /tmp/owrt.bin"
             if is_force:
                 update_command += " && sysupgrade -v /tmp/owrt.bin"
-            client = _OpenWRTSSH(ip, key_path)
+            client = OpenWRTSSH(ip, key_path)
             client.connect()
             output = client.exec_command(update_command)
             client.close()
@@ -66,7 +65,11 @@ def trigger_update(
         master_node = conf["master_node"]
         try:
             _LOGGER.debug("Trying to update %s with %s.", ip, update_command)
-            master = OpenWRTSSH(hostname=master_node.split("@")[1], key_path=key_path, username=master_node.split("@")[0])
+            master = OpenWRTSSH(
+                hostname=master_node.split("@")[1],
+                key_path=key_path,
+                username=master_node.split("@")[0],
+            )
             master.connect()
             output = master.exec_command(update_command)
             _LOGGER.debug("Update result: %s", output)
@@ -88,7 +91,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
         # device properties
         self._ip = device["ip"]
-        self._attr_device_info = get_device_info(self._ip)
+        self._attr_device_info = get_device_info(self.device["place_name"], self._ip)
 
         # base entity properties
         self._attr_name = f"Firmware ({self._ip})"
@@ -140,7 +143,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.options.get("devices", [])
+    place_name = config_entry.data["place_name"]
+    devices = config_entry.options.get("devices", {})
     ssh_key_path = hass.data.get(DOMAIN, {}).get("config", {}).get("ssh_key_path", "")
 
     entities = []
@@ -151,6 +155,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         )
 
     for ip, device in devices.items():
+        device["place_name"] = place_name
         coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [

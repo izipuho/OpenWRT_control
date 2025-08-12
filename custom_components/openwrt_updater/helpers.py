@@ -4,10 +4,12 @@
 import logging
 from pathlib import Path
 
+import voluptuous as vol
 import yaml
-from .const import DOMAIN
 
 from homeassistant.core import HomeAssistant
+
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,3 +53,38 @@ def load_config_types(config_path: str) -> dict:
     except Exception as err:
         _LOGGER.error("Unexpected error loading config from %s: %s", config_path, err)
         # raise HomeAssistantError(f"Error loading config from {config_path}") from err
+
+
+def build_device_schema(hass, defaults=None):
+    """Unified device add schema."""
+    config_types_path = (
+        hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
+    )
+    config_types = load_config_types(config_types_path)
+    choices = sorted(config_types.keys())
+
+    d = defaults or {}
+    return vol.Schema(
+        {
+            vol.Required("ip", default=d.get("ip", "")): str,
+            vol.Required(
+                "config_type",
+                default=d.get("config_type", choices[0] if choices else ""),
+            ): vol.In(choices),
+            vol.Required("simple_update", default=d.get("simple_update", True)): bool,
+            vol.Required("force_update", default=d.get("force_update", False)): bool,
+            vol.Optional("add_another", default=d.get("add_another", False)): bool,
+        }
+    )
+
+
+def upsert_device(devices: dict, user_input: dict) -> dict:
+    """Upsert device by ip and return values."""
+    ip = user_input["ip"]
+    devices[ip] = {
+        "ip": ip,
+        "config_type": user_input["config_type"],
+        "simple_update": user_input["simple_update"],
+        "force_update": user_input["force_update"],
+    }
+    return devices

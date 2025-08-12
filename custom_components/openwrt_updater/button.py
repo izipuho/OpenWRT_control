@@ -33,7 +33,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         # device properties
         self._ip = self._device["ip"]
         self._name = name
-        self._attr_device_info = get_device_info(self._ip)
+        self._attr_device_info = get_device_info(device["place_name"], self._ip)
 
         # base entity properties
         self._attr_name = f"{name} ({self._ip})"
@@ -76,11 +76,13 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.options.get("devices", [])
+    place = config_entry.data
+    devices = config_entry.options.get("devices", {})
 
     entities = []
     for ip, device in devices.items():
         coordinator = OpenWRTDataCoordinator(hass, ip)
+        device["place_name"] = place["place_name"]
         entities.extend(
             [
                 OpenWRTButton(

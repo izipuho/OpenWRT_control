@@ -73,10 +73,6 @@ async def async_setup(hass: HomeAssistant, yaml_config: dict) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""
-    _LOGGER.debug(
-        "Entry data init: %s\nEntry options init: %s", entry.data, entry.options
-    )
-
     # Create empty config-entry dict
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {}
@@ -114,3 +110,10 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_setup_entry(hass, entry)
     await async_unload_entry(hass, entry)
     return True
+
+
+async def async_get_options_flow(config_entry):
+    """Call options flow."""
+    from .options_flow import OpenWRTOptionsFlowHandler
+
+    return OpenWRTOptionsFlowHandler(config_entry)

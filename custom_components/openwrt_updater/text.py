@@ -7,7 +7,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, get_device_info
+from .const import get_device_info
 from .coordinator import OpenWRTDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
     def __init__(
         self,
         coordinator: OpenWRTDataCoordinator,
+        place_name: str,
         ip: str,
         name: str,
         *,
@@ -35,7 +36,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(self._ip)
+        self._attr_device_info = get_device_info(place_name, self._ip)
 
         # base entity properties
         self._key = key
@@ -71,7 +72,8 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    devices = config_entry.data.get("devices", [])
+    place_name = config_entry.data["place_name"]
+    devices = list(config_entry.options.get("devices", {}).keys())
 
     entities = []
     for ip in devices:
@@ -80,6 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             [
                 OpenWRTText(
                     coordinator,
+                    place_name,
                     ip,
                     "IP Address",
                     static_value=ip,
@@ -87,6 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 ),
                 OpenWRTText(
                     coordinator,
+                    place_name,
                     ip,
                     "Device Name",
                     key="hostname",

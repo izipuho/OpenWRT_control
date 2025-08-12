@@ -7,10 +7,13 @@ import paramiko
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class OpenWRTSSH:
     """OpenWRT updater ssh wrapper."""
 
-    def __init__(self, ip: str, key_path: str, username: str = "root", timeout: float = 5.0):
+    def __init__(
+        self, ip: str, key_path: str, username: str = "root", timeout: float = 5.0
+    ):
         """Initialize wrapper."""
         self.ip = ip
         self.key_path = key_path
@@ -22,13 +25,26 @@ class OpenWRTSSH:
 
     def connect(self) -> bool:
         """Connect handler."""
-        _LOGGER.info("Trying to connect to %s@%s with key %s", self.username, self.ip, self.key_path)
+        _LOGGER.info(
+            "Trying to connect to %s@%s with key %s",
+            self.username,
+            self.ip,
+            self.key_path,
+        )
         key = paramiko.Ed25519Key.from_private_key_file(self.key_path)
         try:
-            self.client.connect(hostname=self.ip, username=self.username, pkey=key, timeout=self.timeout, allow_agent=False)
+            self.client.connect(
+                hostname=self.ip,
+                username=self.username,
+                pkey=key,
+                timeout=self.timeout,
+                allow_agent=False,
+            )
         except paramiko.AuthenticationException:
             self.available = False
-            _LOGGER.warning("SSH authentication failed for %s@%s", self.username, self.ip)
+            _LOGGER.warning(
+                "SSH authentication failed for %s@%s", self.username, self.ip
+            )
         except (paramiko.SSHException, socket.error) as err:
             self.available = False
             _LOGGER.debug("SSH connection error to %s - %s", self.ip, err)
@@ -51,8 +67,8 @@ class OpenWRTSSH:
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
             stdin, stdout, stderr = self.client.exec_command(command, timeout=timeout)
-            stdout_str = stdout.read().decode('utf-8').strip()
-            err_str = stderr.read().decode('utf-8').strip()
+            stdout_str = stdout.read().decode("utf-8").strip()
+            err_str = stderr.read().decode("utf-8").strip()
             if err_str:
                 _LOGGER.error("Error output from command '%s': %s", command, err_str)
         except socket.timeout:
@@ -79,9 +95,7 @@ class OpenWRTSSH:
 
 def get_device_info(ip, key_path):
     """Get device info: status, hostname, os version, firmware file presence."""
-    firmware_file_command = (
-        "ls /tmp/*wrt*.bin 2>/dev/null"
-    )
+    firmware_file_command = "ls /tmp/*wrt*.bin 2>/dev/null"
     os_version_command = (
         "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
     )
@@ -89,10 +103,8 @@ def get_device_info(ip, key_path):
     try:
         client = OpenWRTSSH(ip, key_path)
         status = client.connect()
-        firmware_file = (
-            client.exec_command(firmware_file_command)
-        )
-        #if len(firmware_file.split()) > 1:
+        firmware_file = client.exec_command(firmware_file_command)
+        # if len(firmware_file.split()) > 1:
         #    firmware_file = False
         os_version = client.exec_command(os_version_command)
         hostname = client.exec_command(hostname_command)

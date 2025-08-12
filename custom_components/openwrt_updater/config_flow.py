@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 
 from .const import DOMAIN
-from .helpers import load_config_types
+from .helpers import build_device_schema, upsert_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,43 +19,43 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize config flow class."""
-        self.data = []
+        self.data = {}
         self.options = {}
 
     async def async_step_user(self, user_input=None):
-        """Asyncronious user step."""
-        config_types_path = self.hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
-        config_types = await self.hass.async_add_executor_job(
-            load_config_types, config_types_path
-        )
-        errors = {}
+        """Request place info."""
         if user_input is not None:
-            self.data.append(user_input["ip"])
-            self.options[user_input["ip"]] = {
-                "ip": user_input["ip"],
-                "config_type": user_input["config_type"],
-                "simple_update": user_input["simple_update"],
-                "force_update": user_input["force_update"],
+            self.data = {
+                "place_name": user_input["place_name"],
+                "place_ipmask": user_input["place_ipmask"],
             }
-            if user_input.get("add_another"):
-                return await self.async_step_user()
-            _LOGGER.debug("Create device with data: %s", user_input)
-            return self.async_create_entry(
-                title=f"OpenWRT updater {user_input['ip']}",
-                data={"devices": self.data},
-                options={"devices": self.options},
-            )
+            return await self.async_step_add_device()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required("ip"): str,
-                    vol.Required("config_type"): vol.In(sorted(config_types.keys())),
-                    vol.Required("simple_update", default=True): bool,
-                    vol.Required("force_update", default=False): bool,
-                    vol.Optional("add_another", default=False): bool,
+                    vol.Required("place_name"): str,
+                    vol.Required("place_ipmask"): str,
                 }
             ),
-            errors=errors,
         )
+
+    async def async_step_add_device(self, user_input=None):
+        """Request device info."""
+        if user_input is not None:
+            upsert_device(self.options, user_input)
+            if user_input.get("add_another"):
+                return await self.async_step_add_device()
+            _LOGGER.debug("Create device with data: %s", user_input)
+            return self.async_create_entry(
+                title=f"OpenWRT updater {self.data['place_name']}",
+                data=self.data,
+                options={"devices": self.options},
+            )
+
+        defaults = {"ip": f"{self.data['place_ipmask']}."}
+        schema = await self.hass.async_add_executor_job(
+            build_device_schema, self.hass, defaults
+        )
+        return self.async_show_form(step_id="add_device", data_schema=schema)

@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "Добавить место",
+        "description": "Введите данные вашего места.",
+        "data": {
+          "place_name": "Имя",
+          "place_ipmask": "IP mask (префикс)"
+        }
+      },
+      "add_device": {
         "title": "Добавить OpenWRT устройство",
         "description": "Введите данные вашего устройства.",
         "data": {
