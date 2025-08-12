@@ -1,6 +1,8 @@
 """Initialize OpenWRT Updater integration."""
 
 import logging
+from pathlib import Path
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,23 +15,30 @@ from .coordinator import OpenWRTDataCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(DOMAIN, default={}): vol.Schema(
-                {
-                    vol.Optional("master_node", default="zip@10.8.25.20"): cv.string,
-                    vol.Optional("builder_location", default="/home/zip/OpenWrt-bulder/"): cv.string,
-                    vol.Optional("ssh_key_path", default="/config/ssh_keys/id_ed25519"): cv.string,
-                    vol.Optional("TOH_url", default="https://openwrt.org/toh.json"): cv.string,
-                    vol.Optional("config_types_path", default="/config/custom_components/openwrt_updater/config_types.yaml"): cv.string,
-                }
-            )
-        },
-        extra=vol.ALLOW_EXTRA
+    {
+        vol.Optional(DOMAIN, default={}): vol.Schema(
+            {
+                vol.Optional("master_node", default="zip@10.8.25.20"): cv.string,
+                vol.Optional(
+                    "builder_location", default="/home/zip/OpenWrt-bulder/"
+                ): cv.string,
+                vol.Optional("ssh_key_path", default="ssh_keys/id_ed25519"): cv.string,
+                vol.Optional(
+                    "TOH_url", default="https://openwrt.org/toh.json"
+                ): cv.string,
+                vol.Optional(
+                    "config_types_file",
+                    default="config_types.yaml",
+                ): cv.string,
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 PLATFORMS = [
     "binary_sensor",
-    #"button",
+    # "button",
     "select",
     "switch",
     "text",
@@ -37,16 +46,30 @@ PLATFORMS = [
 ]
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+async def async_setup(hass: HomeAssistant, yaml_config: dict) -> bool:
     """Save YAML configuration to hass.data."""
     # Get config from configuration.yaml
-    yaml_conf = config.get(DOMAIN, {})
+    component_config = yaml_config.get(DOMAIN, {})
+
+    ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
+    config_types_path = str(
+        Path(__file__).parent / component_config.get("config_types_file")
+    )
+    _LOGGER.warning(
+        "Init pathes are: \n\t%s \n\t%s",
+        component_config.get("ssh_key_path"),
+        component_config.get("config_types_file"),
+    )
+    _LOGGER.warning("Pathes are: \n\t%s \n\t%s", ssh_key_path, config_types_path)
 
     # Save it to hass.data[DOMAIN]
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN]["config"] = yaml_conf
+    hass.data[DOMAIN]["config"] = component_config
+    hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
+    hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
 
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""
