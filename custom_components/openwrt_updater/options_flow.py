@@ -1,13 +1,15 @@
 """Add devices on options flow."""
 
 import ipaddress
+import logging
 
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import callback
 
 from .helpers import build_device_schema, upsert_device
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _validate_ip(ip_str: str) -> str:
@@ -29,6 +31,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Entry point – go straight to add device form."""
+        _LOGGER.warning("Options flow init")
         return await self.async_step_add_device()
 
     async def async_step_add_device(self, user_input=None):
@@ -52,10 +55,3 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             build_device_schema, self.hass, defaults
         )
         return self.async_show_form(step_id="add_device", data_schema=schema)
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        """Unobligatory call."""
-        # unobligatory, but harmless
-        return OpenWRTOptionsFlowHandler(config_entry)

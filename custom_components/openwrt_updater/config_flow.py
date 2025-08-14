@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigFlow
 
 from .const import DOMAIN
 from .helpers import build_device_schema, upsert_device
+from .options_flow import OpenWRTOptionsFlowHandler
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,3 +60,8 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
             build_device_schema, self.hass, defaults
         )
         return self.async_show_form(step_id="add_device", data_schema=schema)
+
+
+async def async_get_options_flow(config_entry):
+    """Return the options flow handler for this config entry."""
+    return OpenWRTOptionsFlowHandler(config_entry)

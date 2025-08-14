@@ -55,12 +55,6 @@ async def async_setup(hass: HomeAssistant, yaml_config: dict) -> bool:
     config_types_path = str(
         Path(__file__).parent / component_config.get("config_types_file")
     )
-    _LOGGER.warning(
-        "Init pathes are: \n\t%s \n\t%s",
-        component_config.get("ssh_key_path"),
-        component_config.get("config_types_file"),
-    )
-    _LOGGER.warning("Pathes are: \n\t%s \n\t%s", ssh_key_path, config_types_path)
 
     # Save it to hass.data[DOMAIN]
     hass.data.setdefault(DOMAIN, {})
@@ -110,10 +104,3 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_setup_entry(hass, entry)
     await async_unload_entry(hass, entry)
     return True
-
-
-async def async_get_options_flow(config_entry):
-    """Call options flow."""
-    from .options_flow import OpenWRTOptionsFlowHandler
-
-    return OpenWRTOptionsFlowHandler(config_entry)
