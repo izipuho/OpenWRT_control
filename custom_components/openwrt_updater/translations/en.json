@@ -2,6 +2,25 @@
   "config": {
     "step": {
       "user": {
+        "title": "Choose action",
+        "description": "What to do?",
+        "data": {
+          "global": "Set global options",
+          "add_place": "Add place"
+        }
+      },
+      "global": {
+        "title": "Set global options",
+        "description": "Set global options.",
+        "data": {
+          "master_node": "Master node",
+          "builder_location": "Builder location",
+          "ssh_key_path": "SSH key path",
+          "TOH_url": "TOH url",
+          "config_types_file": "Config types file"
+        }
+      },
+      "add_place": {
         "title": "Add place",
         "description": "Enter the details of your place.",
         "data": {
@@ -19,6 +38,12 @@
           "force_update": "Force update",
           "add_another": "Add anoter device"
         }
+      }
+    },
+    "selector": {
+      "options": {
+        "global": "Set global options",
+        "add_place": "Add place"
       }
     },
     "error": {

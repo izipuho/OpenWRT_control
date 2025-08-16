@@ -1,9 +1,6 @@
-"""Add devices on options flow."""
+"""Options flow for OpenWRT Updater: add devices via UI."""
 
-import ipaddress
 import logging
-
-import voluptuous as vol
 
 from homeassistant import config_entries
 
@@ -12,45 +9,37 @@ from .helpers import build_device_schema, upsert_device
 _LOGGER = logging.getLogger(__name__)
 
 
-def _validate_ip(ip_str: str) -> str:
-    try:
-        ipaddress.ip_address(ip_str)
-    except ValueError as e:
-        raise vol.Invalid("Invalid IP address") from e
-    else:
-        return ip_str
-
-
 class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
-    """Options flow that mirrors config_flow.add_device."""
+    """Handle options for an existing config entry."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
         self.config_entry = config_entry
+        # Текущее состояние устройств из options
+        _LOGGER.warning("Config entry: %s", config_entry)
         self._devices = dict(config_entry.options.get("devices", {}))
 
     async def async_step_init(self, user_input=None):
-        """Entry point – go straight to add device form."""
-        _LOGGER.warning("Options flow init")
+        """Entry point – сразу открываем форму добавления устройства."""
+        _LOGGER.warning("Options flow: init")
         return await self.async_step_add_device()
 
     async def async_step_add_device(self, user_input=None):
-        """Add device step."""
+        """Шаг добавления/редактирования устройства."""
         if user_input is not None:
             upsert_device(self._devices, user_input)
 
             if user_input.get("add_another"):
-                # loop to add the next device
+                # Цикл добавления ещё одного
                 return await self.async_step_add_device()
 
-            # save and exit
+            # Сохранить и выйти
             return self.async_create_entry(
-                title="",  # HA ignores title for options
+                title="",  # заголовок игнорируется для options
                 data={"devices": self._devices},
             )
 
-        # defaults for convenience if editing/adding
-        defaults = {}
+        # Значения по умолчанию (пустые при открытии из options)
+        defaults: dict = {}
         schema = await self.hass.async_add_executor_job(
             build_device_schema, self.hass, defaults
         )
