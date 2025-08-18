@@ -1,5 +1,6 @@
 """Initialize OpenWRT Updater integration."""
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -24,12 +25,14 @@ PLATFORMS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up config entry."""
     _LOGGER.warning(
-        "OpenWRT Control: setup_entry id=%s source=%s title=%s",
+        "⚙️OpenWRT Control: setup_entry id=%s source=%s title=%s",
         entry.entry_id,
         entry.source,
         entry.title,
     )
-    # Create empty config-entry dict
+
+    entry.async_on_unload(entry.add_update_listener(_on_entry_update))
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {}
 
@@ -71,9 +74,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+    if entry.unique_id == "__global__":
+        hass.data[DOMAIN]["config"] = {}
+        unload_ok = True
+    else:
+        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+        if unload_ok:
+            hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
 
@@ -82,3 +89,22 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_setup_entry(hass, entry)
     await async_unload_entry(hass, entry)
     return True
+
+
+async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload on any change; if global – обновить всех."""
+    if entry.unique_id == "__global__":
+        # reread global config
+        hass.data[DOMAIN]["config"] = dict(entry.options or {})
+        # reread all device-entries
+        tasks = [
+            hass.config_entries.async_reload(e.entry_id)
+            for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id and e.unique_id != "__global__"
+        ]
+        if tasks:
+            await asyncio.gather(*tasks)
+        return
+
+    # reread only currenty entry
+    await hass.config_entries.async_reload(entry.entry_id)

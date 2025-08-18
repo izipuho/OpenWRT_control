@@ -7,16 +7,12 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
+from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.selector import (
-    SelectSelector,
-    SelectSelectorConfig,
-    SelectOptionDict,
-)
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .const import DOMAIN, INTEGRATION_DEFAULTS
-from .helpers import build_device_schema, upsert_device
-from .options_flow import OpenWRTOptionsFlowHandler
+from .helpers import build_device_schema, build_global_options_schema, upsert_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +28,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Request for action."""
         if user_input is not None:
-            _LOGGER.warning("User input for Step User: %s", user_input)
+            _LOGGER.warning("⚙️User input for Step User: %s", user_input)
             action = user_input.get("action")
             if action == "global":
                 return await self.async_step_global()
@@ -63,26 +59,8 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
                 data={},
                 options=user_input,
             )
-        schema = vol.Schema(
-            {
-                vol.Optional(
-                    "master_node", default=INTEGRATION_DEFAULTS["master_node"]
-                ): cv.string,
-                vol.Optional(
-                    "builder_location",
-                    default=INTEGRATION_DEFAULTS["builder_location"],
-                ): cv.string,
-                vol.Optional(
-                    "ssh_key_path", default=INTEGRATION_DEFAULTS["ssh_key_path"]
-                ): cv.string,
-                vol.Optional(
-                    "TOH_url", default=INTEGRATION_DEFAULTS["TOH_url"]
-                ): cv.string,
-                vol.Optional(
-                    "config_types_file",
-                    default=INTEGRATION_DEFAULTS["config_types_file"],
-                ): cv.string,
-            }
+        schema = await self.hass.async_add_executor_job(
+            build_global_options_schema, self.hass, INTEGRATION_DEFAULTS
         )
         return self.async_show_form(step_id="global", data_schema=schema)
 
@@ -124,7 +102,10 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="add_device", data_schema=schema)
 
-    async def async_get_options_flow(self, config_entry):
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
         """Wire options flow for this entry."""
-        _LOGGER.warning("Start Options flow handled")
+        from .options_flow import OpenWRTOptionsFlowHandler
+
         return OpenWRTOptionsFlowHandler(config_entry)

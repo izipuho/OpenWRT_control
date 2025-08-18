@@ -4,7 +4,7 @@ import logging
 
 from homeassistant import config_entries
 
-from .helpers import build_device_schema, upsert_device
+from .helpers import build_device_schema, build_global_options_schema, upsert_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,18 +13,37 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize Options Flow handler."""
         self.config_entry = config_entry
-        # Текущее состояние устройств из options
+        # Current entry state
         _LOGGER.warning("Config entry: %s", config_entry)
         self._devices = dict(config_entry.options.get("devices", {}))
+
+    def get_fresh_data(self):
+        """Always get fresh data."""
+        entry = self.hass.config_entries.async_get_entry(self.config_entry.entry_id)
+        return dict(entry.options or {})
 
     async def async_step_init(self, user_input=None):
         """Entry point – сразу открываем форму добавления устройства."""
         _LOGGER.warning("Options flow: init")
+        if self.config_entry.unique_id == "__global__":
+            return await self.async_step_global()
         return await self.async_step_add_device()
 
+    async def async_step_global(self, user_input=None):
+        """Global options step."""
+        if user_input is not None:
+            _LOGGER.warning("Saving data to global entry: %s", user_input)
+            return self.async_create_entry(title="", data=user_input)
+        saved_options = self.get_fresh_data()
+        schema = await self.hass.async_add_executor_job(
+            build_global_options_schema, self.hass, saved_options
+        )
+        return self.async_show_form(step_id="global", data_schema=schema)
+
     async def async_step_add_device(self, user_input=None):
-        """Шаг добавления/редактирования устройства."""
+        """Add device step."""
         if user_input is not None:
             upsert_device(self._devices, user_input)
 

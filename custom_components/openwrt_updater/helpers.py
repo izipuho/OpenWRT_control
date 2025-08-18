@@ -1,6 +1,5 @@
 """Shared helpers. Persist states. Load config types."""
 
-# from homeassistant.exceptions import HomeAssistantError
 import logging
 from pathlib import Path
 
@@ -8,6 +7,7 @@ import voluptuous as vol
 import yaml
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 
@@ -53,6 +53,25 @@ def load_config_types(config_path: str) -> dict:
     except Exception as err:
         _LOGGER.error("Unexpected error loading config from %s: %s", config_path, err)
         # raise HomeAssistantError(f"Error loading config from {config_path}") from err
+
+
+def build_global_options_schema(hass, defaults=None):
+    """Unified global options schema."""
+    return vol.Schema(
+        {
+            vol.Optional("master_node", default=defaults["master_node"]): cv.string,
+            vol.Optional(
+                "builder_location",
+                default=defaults["builder_location"],
+            ): cv.string,
+            vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
+            vol.Optional("TOH_url", default=defaults["TOH_url"]): cv.string,
+            vol.Optional(
+                "config_types_file",
+                default=defaults["config_types_file"],
+            ): cv.string,
+        }
+    )
 
 
 def build_device_schema(hass, defaults=None):

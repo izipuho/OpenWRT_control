@@ -2,6 +2,14 @@
 
 DOMAIN = "openwrt_updater"
 
+INTEGRATION_DEFAULTS = {
+    "master_node": "zip@10.8.25.20",
+    "builder_location": "/home/zip/OpenWrt-bulder/",
+    "ssh_key_path": "ssh_keys/id_ed25519",
+    "TOH_url": "https://openwrt.org/toh.json",
+    "config_types_file": "config_types.yaml",
+}
+
 
 def get_device_info(place_name: str, ip: str) -> dict:
     """Return device info for all platforms based on IP."""
