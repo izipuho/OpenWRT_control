@@ -1,0 +1,65 @@
+{
+  "title": "OpenWRT Updater",
+  "config": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Paramètres globaux",
+        "description": "Nœud principal, clés SSH et autres.",
+        "data": {
+          "master_node": "Nœud maître (user@host)",
+          "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
+          "ssh_key_path": "Chemin de la clé SSH (dans config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Fichier des types de configuration (dans l’intégration)"
+        }
+      },
+      "add_place": {
+        "title": "Ajouter un site",
+        "description": "Entrez les détails de votre site.",
+        "data": {
+          "place_name": "Nom du site",
+          "place_ipmask": "Masque IP (préfixe)"
+        }
+      },
+      "add_device": {
+        "title": "Ajouter un périphérique OpenWRT",
+        "description": "Entrez les détails de votre périphérique OpenWRT.",
+        "data": {
+          "ip": "Adresse IP",
+          "config_type": "Type de configuration",
+          "simple_update": "Support de mise à jour simple",
+          "force_update": "Forcer la mise à jour",
+          "add_another": "Ajouter un autre périphérique"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Paramètres globaux",
+        "description": "Nœud principal, clés SSH et autres.",
+        "data": {
+          "master_node": "Nœud maître (user@host)",
+          "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
+          "ssh_key_path": "Chemin de la clé SSH (dans config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Fichier des types de configuration (dans l’intégration)"
+        }
+      },
+      "add_device": {
+        "title": "Ajouter un périphérique OpenWRT",
+        "description": "Entrez les détails de votre périphérique OpenWRT.",
+        "data": {
+          "ip": "Adresse IP",
+          "config_type": "Type de configuration",
+          "simple_update": "Support de mise à jour simple",
+          "force_update": "Forcer la mise à jour",
+          "add_another": "Ajouter un autre périphérique"
+        }
+      }
+    }
+  }
+}

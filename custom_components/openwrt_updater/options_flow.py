@@ -1,46 +1,67 @@
-import voluptuous as vol
+"""Options flow for OpenWRT Updater: add devices via UI."""
+
+import logging
+
 from homeassistant import config_entries
-from homeassistant.core import callback
-from .const import DOMAIN
-import ipaddress
 
+from .helpers import build_device_schema, build_global_options_schema, upsert_device
 
-def validate_ip(ip_str):
-    try:
-        ipaddress.ip_address(ip_str)
-        return ip_str
-    except ValueError:
-        raise vol.Invalid("Invalid IP address")
+_LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
+    """Handle options for an existing config entry."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize Options Flow handler."""
         self.config_entry = config_entry
+        # Current entry state
+        _LOGGER.warning("Config entry: %s", config_entry)
+        self._data = dict(config_entry.data)
+        self._devices = dict(config_entry.options.get("devices", {}))
+
+    def get_fresh_data(self):
+        """Always get fresh data."""
+        entry = self.hass.config_entries.async_get_entry(self.config_entry.entry_id)
+        return dict(entry.options or {})
 
     async def async_step_init(self, user_input=None):
+        """Entry point – сразу открываем форму добавления устройства."""
+        _LOGGER.warning("Options flow: init")
+        if self.config_entry.unique_id == "__global__":
+            return await self.async_step_global()
+        return await self.async_step_add_device()
+
+    async def async_step_global(self, user_input=None):
+        """Global options step."""
         if user_input is not None:
-            # Get current devices list
-            devices = (
-                self.config_entry.options.get("devices", [])
-                if self.config_entry.options
-                else []
+            _LOGGER.warning("Saving data to global entry: %s", user_input)
+            return self.async_create_entry(title="", data=user_input)
+        saved_options = self.get_fresh_data()
+        schema = await self.hass.async_add_executor_job(
+            build_global_options_schema, self.hass, saved_options
+        )
+        return self.async_show_form(step_id="global", data_schema=schema)
+
+    async def async_step_add_device(self, user_input=None):
+        """Add device step."""
+        if user_input is not None:
+            upsert_device(self._devices, user_input)
+
+            if user_input.get("add_another"):
+                # Цикл добавления ещё одного
+                return await self.async_step_add_device()
+
+            # Сохранить и выйти
+            return self.async_create_entry(
+                title="",  # заголовок игнорируется для options
+                data={"devices": self._devices},
             )
 
-            new_device = {
-                "ip": user_input["ip"],
-                "config_type": user_input["config_type"],
-            }
-
-            devices.append(new_device)
-
-            return self.async_create_entry(title="", data={"devices": devices})
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("ip"): vol.All(str, validate_ip),
-                    vol.Required("config_type"): str,
-                }
-            ),
+        # Значения по умолчанию (пустые при открытии из options)
+        _LOGGER.warning(self._data)
+        defaults: dict = {"ip": f"{self._data.get('place_ipmask', '')}."}
+        schema = await self.hass.async_add_executor_job(
+            build_device_schema, self.hass, defaults
         )
+        return self.async_show_form(step_id="add_device", data_schema=schema)

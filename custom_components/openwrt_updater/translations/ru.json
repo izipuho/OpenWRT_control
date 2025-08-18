@@ -2,6 +2,33 @@
   "config": {
     "step": {
       "user": {
+        "title": "Выберите действие",
+        "description": "Что сейчас делаем?",
+        "data": {
+          "global": "Задать общие настройки",
+          "add_place": "Добавить место"
+        }
+      },
+      "global": {
+        "title": "Задать общие настройки",
+        "description": "Задать общие настройки.",
+        "data": {
+          "master_node": "Master node",
+          "builder_location": "Путь к Builder'у",
+          "ssh_key_path": "SSH key path",
+          "TOH_url": "TOH URL",
+          "config_types_file": "Файл с типами устройств"
+        }
+      },
+      "add_place": {
+        "title": "Добавить место",
+        "description": "Введите данные вашего места.",
+        "data": {
+          "place_name": "Имя",
+          "place_ipmask": "IP mask (префикс)"
+        }
+      },
+      "add_device": {
         "title": "Добавить OpenWRT устройство",
         "description": "Введите данные вашего устройства.",
         "data": {
@@ -11,6 +38,12 @@
           "force_update": "Принудительное обновление",
           "add_another": "Добавить другое устройство"
         }
+      }
+    },
+    "selector": {
+      "options": {
+        "global": "Задать общие настройки",
+        "add_place": "Добавить место"
       }
     },
     "error": {

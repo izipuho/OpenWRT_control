@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONFIG_TYPES_PATH, DOMAIN, KEY_PATH
+from .const import DOMAIN
 from .helpers import load_config_types
 from .ssh_client import get_device_info
 from .toh_parser import TOH
@@ -30,7 +30,6 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
             hass, _LOGGER, name=f"OpenWRT Updater ({ip})", update_interval=SCAN_INTERVAL
         )
         self._ip = ip
-        # self.config_type = config_type
         self.config_type = (
             self.config_entry.options.get("devices", {})
             .get(self._ip, {})
@@ -38,17 +37,21 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
         )
         self.toh = TOH(hass)
 
-        self._config_types = {}
-        self.ssh_key_path = hass.config.path(KEY_PATH)
-        self.config_types_path = hass.config.path(CONFIG_TYPES_PATH)
+        self.ssh_key_path = hass.data.get(DOMAIN, {}).get("config", {}).get("ssh_key_path", "")
+        if not self.ssh_key_path:
+            _LOGGER.error("No SSH key path defined in configuration.yaml.")
+        self.config_types_path = hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
 
     async def _async_update_data(self):
         coordinator = {}
         try:
+            # Load config types from local YAML
             config_types = await self.hass.async_add_executor_job(
                 load_config_types, self.config_types_path
             )
+            # Get SSH-based info
             (
+                firmware_file,
                 firmware_downloaded,
                 hostname,
                 os_version,
@@ -69,16 +72,16 @@ class OpenWRTDataCoordinator(DataUpdateCoordinator):
             coordinator = {
                 "hostname": hostname,
                 "current_os_version": os_version,
-                # "status": "on" if status else "off",
                 "status": status,
                 "available_os_version": self.toh.version,
                 "snapshot_url": self.toh.snapshot_url,
-                # "firmware_downloaded": "on" if firmware_downloaded else "off",
                 "firmware_downloaded": firmware_downloaded,
+                "firmware_file": firmware_file,
             }
-        _LOGGER.debug("Coordinator: %s", coordinator)
+        _LOGGER.debug("Coordinator data: %s", coordinator)
+        # Save coordinator data to hass.data
+        self.hass.data[DOMAIN][self.config_entry.entry_id][self._ip].update(coordinator)
         _LOGGER.debug(
             "HAss data: %s", self.hass.data[DOMAIN][self.config_entry.entry_id]
         )
-        self.hass.data[DOMAIN][self.config_entry.entry_id][self._ip].update(coordinator)
         return coordinator

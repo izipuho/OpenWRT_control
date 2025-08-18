@@ -1,7 +1,28 @@
 {
+  "title": "OpenWRT Updater",
   "config": {
     "step": {
-      "user": {
+      "user": {},
+      "global": {
+        "title": "Set global options",
+        "description": "Master node, SSH keys and so on.",
+        "data": {
+          "master_node": "Master node (user@host)",
+          "builder_location": "Builder location (directory on master node)",
+          "ssh_key_path": "SSH key path (inside of config directory)",
+          "toh_url": "TOH url",
+          "config_types_file": "Config types file (inside of integration directory)"
+        }
+      },
+      "add_place": {
+        "title": "Add place",
+        "description": "Enter the details of your place.",
+        "data": {
+          "place_name": "Place name",
+          "place_ipmask": "IP mask (prefix)"
+        }
+      },
+      "add_device": {
         "title": "Add OpenWRT Device",
         "description": "Enter the details of your OpenWRT device.",
         "data": {
@@ -12,9 +33,33 @@
           "add_another": "Add anoter device"
         }
       }
-    },
-    "error": {
-      "invalid_ip": "Invalid IP address"
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Set global options",
+        "description": "Master node, SSH keys and so on.",
+        "data": {
+          "master_node": "Master node (user@host)",
+          "builder_location": "Builder location (directory on master node)",
+          "ssh_key_path": "SSH key path (inside of config directory)",
+          "TOH_url": "TOH url",
+          "config_types_file": "Config types file (inside of integration directory)"
+        }
+      },
+      "add_device": {
+        "title": "Add OpenWRT Device",
+        "description": "Enter the details of your OpenWRT device.",
+        "data": {
+          "ip": "IP Address",
+          "config_type": "Config Type",
+          "simple_update": "Support simple update",
+          "force_update": "Force update",
+          "add_another": "Add anoter device"
+        }
+      }
     }
   }
 }

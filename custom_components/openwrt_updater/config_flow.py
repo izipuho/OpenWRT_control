@@ -7,9 +7,12 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
+from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
-from .const import CONFIG_TYPES_PATH, DOMAIN
-from .helpers import load_config_types
+from .const import DOMAIN, INTEGRATION_DEFAULTS
+from .helpers import build_device_schema, build_global_options_schema, upsert_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,46 +22,90 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize config flow class."""
-        self.data = []
+        self.data = {}
         self.options = {}
 
     async def async_step_user(self, user_input=None):
-        """Asyncronious user step."""
-        config_types_path = self.hass.config.path(CONFIG_TYPES_PATH)
-        config_types = await self.hass.async_add_executor_job(
-            load_config_types, config_types_path
-        )
-        errors = {}
+        """Request for action."""
         if user_input is not None:
-            # self.devices[user_input["ip"]] = user_input
-            # self.devices[user_input["ip"]] = {user_input}
-            # self.data[user_input["ip"]] = {"ip": user_input["ip"]}
-            self.data.append(user_input["ip"])
-            self.options[user_input["ip"]] = {
-                "ip": user_input["ip"],
-                "config_type": user_input["config_type"],
-                "simple_update": user_input["simple_update"],
-                "force_update": user_input["force_update"],
+            _LOGGER.warning("⚙️User input for Step User: %s", user_input)
+            action = user_input.get("action")
+            if action == "global":
+                return await self.async_step_global()
+            return await self.async_step_add_place()
+
+        schema = vol.Schema(
+            {
+                vol.Required("action", default="place"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=["global", "add_place"], translation_key="action_choice"
+                    )
+                )
             }
+        )
+        return self.async_show_form(step_id="user", data_schema=schema)
+
+    async def async_step_global(self, user_input=None):
+        """Create global-entry."""
+        # Пробуем зарезервировать уникальный ID глобального entry
+        await self.async_set_unique_id("__global__", raise_on_progress=False)
+        # Если уже есть — просто завершаем с abort (пользователь зайдет в «Настроить» на карточке)
+        self._abort_if_unique_id_configured()
+
+        if user_input is not None:
+            # Заводим Global entry: data пустые, опции — глобальные настройки
+            return self.async_create_entry(
+                title="OpenWRT Control — Global config",
+                data={},
+                options=user_input,
+            )
+        schema = await self.hass.async_add_executor_job(
+            build_global_options_schema, self.hass, INTEGRATION_DEFAULTS
+        )
+        return self.async_show_form(step_id="global", data_schema=schema)
+
+    async def async_step_add_place(self, user_input=None):
+        """Request place info."""
+        if user_input is not None:
+            self.data = {
+                "place_name": user_input["place_name"],
+                "place_ipmask": user_input["place_ipmask"],
+            }
+            return await self.async_step_add_device()
+
+        return self.async_show_form(
+            step_id="add_place",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("place_name"): str,
+                    vol.Required("place_ipmask"): str,
+                }
+            ),
+        )
+
+    async def async_step_add_device(self, user_input=None):
+        """Request device info."""
+        if user_input is not None:
+            upsert_device(self.options, user_input)
             if user_input.get("add_another"):
-                return await self.async_step_user()
+                return await self.async_step_add_device()
             _LOGGER.debug("Create device with data: %s", user_input)
             return self.async_create_entry(
-                title=f"OpenWRT updater {user_input['ip']}",
-                data={"devices": self.data},
+                title=f"OpenWRT updater {self.data['place_name']}",
+                data=self.data,
                 options={"devices": self.options},
             )
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("ip"): str,
-                    vol.Required("config_type"): vol.In(sorted(config_types.keys())),
-                    vol.Required("simple_update", default=True): bool,
-                    vol.Required("force_update", default=False): bool,
-                    vol.Optional("add_another", default=False): bool,
-                }
-            ),
-            errors=errors,
+        defaults = {"ip": f"{self.data['place_ipmask']}."}
+        schema = await self.hass.async_add_executor_job(
+            build_device_schema, self.hass, defaults
         )
+        return self.async_show_form(step_id="add_device", data_schema=schema)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Wire options flow for this entry."""
+        from .options_flow import OpenWRTOptionsFlowHandler
+
+        return OpenWRTOptionsFlowHandler(config_entry)
