@@ -1,23 +1,17 @@
 {
+  "title": "OpenWRT Updater",
   "config": {
     "step": {
-      "user": {
-        "title": "Choose action",
-        "description": "What to do?",
-        "data": {
-          "global": "Set global options",
-          "add_place": "Add place"
-        }
-      },
+      "user": {},
       "global": {
         "title": "Set global options",
-        "description": "Set global options.",
+        "description": "Master node, SSH keys and so on.",
         "data": {
-          "master_node": "Master node",
-          "builder_location": "Builder location",
-          "ssh_key_path": "SSH key path",
-          "TOH_url": "TOH url",
-          "config_types_file": "Config types file"
+          "master_node": "Master node (user@host)",
+          "builder_location": "Builder location (directory on master node)",
+          "ssh_key_path": "SSH key path (inside of config directory)",
+          "toh_url": "TOH url",
+          "config_types_file": "Config types file (inside of integration directory)"
         }
       },
       "add_place": {
@@ -39,15 +33,33 @@
           "add_another": "Add anoter device"
         }
       }
-    },
-    "selector": {
-      "options": {
-        "global": "Set global options",
-        "add_place": "Add place"
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Set global options",
+        "description": "Master node, SSH keys and so on.",
+        "data": {
+          "master_node": "Master node (user@host)",
+          "builder_location": "Builder location (directory on master node)",
+          "ssh_key_path": "SSH key path (inside of config directory)",
+          "TOH_url": "TOH url",
+          "config_types_file": "Config types file (inside of integration directory)"
+        }
+      },
+      "add_device": {
+        "title": "Add OpenWRT Device",
+        "description": "Enter the details of your OpenWRT device.",
+        "data": {
+          "ip": "IP Address",
+          "config_type": "Config Type",
+          "simple_update": "Support simple update",
+          "force_update": "Force update",
+          "add_another": "Add anoter device"
+        }
       }
-    },
-    "error": {
-      "invalid_ip": "Invalid IP address"
     }
   }
 }

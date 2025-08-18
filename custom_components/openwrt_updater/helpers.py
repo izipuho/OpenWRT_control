@@ -65,7 +65,7 @@ def build_global_options_schema(hass, defaults=None):
                 default=defaults["builder_location"],
             ): cv.string,
             vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
-            vol.Optional("TOH_url", default=defaults["TOH_url"]): cv.string,
+            vol.Optional("toh_url", default=defaults["TOH_url"]): cv.string,
             vol.Optional(
                 "config_types_file",
                 default=defaults["config_types_file"],

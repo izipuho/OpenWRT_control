@@ -17,6 +17,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         self.config_entry = config_entry
         # Current entry state
         _LOGGER.warning("Config entry: %s", config_entry)
+        self._data = dict(config_entry.data)
         self._devices = dict(config_entry.options.get("devices", {}))
 
     def get_fresh_data(self):
@@ -58,7 +59,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             )
 
         # Значения по умолчанию (пустые при открытии из options)
-        defaults: dict = {}
+        _LOGGER.warning(self._data)
+        defaults: dict = {"ip": f"{self._data.get('place_ipmask', '')}."}
         schema = await self.hass.async_add_executor_job(
             build_device_schema, self.hass, defaults
         )

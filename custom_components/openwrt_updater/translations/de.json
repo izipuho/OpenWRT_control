@@ -1,0 +1,65 @@
+{
+  "title": "OpenWRT Updater",
+  "config": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Globale Optionen",
+        "description": "Master-Node, SSH-Schlüssel und mehr.",
+        "data": {
+          "master_node": "Master-Node (user@host)",
+          "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
+          "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
+          "toh_url": "TOH-URL",
+          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)"
+        }
+      },
+      "add_place": {
+        "title": "Standort hinzufügen",
+        "description": "Geben Sie die Details Ihres Standorts ein.",
+        "data": {
+          "place_name": "Name des Standorts",
+          "place_ipmask": "IP-Maske (Präfix)"
+        }
+      },
+      "add_device": {
+        "title": "OpenWRT-Gerät hinzufügen",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
+        "data": {
+          "ip": "IP-Adresse",
+          "config_type": "Konfigurationstyp",
+          "simple_update": "Einfache Aktualisierung unterstützen",
+          "force_update": "Aktualisierung erzwingen",
+          "add_another": "Weiteres Gerät hinzufügen"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Globale Optionen",
+        "description": "Master-Node, SSH-Schlüssel und mehr.",
+        "data": {
+          "master_node": "Master-Node (user@host)",
+          "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
+          "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
+          "toh_url": "TOH-URL",
+          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)"
+        }
+      },
+      "add_device": {
+        "title": "OpenWRT-Gerät hinzufügen",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
+        "data": {
+          "ip": "IP-Adresse",
+          "config_type": "Konfigurationstyp",
+          "simple_update": "Einfache Aktualisierung unterstützen",
+          "force_update": "Aktualisierung erzwingen",
+          "add_another": "Weiteres Gerät hinzufügen"
+        }
+      }
+    }
+  }
+}

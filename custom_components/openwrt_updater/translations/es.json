@@ -1,0 +1,65 @@
+{
+  "title": "OpenWRT Updater",
+  "config": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Opciones globales",
+        "description": "Nodo maestro, claves SSH y más.",
+        "data": {
+          "master_node": "Nodo maestro (user@host)",
+          "builder_location": "Ubicación del builder (directorio en el nodo maestro)",
+          "ssh_key_path": "Ruta de la clave SSH (dentro de config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)"
+        }
+      },
+      "add_place": {
+        "title": "Agregar lugar",
+        "description": "Ingrese los detalles de su lugar.",
+        "data": {
+          "place_name": "Nombre del lugar",
+          "place_ipmask": "Máscara IP (prefijo)"
+        }
+      },
+      "add_device": {
+        "title": "Agregar dispositivo OpenWRT",
+        "description": "Ingrese los detalles de su dispositivo OpenWRT.",
+        "data": {
+          "ip": "Dirección IP",
+          "config_type": "Tipo de configuración",
+          "simple_update": "Soporte de actualización simple",
+          "force_update": "Forzar actualización",
+          "add_another": "Agregar otro dispositivo"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Opciones globales",
+        "description": "Nodo maestro, claves SSH y más.",
+        "data": {
+          "master_node": "Nodo maestro (user@host)",
+          "builder_location": "Ubicación del builder (directorio en el nodo maestro)",
+          "ssh_key_path": "Ruta de la clave SSH (dentro de config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)"
+        }
+      },
+      "add_device": {
+        "title": "Agregar dispositivo OpenWRT",
+        "description": "Ingrese los detalles de su dispositivo OpenWRT.",
+        "data": {
+          "ip": "Dirección IP",
+          "config_type": "Tipo de configuración",
+          "simple_update": "Soporte de actualización simple",
+          "force_update": "Forzar actualización",
+          "add_another": "Agregar otro dispositivo"
+        }
+      }
+    }
+  }
+}
