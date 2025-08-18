@@ -24,7 +24,9 @@ Monitor device status (online/offline).
 ## Configuration
 
 Provide SSH key you want to use for connections in consts.py. By default `/config/ssh_keys/id_ed25519` is used.
-Further the integration is configured via the UI. You'll need to provide:
+Set global options (stored in special config entry).
+Create Place (config entry for store devices).
+Add device:
 - Device IP
 - Configuration type (defined in `config_types.yaml`)
 
