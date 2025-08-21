@@ -7,8 +7,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import get_device_info
-from .coordinator import OpenWRTDataCoordinator
+from .const import DOMAIN, get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     def __init__(
         self,
-        coordinator: OpenWRTDataCoordinator,
+        coordinator,
         place_name: str,
         ip: str,
         name: str,
@@ -77,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
     for ip in devices:
-        coordinator = OpenWRTDataCoordinator(hass, ip)
+        coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
                 OpenWRTText(

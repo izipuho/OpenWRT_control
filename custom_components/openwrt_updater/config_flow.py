@@ -9,7 +9,6 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .const import DOMAIN, INTEGRATION_DEFAULTS
 from .helpers import build_device_schema, build_global_options_schema, upsert_device
@@ -25,35 +24,24 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         self.data = {}
         self.options = {}
 
-    async def async_step_user(self, user_input=None):
-        """Request for action."""
-        if user_input is not None:
-            _LOGGER.warning("⚙️User input for Step User: %s", user_input)
-            action = user_input.get("action")
-            if action == "global":
-                return await self.async_step_global()
-            return await self.async_step_add_place()
+    def check_global_exists(self) -> bool:
+        """Check for global entry."""
+        return any(e.unique_id == "__global__" for e in self._async_current_entries())
 
-        schema = vol.Schema(
-            {
-                vol.Required("action", default="place"): SelectSelector(
-                    SelectSelectorConfig(
-                        options=["global", "add_place"], translation_key="action_choice"
-                    )
-                )
-            }
-        )
-        return self.async_show_form(step_id="user", data_schema=schema)
+    async def async_step_user(self, user_input=None):
+        """Route for correct action: set globals or add place."""
+        if not self.check_global_exists():
+            return await self.async_step_global()
+        return await self.async_step_add_place()
 
     async def async_step_global(self, user_input=None):
-        """Create global-entry."""
-        # Пробуем зарезервировать уникальный ID глобального entry
+        """Create global entry."""
+        # Trying to reserve __global__ unique ID
         await self.async_set_unique_id("__global__", raise_on_progress=False)
-        # Если уже есть — просто завершаем с abort (пользователь зайдет в «Настроить» на карточке)
+        # Abort if already exists
         self._abort_if_unique_id_configured()
 
         if user_input is not None:
-            # Заводим Global entry: data пустые, опции — глобальные настройки
             return self.async_create_entry(
                 title="OpenWRT Control — Global config",
                 data={},
@@ -108,4 +96,4 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         """Wire options flow for this entry."""
         from .options_flow import OpenWRTOptionsFlowHandler
 
-        return OpenWRTOptionsFlowHandler(config_entry)
+        return OpenWRTOptionsFlowHandler()

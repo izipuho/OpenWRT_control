@@ -11,7 +11,9 @@
           "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
           "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)"
+          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)",
+          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
+          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)"
         }
       },
       "add_place": {
@@ -46,7 +48,9 @@
           "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
           "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)"
+          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)",
+          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
+          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)"
         }
       },
       "add_device": {

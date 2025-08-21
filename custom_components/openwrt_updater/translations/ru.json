@@ -1,53 +1,69 @@
 {
+  "title": "OpenWRT Updater",
   "config": {
     "step": {
-      "user": {
-        "title": "Выберите действие",
-        "description": "Что сейчас делаем?",
-        "data": {
-          "global": "Задать общие настройки",
-          "add_place": "Добавить место"
-        }
-      },
+      "user": {},
       "global": {
-        "title": "Задать общие настройки",
-        "description": "Задать общие настройки.",
+        "title": "Глобальные параметры",
+        "description": "Главный узел, SSH-ключи и прочее.",
         "data": {
-          "master_node": "Master node",
-          "builder_location": "Путь к Builder'у",
-          "ssh_key_path": "SSH key path",
-          "TOH_url": "TOH URL",
-          "config_types_file": "Файл с типами устройств"
+          "master_node": "Мастер-узел (user@host)",
+          "builder_location": "Путь к сборщику (директория на мастер-узле)",
+          "ssh_key_path": "Путь к SSH-ключу (внутри config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Файл типов конфигураций (внутри интеграции)",
+          "toh_timeout_hours": "Интервал координатора TOH (в часах)",
+          "device_timeout_minutes": "Интервал координатора устройств (в минутах)"
         }
       },
       "add_place": {
-        "title": "Добавить место",
-        "description": "Введите данные вашего места.",
+        "title": "Добавить площадку",
+        "description": "Укажите параметры площадки.",
         "data": {
-          "place_name": "Имя",
-          "place_ipmask": "IP mask (префикс)"
+          "place_name": "Название площадки",
+          "place_ipmask": "IP-маска (префикс)"
         }
       },
       "add_device": {
-        "title": "Добавить OpenWRT устройство",
-        "description": "Введите данные вашего устройства.",
+        "title": "Добавить устройство OpenWRT",
+        "description": "Укажите параметры устройства OpenWRT.",
         "data": {
-          "ip": "IP адрес",
+          "ip": "IP-адрес",
           "config_type": "Тип конфигурации",
           "simple_update": "Поддержка простого обновления",
           "force_update": "Принудительное обновление",
-          "add_another": "Добавить другое устройство"
+          "add_another": "Добавить ещё устройство"
         }
       }
-    },
-    "selector": {
-      "options": {
-        "global": "Задать общие настройки",
-        "add_place": "Добавить место"
+    }
+  },
+  "options": {
+    "step": {
+      "user": {},
+      "global": {
+        "title": "Глобальные параметры",
+        "description": "Главный узел, SSH-ключи и прочее.",
+        "data": {
+          "master_node": "Мастер-узел (user@host)",
+          "builder_location": "Путь к сборщику (директория на мастер-узле)",
+          "ssh_key_path": "Путь к SSH-ключу (внутри config)",
+          "toh_url": "URL TOH",
+          "config_types_file": "Файл типов конфигураций (внутри интеграции)",
+          "toh_timeout_hours": "Интервал координатора TOH (в часах)",
+          "device_timeout_minutes": "Интервал координатора устройств (в минутах)"
+        }
+      },
+      "add_device": {
+        "title": "Добавить устройство OpenWRT",
+        "description": "Укажите параметры устройства OpenWRT.",
+        "data": {
+          "ip": "IP-адрес",
+          "config_type": "Тип конфигурации",
+          "simple_update": "Поддержка простого обновления",
+          "force_update": "Принудительное обновление",
+          "add_another": "Добавить ещё устройство"
+        }
       }
-    },
-    "error": {
-      "invalid_ip": "Некорректный IP адрес"
     }
   }
 }

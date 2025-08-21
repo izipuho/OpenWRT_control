@@ -1,14 +1,15 @@
 """Initialize OpenWRT Updater integration."""
 
 import asyncio
+from datetime import timedelta
 import logging
 from pathlib import Path
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .coordinator import OpenWRTDataCoordinator
+from .coordinators import OpenWRTDeviceCoordinator, TohCacheCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,19 +23,31 @@ PLATFORMS = [
 ]
 
 
+async def async_setup(hass: HomeAssistant, config):
+    """Set wait for global point."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault("global_ready", asyncio.Event())
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up config entry."""
-    _LOGGER.warning(
-        "⚙️OpenWRT Control: setup_entry id=%s source=%s title=%s",
-        entry.entry_id,
-        entry.source,
-        entry.title,
-    )
+    """Set up the integration: prepare shared TOH cache and per-device coordinators.
+
+    Stores the following structure in hass.data[DOMAIN][entry.entry_id]:
+      - "toh_coordinator": TohCacheCoordinator
+      - "device_coordinators": dict[ip, OpenWRTDeviceCoordinator]
+      - "devices_cfg": dict loaded from options
+    """
 
     entry.async_on_unload(entry.add_update_listener(_on_entry_update))
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {}
+
+    # toh_coordinator = TohCacheCoordinator(hass, timedelta(hours=_DEFAULT_TOH_TIMEOUT))
+    # await toh_coordinator.async_config_entry_first_refresh()
+    # hass.data[DOMAIN]["toh_cache"] = toh_coordinator
+
+    hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
     if entry.unique_id == "__global__":
         component_config = dict(entry.options)
@@ -44,12 +57,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             Path(__file__).parent / component_config.get("config_types_file")
         )
 
-        # Save it to hass.data[DOMAIN]
-        hass.data.setdefault(DOMAIN, {})
         hass.data[DOMAIN]["config"] = component_config
         hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
         hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
+
+        toh_coordinator = TohCacheCoordinator(
+            hass, timedelta(hours=component_config["toh_timeout_hours"])
+        )
+        await toh_coordinator.async_config_entry_first_refresh()
+        hass.data[DOMAIN]["toh_cache"] = toh_coordinator
+
+        hass.data[DOMAIN]["global_ready"].set()
     else:
+        if not hass.data[DOMAIN]["global_ready"].is_set():
+            raise ConfigEntryNotReady("Waiting for __global__ entry")
+
+        hass.data[DOMAIN][entry.entry_id]["data"] = entry.data
+
         # Get devices info from config_entry
         devices = entry.options.get("devices", [])
 
@@ -58,9 +82,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Config-entry data
             hass.data[DOMAIN][entry.entry_id][ip] = dict(device)
             # Coordinator data
-            coordinator = OpenWRTDataCoordinator(hass, ip)
+            coordinator = OpenWRTDeviceCoordinator(hass, entry, ip)
             await coordinator.async_config_entry_first_refresh()
-            hass.data[DOMAIN][entry.entry_id][ip].update(coordinator.data)
+            hass.data[DOMAIN][entry.entry_id][ip]["coordinator"] = coordinator
+            # hass.data[DOMAIN][entry.entry_id][ip].update(coordinator.data)
 
             _LOGGER.debug(
                 "Initial HAss data: %s", hass.data[DOMAIN][entry.entry_id][ip]

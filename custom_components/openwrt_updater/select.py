@@ -13,13 +13,11 @@ from .helpers import load_config_types, load_device_option, save_device_option
 _LOGGER = logging.getLogger(__name__)
 
 
-# class OpenWRTSelect(CoordinatorEntity, SelectEntity):
 class OpenWRTSelect(SelectEntity):
     """Select entities declaration."""
 
     def __init__(
         self,
-        # coordinator: OpenWRTDataCoordinator,
         entry,
         ip: str,
         name: str,
@@ -31,7 +29,6 @@ class OpenWRTSelect(SelectEntity):
         config_types: list[str],
     ) -> None:
         """Initialize select entity."""
-        # super().__init__(coordinator)
         # helpers
         self._entry = entry
         self._config_types = config_types
@@ -62,7 +59,6 @@ class OpenWRTSelect(SelectEntity):
     def current_option(self):
         """Return current option."""
         return load_device_option(
-            # self.coordinator.config_entry, self._ip, self._key, self._current_value
             self._entry,
             self._ip,
             self._key,
@@ -76,7 +72,6 @@ class OpenWRTSelect(SelectEntity):
         _LOGGER.debug("Select option: %s", option)
         save_device_option(
             self.hass,
-            # self.coordinator.config_entry,
             self._entry,
             self._ip,
             self._key,
@@ -111,7 +106,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         entities.extend(
             [
                 OpenWRTSelect(
-                    # coordinator,
                     config_entry,
                     ip,
                     "Config Type",

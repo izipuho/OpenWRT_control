@@ -1,5 +1,6 @@
 """Shared helpers. Persist states. Load config types."""
 
+import json
 import logging
 from pathlib import Path
 
@@ -65,11 +66,19 @@ def build_global_options_schema(hass, defaults=None):
                 default=defaults["builder_location"],
             ): cv.string,
             vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
-            vol.Optional("toh_url", default=defaults["TOH_url"]): cv.string,
+            vol.Optional("toh_url", default=defaults["toh_url"]): cv.string,
             vol.Optional(
                 "config_types_file",
                 default=defaults["config_types_file"],
             ): cv.string,
+            vol.Optional(
+                "toh_timeout_hours",
+                default=defaults["toh_timeout_hours"],
+            ): int,
+            vol.Optional(
+                "device_timeout_minutes",
+                default=defaults["device_timeout_minutes"],
+            ): int,
         }
     )
 
@@ -107,3 +116,34 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
         "force_update": user_input["force_update"],
     }
     return devices
+
+
+async def dump_toh_json(
+    hass: HomeAssistant,
+    data,
+    filename: str = "toh_dump.json",
+    to_config: bool = False,
+) -> None:
+    """Persist raw TOH JSON for debugging.
+
+    If to_config=True -> writes to /config/<filename>.
+    Else -> writes to the integration root (custom_components/openwrt_updater/<filename>).
+    """
+    try:
+        if to_config:
+            # Safer, always writable and visible from UI add-ons
+            path = Path(hass.config.path(filename))
+        else:
+            # This module lives under custom_components/openwrt_updater/helpers/debug_dump.py
+            # parents[1] -> custom_components/openwrt_updater
+            path = Path(__file__).resolve().parents[1] / filename
+
+        text = json.dumps(data, ensure_ascii=False, indent=2)
+
+        def _write() -> None:
+            path.write_text(text, encoding="utf-8")
+
+        await hass.async_add_executor_job(_write)
+        _LOGGER.warning("TOH dump saved to: %s", path)
+    except Exception as exc:  # noqa: BLE001
+        _LOGGER.error("Failed to dump TOH JSON: %s", exc)

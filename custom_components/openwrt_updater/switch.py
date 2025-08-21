@@ -13,13 +13,11 @@ from .helpers import load_device_option, save_device_option
 _LOGGER = logging.getLogger(__name__)
 
 
-# class OpenWRTSwitch(CoordinatorEntity, SwitchEntity, RestoreEntity):
 class OpenWRTSwitch(SwitchEntity, RestoreEntity):
     """OpenWRT simple update class."""
 
     def __init__(
         self,
-        # coordinator,
         entry,
         ip: str,
         name: str,
@@ -28,7 +26,6 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         entity_category: EntityCategory = None,
     ) -> None:
         """Initialize simple update class."""
-        # super().__init__(coordinator)
         # helpers
         self._entry = entry
         self._key = key
@@ -48,7 +45,6 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
 
         # specific entity properties
         self._attr_is_on = load_device_option(
-            # self.coordinator.config_entry, self._ip, self._key, self._default_state
             self._entry,
             self._ip,
             self._key,
@@ -61,7 +57,6 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         """Persist changes. Dunno how."""
         await super().async_added_to_hass()
         self._attr_is_on = load_device_option(
-            # self.coordinator.config_entry, self._ip, self._key, self._default_state
             self._entry,
             self._ip,
             self._key,
@@ -78,7 +73,6 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         self._attr_is_on = True
         save_device_option(
             self.hass,
-            # self.coordinator.config_entry,
             self._entry,
             self._ip,
             self._key,
@@ -91,7 +85,6 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         self._attr_is_on = False
         save_device_option(
             self.hass,
-            # self.coordinator.config_entry,
             self._entry,
             self._ip,
             self._key,
@@ -114,11 +107,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
     for ip in devices:
-        # coordinator = OpenWRTDataCoordinator(hass, ip)
         entities.extend(
             [
                 OpenWRTSwitch(
-                    # coordinator=coordinator,
                     entry=config_entry,
                     ip=ip,
                     name="Simple update",
@@ -127,7 +118,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     entity_category=EntityCategory.CONFIG,
                 ),
                 OpenWRTSwitch(
-                    # coordinator=coordinator,
                     entry=config_entry,
                     ip=ip,
                     name="Force update",
