@@ -25,7 +25,7 @@ def trigger_update(
     """Trigger update of the remote device."""
     conf = hass.data.get(DOMAIN, {}).get("config", {})
     _LOGGER.debug("Updating device with HAss data: %s", hass.data[DOMAIN][entry_id][ip])
-    firmware_file = hass.data[DOMAIN][entry_id][ip]["firmware_file"]
+    firmware_file = hass.data[DOMAIN][entry_id][ip]["coordinator"].data["firmware_file"]
     is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
     if firmware_file and is_force:
