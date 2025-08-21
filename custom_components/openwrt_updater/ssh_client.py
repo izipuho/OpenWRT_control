@@ -77,7 +77,7 @@ class OpenWRTSSH:
                 connect_timeout=self.connect_timeout,
             )
         except (TimeoutError, asyncssh.Error, OSError) as exc:
-            _LOGGER.warning("SSH connect to %s failed: %s", self._ip, exc)
+            _LOGGER.warning("SSH connect to %s failed: %s", self.ip, exc)
             self._conn = None
             self.available = False
             raise
