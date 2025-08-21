@@ -10,8 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import get_device_info
-from .coordinator import OpenWRTDataCoordinator
+from .const import get_device_info, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     def __init__(
         self,
-        coordinator: OpenWRTDataCoordinator,
+        coordinator,
         place_name: str,
         ip: str,
         name: str,
@@ -53,7 +52,6 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         """Return device status."""
         if self.coordinator.data is None:
             return False
-        # return self.coordinator.data.get(self._ip).get(self._key) == "on"
         return self.coordinator.data.get(self._key)
 
     @property
@@ -76,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
     for ip in devices:
-        coordinator = OpenWRTDataCoordinator(hass, ip)
+        coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
                 OpenWRTBinarySensor(

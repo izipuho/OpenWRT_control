@@ -12,22 +12,23 @@ _LOGGER = logging.getLogger(__name__)
 class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize Options Flow handler."""
-        self.config_entry = config_entry
+        # self.config_entry = config_entry
         # Current entry state
-        _LOGGER.warning("Config entry: %s", config_entry)
-        self._data = dict(config_entry.data)
-        self._devices = dict(config_entry.options.get("devices", {}))
+        self._data = {}
+        self._devices = {}
 
     def get_fresh_data(self):
-        """Always get fresh data."""
+        """Get fresh data all the time."""
         entry = self.hass.config_entries.async_get_entry(self.config_entry.entry_id)
         return dict(entry.options or {})
 
     async def async_step_init(self, user_input=None):
-        """Entry point – сразу открываем форму добавления устройства."""
+        """Entry point."""
         _LOGGER.warning("Options flow: init")
+        self._data = dict(self.config_entry.data)
+        self._devices = dict(self.config_entry.options.get("devices", {}))
         if self.config_entry.unique_id == "__global__":
             return await self.async_step_global()
         return await self.async_step_add_device()
@@ -49,17 +50,13 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             upsert_device(self._devices, user_input)
 
             if user_input.get("add_another"):
-                # Цикл добавления ещё одного
                 return await self.async_step_add_device()
 
-            # Сохранить и выйти
             return self.async_create_entry(
-                title="",  # заголовок игнорируется для options
+                title="",
                 data={"devices": self._devices},
             )
 
-        # Значения по умолчанию (пустые при открытии из options)
-        _LOGGER.warning(self._data)
         defaults: dict = {"ip": f"{self._data.get('place_ipmask', '')}."}
         schema = await self.hass.async_add_executor_job(
             build_device_schema, self.hass, defaults

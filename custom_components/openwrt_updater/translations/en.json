@@ -11,7 +11,9 @@
           "builder_location": "Builder location (directory on master node)",
           "ssh_key_path": "SSH key path (inside of config directory)",
           "toh_url": "TOH url",
-          "config_types_file": "Config types file (inside of integration directory)"
+          "config_types_file": "Config types file (inside of integration directory)",
+          "toh_timeout_hours": "TOH coordinator interval (hours)",
+          "device_timeout_minutes": "Device coordinator interval (minutes)"
         }
       },
       "add_place": {
@@ -46,7 +48,9 @@
           "builder_location": "Builder location (directory on master node)",
           "ssh_key_path": "SSH key path (inside of config directory)",
           "TOH_url": "TOH url",
-          "config_types_file": "Config types file (inside of integration directory)"
+          "config_types_file": "Config types file (inside of integration directory)",
+          "toh_timeout_hours": "TOH coordinator interval (hours)",
+          "device_timeout_minutes": "Device coordinator interval (minutes)"
         }
       },
       "add_device": {

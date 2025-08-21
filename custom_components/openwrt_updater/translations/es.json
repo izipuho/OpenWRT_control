@@ -11,7 +11,9 @@
           "builder_location": "Ubicación del builder (directorio en el nodo maestro)",
           "ssh_key_path": "Ruta de la clave SSH (dentro de config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)"
+          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)",
+          "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
+          "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)"
         }
       },
       "add_place": {
@@ -46,7 +48,9 @@
           "builder_location": "Ubicación del builder (directorio en el nodo maestro)",
           "ssh_key_path": "Ruta de la clave SSH (dentro de config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)"
+          "config_types_file": "Archivo de tipos de configuración (dentro de la integración)",
+          "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
+          "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)"
         }
       },
       "add_device": {

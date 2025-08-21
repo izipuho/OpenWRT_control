@@ -5,13 +5,15 @@
       "user": {},
       "global": {
         "title": "Paramètres globaux",
-        "description": "Nœud principal, clés SSH et autres.",
+        "description": "Nœud maître, clés SSH et autres.",
         "data": {
           "master_node": "Nœud maître (user@host)",
           "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
           "ssh_key_path": "Chemin de la clé SSH (dans config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans l’intégration)"
+          "config_types_file": "Fichier des types de configuration (dans l’intégration)",
+          "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
+          "device_timeout_minutes": "Intervalle du coordinateur des périphériques (minutes)"
         }
       },
       "add_place": {
@@ -40,13 +42,15 @@
       "user": {},
       "global": {
         "title": "Paramètres globaux",
-        "description": "Nœud principal, clés SSH et autres.",
+        "description": "Nœud maître, clés SSH et autres.",
         "data": {
           "master_node": "Nœud maître (user@host)",
           "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
           "ssh_key_path": "Chemin de la clé SSH (dans config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans l’intégration)"
+          "config_types_file": "Fichier des types de configuration (dans l’intégration)",
+          "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
+          "device_timeout_minutes": "Intervalle du coordinateur des périphériques (minutes)"
         }
       },
       "add_device": {

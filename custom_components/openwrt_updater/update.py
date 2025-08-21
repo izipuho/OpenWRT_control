@@ -11,7 +11,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, get_device_info
-from .coordinator import OpenWRTDataCoordinator
 from .ssh_client import OpenWRTSSH
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,13 +19,11 @@ _LOGGER = logging.getLogger(__name__)
 def trigger_update(
     hass: HomeAssistant,
     entry_id,
-    device: dict,
+    ip: str,
     key_path: str,
 ):
     """Trigger update of the remote device."""
-    _LOGGER.debug("Updating device: %s", device)
     conf = hass.data.get(DOMAIN, {}).get("config", {})
-    ip = device["ip"]
     _LOGGER.debug("Updating device with HAss data: %s", hass.data[DOMAIN][entry_id][ip])
     firmware_file = hass.data[DOMAIN][entry_id][ip]["firmware_file"]
     is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
@@ -64,7 +61,7 @@ def trigger_update(
         )
         master_node = conf["master_node"]
         try:
-            _LOGGER.debug("Trying to update %s with %s.", ip, update_command)
+            _LOGGER.debug("Trying to update %s with %s", ip, update_command)
             master = OpenWRTSSH(
                 hostname=master_node.split("@")[1],
                 key_path=key_path,
@@ -83,11 +80,12 @@ def trigger_update(
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     """Updater entity declaration."""
 
-    def __init__(self, coordinator, device, update_callback) -> None:
+    def __init__(self, config_entry, coordinator, device, update_callback) -> None:
         """Initialize updater entity."""
         super().__init__(coordinator)
         # helpers
         self.device = device
+        self.config_entry = config_entry
 
         # device properties
         self._ip = device["ip"]
@@ -131,7 +129,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
-        await self._update_callback(self.coordinator.config_entry.entry_id, self.device)
+        await self._update_callback(self.config_entry.entry_id, self._ip)
         await self.coordinator.async_request_refresh()
 
     def __repr__(self):
@@ -149,17 +147,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     entities = []
 
-    async def update_callback(entry_id, device):
+    async def update_callback(entry_id, ip):
         await hass.async_add_executor_job(
-            trigger_update, hass, entry_id, device, ssh_key_path
+            trigger_update, hass, entry_id, ip, ssh_key_path
         )
 
     for ip, device in devices.items():
         device["place_name"] = place_name
-        coordinator = OpenWRTDataCoordinator(hass, ip)
+        coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
-                OpenWRTUpdateEntity(coordinator, device, update_callback),
+                OpenWRTUpdateEntity(config_entry, coordinator, device, update_callback),
             ]
         )
 
