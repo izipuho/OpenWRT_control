@@ -23,7 +23,7 @@ async def trigger_update(
     key_path: str,
 ):
     """Trigger update of the remote device."""
-    conf = hass.data.get(DOMAIN, {}).get("config", {})
+    conf = hass.data[DOMAIN].get("config", {})
     data = hass.data[DOMAIN][entry_id][ip]
     coordinator = data.pop("coordinator")
     data.update(coordinator.data)
