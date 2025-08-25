@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    # "button",
+    #"button",
     "select",
     "switch",
     "text",
@@ -42,10 +42,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_on_entry_update))
 
     hass.data.setdefault(DOMAIN, {})
-
-    # toh_coordinator = TohCacheCoordinator(hass, timedelta(hours=_DEFAULT_TOH_TIMEOUT))
-    # await toh_coordinator.async_config_entry_first_refresh()
-    # hass.data[DOMAIN]["toh_cache"] = toh_coordinator
 
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 

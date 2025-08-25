@@ -75,6 +75,7 @@ class OpenWRTSSH:
                 client_keys=client_keys,
                 known_hosts=None,
                 connect_timeout=self.connect_timeout,
+                agent_forwarding=True,
             )
         except (TimeoutError, asyncssh.Error, OSError) as exc:
             _LOGGER.warning("SSH connect to %s failed: %s", self.ip, exc)
@@ -91,7 +92,7 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(self, command: str, timeout: float = None) -> str:
+    async def exec_command(self, command: str, timeout: float | None = None) -> str:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
@@ -118,11 +119,13 @@ class OpenWRTSSH:
             )
             return None
         except Exception as err:
-            _LOGGER.exception(
-                "Unexpected error running SSH command '%s': %s", command, err
-            )
+            _LOGGER.error("Unexpected error running SSH command '%s': %s", command, err)
             return None
         else:
+            if result.exit_status != 0:
+                _LOGGER.error(
+                    "Update failed: %s | %s", result.exit_status, result.stderr
+                )
             return result
 
     async def read_os_version(self) -> str | None:

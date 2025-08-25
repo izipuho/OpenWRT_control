@@ -8,9 +8,9 @@ import logging
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..const import DOMAIN
+from ..helpers import load_config_types
 from ..ssh_client import OpenWRTSSH
 from ..types import DeviceData
-from ..helpers import load_config_types
 
 _LOGGER = logging.getLogger(__name__)
 _DEVICE_SCAN_INTERVAL = timedelta(minutes=10)
@@ -67,13 +67,13 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
 
         # 3) Produce a typed snapshot for entities
         result = {
-                "current_os_version": os_version,
-                "status": status,
-                "available_os_version": toh_item.version,
-                "snapshot_url": toh_item.snapshot_url,
-                "firmware_downloaded": fw_downloaded,
-                "firmware_file": fw_file,
-                "hostname": hostname,
+            "current_os_version": os_version,
+            "status": status,
+            "available_os_version": toh_item.version,
+            "snapshot_url": toh_item.snapshot_url,
+            "firmware_downloaded": fw_downloaded,
+            "firmware_file": fw_file,
+            "hostname": hostname,
         }
         _LOGGER.debug(
             "Coordinator data: %s",
