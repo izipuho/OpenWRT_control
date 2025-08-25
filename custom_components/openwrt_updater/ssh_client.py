@@ -75,6 +75,7 @@ class OpenWRTSSH:
                 client_keys=client_keys,
                 known_hosts=None,
                 connect_timeout=self.connect_timeout,
+                agent_forwarding=True,
             )
         except (TimeoutError, asyncssh.Error, OSError) as exc:
             _LOGGER.warning("SSH connect to %s failed: %s", self.ip, exc)
@@ -123,6 +124,8 @@ class OpenWRTSSH:
             )
             return None
         else:
+            if result.stderr:
+                _LOGGER.error("Update failed: %s", result.stderr)
             return result
 
     async def read_os_version(self) -> str | None:

@@ -16,7 +16,7 @@ from .ssh_client import OpenWRTSSH
 _LOGGER = logging.getLogger(__name__)
 
 
-def trigger_update(
+async def trigger_update(
     hass: HomeAssistant,
     entry_id,
     ip: str,
@@ -29,24 +29,20 @@ def trigger_update(
     is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
     if firmware_file and is_force:
-        _LOGGER.warning("Trying to update %s with local file %s", ip, firmware_file)
-        client = OpenWRTSSH(ip, key_path)
-        client.connect()
-        output = client.exec_command(f"sysupgrade -v {firmware_file}")
-        client.close()
-        return output
+        _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
+        async with OpenWRTSSH(ip, key_path) as client:
+            return await client.exec_command(f"sysupgrade -v {firmware_file}")
     if is_simple:
         url = hass.data[DOMAIN][entry_id][ip]["snapshot_url"]
         try:
             _LOGGER.debug("Trying to simple update %s", ip)
             _LOGGER.debug("Downloading %s", url)
-            update_command = f"curl {url} --output /tmp/owrt.bin"
+            update_command = f"curl {url} --output /tmp/openwrt.bin"
             if is_force:
-                update_command += " && sysupgrade -v /tmp/owrt.bin"
-            client = OpenWRTSSH(ip, key_path)
-            client.connect()
-            output = client.exec_command(update_command)
-            client.close()
+                update_command += " && sysupgrade -v /tmp/openwrt.bin"
+            async with OpenWRTSSH(ip, key_path) as client:
+                output = await client.exec_command(update_command)
+            _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
             return None
@@ -56,19 +52,19 @@ def trigger_update(
         builder_location = conf["builder_location"]
         config_type = hass.data[DOMAIN][entry_id][ip]["config_type"]
         update_strategy = "install" if is_force else "copy"
-        update_command = (
-            f"cd {builder_location} && make C={config_type} HOST={ip} {update_strategy}"
-        )
+        available_os_version = hass.data[DOMAIN][entry_id][ip]["coordinator"].data[
+            "available_os_version"
+        ]
+        update_command = f"cd {builder_location} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
         master_node = conf["master_node"]
         try:
             _LOGGER.debug("Trying to update %s with %s", ip, update_command)
-            master = OpenWRTSSH(
-                hostname=master_node.split("@")[1],
+            async with OpenWRTSSH(
+                ip=master_node.split("@")[1],
                 key_path=key_path,
                 username=master_node.split("@")[0],
-            )
-            master.connect()
-            output = master.exec_command(update_command)
+            ) as master:
+                output = await master.exec_command(update_command)
             _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
@@ -148,9 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     entities = []
 
     async def update_callback(entry_id, ip):
-        await hass.async_add_executor_job(
-            trigger_update, hass, entry_id, ip, ssh_key_path
-        )
+        await trigger_update(hass, entry_id, ip, ssh_key_path)
 
     for ip, device in devices.items():
         device["place_name"] = place_name

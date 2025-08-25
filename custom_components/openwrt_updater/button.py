@@ -48,12 +48,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle button press."""
-        #   await self.coordinator.async_config_entry_first_refresh()
-        #   _LOGGER.warning(
-        #       "DEBUG coordinator data for %s: %s",
-        #       self._ip,
-        #       self.coordinator.data,
-        #   )
+        await self.coordinator.async_request_refresh()
         #   _LOGGER.warning(
         #       "DEBUG entry options for %s: %s",
         #       self._ip,
@@ -73,6 +68,11 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
             "Entry data: %s | options: %s",
             self._config_entry.data,
             self._config_entry.options,
+        )
+        _LOGGER.error(
+            "DEBUG coordinator data for %s: %s",
+            self._ip,
+            self.coordinator.data,
         )
 
     def __repr__(self):
