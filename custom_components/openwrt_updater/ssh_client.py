@@ -92,7 +92,7 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(self, command: str, timeout: float = None) -> str:
+    async def exec_command(self, command: str, timeout: float | None = None) -> str:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
@@ -119,9 +119,7 @@ class OpenWRTSSH:
             )
             return None
         except Exception as err:
-            _LOGGER.exception(
-                "Unexpected error running SSH command '%s': %s", command, err
-            )
+            _LOGGER.error("Unexpected error running SSH command '%s': %s", command, err)
             return None
         else:
             if result.exit_status != 0:
