@@ -24,19 +24,20 @@ async def trigger_update(
 ):
     """Trigger update of the remote device."""
     conf = hass.data.get(DOMAIN, {}).get("config", {})
-    _LOGGER.debug("Updating device with HAss data: %s", hass.data[DOMAIN][entry_id][ip])
-    firmware_file = hass.data[DOMAIN][entry_id][ip]["coordinator"].data["firmware_file"]
-    is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
-    is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
-    available_os_version = hass.data[DOMAIN][entry_id][ip]["coordinator"].data[
-        "available_os_version"
-    ]
+    data = hass.data[DOMAIN][entry_id][ip]
+    coordinator = data.pop("coordinator")
+    data.update(coordinator.data)
+    _LOGGER.debug("Updating device with HAss data: %s", data)
+    firmware_file = data["firmware_file"]
+    is_simple = data["simple_update"]
+    is_force = data["force_update"]
+    available_os_version = data["available_os_version"]
     if firmware_file and is_force:
         _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
         async with OpenWRTSSH(ip, key_path) as client:
             return await client.exec_command(f"sysupgrade -v {firmware_file}")
     if is_simple:
-        url = hass.data[DOMAIN][entry_id][ip]["coordinator"].data["snapshot_url"]
+        url = data["snapshot_url"]
         try:
             _LOGGER.debug("Trying to simple update %s", ip)
             _LOGGER.debug("Downloading %s", url)
@@ -57,7 +58,7 @@ async def trigger_update(
             return output
     else:
         builder_location = conf["builder_location"]
-        config_type = hass.data[DOMAIN][entry_id][ip]["config_type"]
+        config_type = data["config_type"]
         update_strategy = "install" if is_force else "copy"
         update_command = f"cd {builder_location} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
         master_node = conf["master_node"].split("@")
