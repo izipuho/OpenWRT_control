@@ -124,8 +124,10 @@ class OpenWRTSSH:
             )
             return None
         else:
-            if result.stderr:
-                _LOGGER.error("Update failed: %s", result.stderr)
+            if result.exit_status != 0:
+                _LOGGER.error(
+                    "Update failed: %s | %s", result.exit_status, result.stderr
+                )
             return result
 
     async def read_os_version(self) -> str | None:

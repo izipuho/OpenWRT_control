@@ -28,18 +28,25 @@ async def trigger_update(
     firmware_file = hass.data[DOMAIN][entry_id][ip]["coordinator"].data["firmware_file"]
     is_simple = hass.data[DOMAIN][entry_id][ip]["simple_update"]
     is_force = hass.data[DOMAIN][entry_id][ip]["force_update"]
+    available_os_version = hass.data[DOMAIN][entry_id][ip]["coordinator"].data[
+        "available_os_version"
+    ]
     if firmware_file and is_force:
         _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
         async with OpenWRTSSH(ip, key_path) as client:
             return await client.exec_command(f"sysupgrade -v {firmware_file}")
     if is_simple:
-        url = hass.data[DOMAIN][entry_id][ip]["snapshot_url"]
+        url = hass.data[DOMAIN][entry_id][ip]["coordinator"].data["snapshot_url"]
         try:
             _LOGGER.debug("Trying to simple update %s", ip)
             _LOGGER.debug("Downloading %s", url)
-            update_command = f"curl {url} --output /tmp/openwrt.bin"
+            update_command = (
+                f"curl {url} --output /tmp/openwrt-{available_os_version}.bin"
+            )
             if is_force:
-                update_command += " && sysupgrade -v /tmp/openwrt.bin"
+                update_command += (
+                    f" && sysupgrade -v /tmp/openwrt-{available_os_version}.bin"
+                )
             async with OpenWRTSSH(ip, key_path) as client:
                 output = await client.exec_command(update_command)
             _LOGGER.debug("Update result: %s", output)
@@ -52,17 +59,14 @@ async def trigger_update(
         builder_location = conf["builder_location"]
         config_type = hass.data[DOMAIN][entry_id][ip]["config_type"]
         update_strategy = "install" if is_force else "copy"
-        available_os_version = hass.data[DOMAIN][entry_id][ip]["coordinator"].data[
-            "available_os_version"
-        ]
         update_command = f"cd {builder_location} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
-        master_node = conf["master_node"]
+        master_node = conf["master_node"].split("@")
         try:
             _LOGGER.debug("Trying to update %s with %s", ip, update_command)
             async with OpenWRTSSH(
-                ip=master_node.split("@")[1],
+                ip=master_node[1],
                 key_path=key_path,
-                username=master_node.split("@")[0],
+                username=master_node[0],
             ) as master:
                 output = await master.exec_command(update_command)
             _LOGGER.debug("Update result: %s", output)
