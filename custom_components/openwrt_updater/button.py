@@ -3,11 +3,13 @@
 import logging
 
 from homeassistant.components.button import ButtonEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, get_device_info
+from .coordinators.device import OpenWRTDeviceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,9 +19,9 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
     def __init__(
         self,
-        coordinator,
-        config_entry,
-        device: dict,
+        coordinator: OpenWRTDeviceCoordinator,
+        config_entry: ConfigEntry,
+        ip: str,
         name: str,
         key: str,
         entity_category: EntityCategory,
@@ -28,13 +30,13 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         super().__init__(coordinator)
 
         # helpers
-        self._device = device
         self._key = key
+        place_name = config_entry.data["place_name"]
 
         # device properties
-        self._ip = self._device["ip"]
+        self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(device["place_name"], self._ip)
+        self._attr_device_info = get_device_info(place_name, self._ip)
         self._config_entry = config_entry
 
         # base entity properties
@@ -84,19 +86,17 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    place = config_entry.data
     devices = config_entry.options.get("devices", {})
 
     entities = []
-    for ip, device in devices.items():
+    for ip in devices:
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
-        device["place_name"] = place["place_name"]
         entities.extend(
             [
                 OpenWRTButton(
                     coordinator=coordinator,
                     config_entry=config_entry,
-                    device=device,
+                    ip=ip,
                     name="Debug",
                     key="debug",
                     entity_category=EntityCategory.DIAGNOSTIC,

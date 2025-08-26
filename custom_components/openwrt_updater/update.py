@@ -32,24 +32,24 @@ async def trigger_update(
     is_simple = data["simple_update"]
     is_force = data["force_update"]
     available_os_version = data["available_os_version"]
+    sysupgrade_command = (
+        f"nohup sysupgrade -v {firmware_file} >/tmp/sysupgrade.log 2>&1 &"
+    )
     if firmware_file and is_force:
         _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
+        update_command = f"sh -c '{sysupgrade_command}'"
         async with OpenWRTSSH(ip, key_path) as client:
-            return await client.exec_command(f"sysupgrade -v {firmware_file}")
+            return await client.exec_command(update_command, timeout=10)
     if is_simple:
         url = data["snapshot_url"]
         try:
             _LOGGER.debug("Trying to simple update %s", ip)
             _LOGGER.debug("Downloading %s", url)
-            update_command = (
-                f"curl {url} --output /tmp/openwrt-{available_os_version}.bin"
-            )
+            update_command = f"curl -L --fail --silent --show-error {url} --output /tmp/openwrt-{available_os_version}.bin"
             if is_force:
-                update_command += (
-                    f" && sysupgrade -v /tmp/openwrt-{available_os_version}.bin"
-                )
+                update_command = f"sh -c'{update_command} && {sysupgrade_command}'"
             async with OpenWRTSSH(ip, key_path) as client:
-                output = await client.exec_command(update_command)
+                output = await client.exec_command(update_command, timeout=900)
             _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)
@@ -69,7 +69,9 @@ async def trigger_update(
                 key_path=key_path,
                 username=master_node[0],
             ) as master:
-                output = await master.exec_command(update_command)
+                output = await master.exec_command(
+                    f"sh -c'{update_command}'", timeout=1800
+                )
             _LOGGER.debug("Update result: %s", output)
         except Exception as e:
             _LOGGER.error("Failed to run update script: %s", e)

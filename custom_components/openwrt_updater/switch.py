@@ -3,6 +3,7 @@
 import logging
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -18,7 +19,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
 
     def __init__(
         self,
-        entry,
+        entry: ConfigEntry,
         ip: str,
         name: str,
         key: str,
@@ -30,13 +31,12 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         self._entry = entry
         self._key = key
         self._default_state = default_state
+        place_name = entry.data["place_name"]
 
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(
-            self._entry.data["place_name"], self._ip
-        )
+        self._attr_device_info = get_device_info(place_name, self._ip)
 
         # base entity properties
         self._attr_name = f"{self._name} ({self._ip})"
