@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    #"button",
+    # "button",
     "select",
     "switch",
     "text",
@@ -24,7 +24,13 @@ PLATFORMS = [
 
 
 async def async_setup(hass: HomeAssistant, config):
-    """Set wait for global point."""
+    """Set wait for global point.
+
+    Stores the following structure in hass.data[DOMAIN]:
+      - "config": global configuration for all Config Entries; sets up in entry setup
+      - "toh_cache": cache of web TOH; sets up in entry setup
+      - "global_ready": flag of global configuration
+    """
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault("global_ready", asyncio.Event())
     return True
@@ -33,10 +39,11 @@ async def async_setup(hass: HomeAssistant, config):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the integration: prepare shared TOH cache and per-device coordinators.
 
-    Stores the following structure in hass.data[DOMAIN][entry.entry_id]:
-      - "toh_coordinator": TohCacheCoordinator
-      - "device_coordinators": dict[ip, OpenWRTDeviceCoordinator]
-      - "devices_cfg": dict loaded from options
+    Stores hass.data[DOMAIN][entry.entry_id]:
+      - "data":
+        - "place_ipmask": IP mask for ConfigEntry
+        - "place_name": Name of the place for ConfigEntry
+      - dict[ip, OpenWRTDeviceCoordinator]
     """
 
     entry.async_on_unload(entry.add_update_listener(_on_entry_update))
