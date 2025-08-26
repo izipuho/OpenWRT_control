@@ -181,7 +181,7 @@ class OpenWRTSSH:
                 hostname = await self.read_hostname()
                 fw_file, fw_downloaded = await self.find_downloaded_firmware()
         except (TimeoutError, asyncssh.Error, OSError) as e:
-            _LOGGER.error("Device info over SSH fetch failed: %s", e)
+            _LOGGER.debug("Device info over SSH fetch failed: %s", e)
             return None, False, None, None, None
         else:
             return (
