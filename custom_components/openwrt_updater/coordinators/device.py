@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+from typing import TYPE_CHECKING
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -11,6 +12,10 @@ from ..const import DOMAIN
 from ..helpers import load_config_types
 from ..ssh_client import OpenWRTSSH
 from ..types import DeviceData
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 _DEVICE_SCAN_INTERVAL = timedelta(minutes=10)
@@ -23,7 +28,9 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
     information via the shared TohCacheCoordinator instance stored in hass.data.
     """
 
-    def __init__(self, hass, config_entry, ip: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant | None, config_entry: ConfigEntry, ip: str
+    ) -> None:
         """Initialize the device coordinator for a specific IP."""
         super().__init__(
             hass=hass,
@@ -53,6 +60,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
         # 1) Fetch live device state
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
         client = OpenWRTSSH(self.ip, key_path)
+
         (
             os_version,
             status,

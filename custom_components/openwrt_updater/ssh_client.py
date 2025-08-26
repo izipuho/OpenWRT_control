@@ -28,7 +28,7 @@ class OpenWRTSSH:
         key_path: str,
         username: str = "root",
         connect_timeout: float = 5.0,
-        command_timeout: float = 5.0,
+        command_timeout: float | None = 5.0,
     ) -> None:
         """Initialize wrapper."""
         self.ip = ip
@@ -110,9 +110,8 @@ class OpenWRTSSH:
 
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
-            result = await asyncio.wait_for(
-                self._conn.run(command), timeout or self.command_timeout
-            )
+            effective_timeout = self.command_timeout if timeout is None else timeout
+            result = await asyncio.wait_for(self._conn.run(command), effective_timeout)
         except TimeoutError as err:
             _LOGGER.warning(
                 "SSH command timed out on %s: %s, %s", self.ip, command, err

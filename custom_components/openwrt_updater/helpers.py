@@ -3,10 +3,12 @@
 import json
 import logging
 from pathlib import Path
+import re
 
 import voluptuous as vol
 import yaml
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -15,16 +17,19 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-def load_device_option(entry, ip, key, default=None):
+def load_device_option(
+    entry: ConfigEntry, ip: str, key: str, default: str | None
+) -> dict:
     """Load a value for a device from config entry options."""
     devices = entry.options.get("devices", {})
     return devices.get(ip, {}).get(key, default)
 
 
-def save_device_option(hass: HomeAssistant, entry, ip, key, value):
+def save_device_option(
+    hass: HomeAssistant | None, entry: ConfigEntry, ip: str, key: str, value: str
+) -> None:
     """Save a value for a device into config entry options."""
     # Deep copy to avoid in-place mutation
-    # options = copy.deepcopy(entry.options)
     options = dict(entry.options)
     devices = dict(options.get("devices", {}))
 
@@ -56,7 +61,9 @@ def load_config_types(config_path: str) -> dict:
         # raise HomeAssistantError(f"Error loading config from {config_path}") from err
 
 
-def build_global_options_schema(hass, defaults=None):
+def build_global_options_schema(
+    hass: HomeAssistant | None, defaults=None
+) -> vol.Schema:
     """Unified global options schema."""
     return vol.Schema(
         {
@@ -66,11 +73,11 @@ def build_global_options_schema(hass, defaults=None):
                 default=defaults["builder_location"],
             ): cv.string,
             vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
-            vol.Optional("toh_url", default=defaults["toh_url"]): cv.string,
+            vol.Optional("toh_url", default=defaults["toh_url"]): cv.url,
             vol.Optional(
                 "config_types_file",
                 default=defaults["config_types_file"],
-            ): cv.string,
+            ): cv.matches_regex(r".+\.ya?ml$", re.IGNORECASE),
             vol.Optional(
                 "toh_timeout_hours",
                 default=defaults["toh_timeout_hours"],
@@ -83,7 +90,9 @@ def build_global_options_schema(hass, defaults=None):
     )
 
 
-def build_device_schema(hass, defaults=None):
+def build_device_schema(
+    hass: HomeAssistant | None, defaults: dict | None
+) -> vol.Schema:
     """Unified device add schema."""
     config_types_path = (
         hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
@@ -94,7 +103,7 @@ def build_device_schema(hass, defaults=None):
     d = defaults or {}
     return vol.Schema(
         {
-            vol.Required("ip", default=d.get("ip", "")): str,
+            vol.Required("ip", default=d.get("ip", "")): cv.host,
             vol.Required(
                 "config_type",
                 default=d.get("config_type", choices[0] if choices else ""),
