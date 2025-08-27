@@ -3,7 +3,6 @@
 import json
 import logging
 from pathlib import Path
-import re
 
 import voluptuous as vol
 import yaml
@@ -71,11 +70,11 @@ def build_global_options_schema(
                 default=defaults["builder_location"],
             ): cv.string,
             vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
-            vol.Optional("toh_url", default=defaults["toh_url"]): cv.url,
+            vol.Optional("toh_url", default=defaults["toh_url"]): cv.string,  # cv.url,
             vol.Optional(
                 "config_types_file",
                 default=defaults["config_types_file"],
-            ): cv.matches_regex(r".+\.ya?ml$", re.IGNORECASE),
+            ): cv.string,
             vol.Optional(
                 "toh_timeout_hours",
                 default=defaults["toh_timeout_hours"],
