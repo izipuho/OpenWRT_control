@@ -50,11 +50,10 @@ class OpenWRTSSH:
 
     async def connect(self) -> bool:
         """Connect handler."""
-        _LOGGER.info(
-            "Trying to connect to %s@%s with key %s",
+        _LOGGER.debug(
+            "Trying to connect to %s@%s",
             self.username,
             self.ip,
-            self.key_path,
         )
         if self._conn is not None:
             return None
@@ -117,8 +116,8 @@ class OpenWRTSSH:
                 "SSH command timed out on %s: %s, %s", self.ip, command, err
             )
             return None
-        except Exception as err:
-            _LOGGER.error("Unexpected error running SSH command '%s': %s", command, err)
+        except Exception:
+            _LOGGER.exception("Unexpected error running SSH command '%s'", command)
             return None
         else:
             if result.exit_status != 0:
