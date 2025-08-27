@@ -53,12 +53,10 @@ def load_config_types(config_path: str) -> dict:
     except FileNotFoundError:
         _LOGGER.debug("Configuration file not found: %s", config_path)
         return {}
-    except yaml.YAMLError as err:
-        _LOGGER.error("Error parsing YAML from %s: %s", config_path, err)
-        # raise HomeAssistantError(f"Invalid YAML in {config_path}") from err
-    except Exception as err:
-        _LOGGER.error("Unexpected error loading config from %s: %s", config_path, err)
-        # raise HomeAssistantError(f"Error loading config from {config_path}") from err
+    except yaml.YAMLError:
+        _LOGGER.error("Error parsing YAML from %s", config_path)
+    except Exception:
+        _LOGGER.error("Unexpected error loading config from %s", config_path)
 
 
 def build_global_options_schema(
