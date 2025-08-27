@@ -59,9 +59,9 @@ class OpenWRTSSH:
             return None
 
         key_file = Path(self.key_path)
-        key_text = await asyncio.to_thread(Path(self.key_path).read_text)
-        private_key = asyncssh.import_private_key(key_text)
         if key_file.exists():
+            key_text = await asyncio.to_thread(Path(self.key_path).read_text)
+            private_key = asyncssh.import_private_key(key_text)
             client_keys = [private_key]
         else:
             _LOGGER.warning(

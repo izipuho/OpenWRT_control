@@ -31,8 +31,8 @@ async def trigger_update(
     data = {**data, **(coordinator.data or {})}
 
     firmware_file = shlex.quote(data["firmware_file"])
-    is_simple = shlex.quote(data["simple_update"])
-    is_force = shlex.quote(data["force_update"])
+    is_simple = bool(data["simple_update"])
+    is_force = bool(data["force_update"])
     available_os_version = shlex.quote(data["available_os_version"])
     sysupgrade_command = (
         f"nohup sysupgrade -v {firmware_file} >/tmp/sysupgrade.log 2>&1 &"

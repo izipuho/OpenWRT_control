@@ -112,13 +112,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Reload entry."""
-    await async_setup_entry(hass, entry)
-    await async_unload_entry(hass, entry)
-    return True
-
-
 async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload on any change; if global – обновить всех."""
     if entry.unique_id == "__global__":
