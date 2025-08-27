@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import timedelta
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..const import DOMAIN
 from ..toh_parser import TOH
 from ..types import TohItem
-from ..helpers import dump_toh_json
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from homeassistant.core import HomeAssistant
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,8 +54,9 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if cached:
             try:
                 self._toh.load(cached)
-            except Exception as e:
-                _LOGGER.warning("Failed to preload TOH cache: %s", e)
+                _LOGGER.debug("TOH first refresh")
+            except Exception:
+                _LOGGER.warning("Failed to preload TOH cache", exc_info=True)
         await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -64,12 +68,12 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         cached = await self._store.async_load() or {}
         try:
             raw = await self._toh.fetch()
-            # await dump_toh_json(self.hass, raw)
-            if raw is None:
-                raw = getattr(self._toh, "data", {})  # compatibility fallback
             await self._store.async_save(raw)
-        except Exception as e:
-            _LOGGER.warning("TOH update failed, using cached data if available: %s", e)
+            _LOGGER.debug("Updating TOH cache: %d rows", len(raw))
+        except Exception:
+            _LOGGER.warning(
+                "TOH update failed, using cached data if available", exc_info=True
+            )
             if cached:
                 with contextlib.suppress(Exception):
                     self._toh.load(cached)

@@ -1,6 +1,7 @@
 """Updater entity declaration."""
 
 import logging
+import shlex
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -24,41 +25,42 @@ async def trigger_update(
 ):
     """Trigger update of the remote device."""
     conf = hass.data[DOMAIN].get("config", {})
+
     data = hass.data[DOMAIN][entry_id][ip]
-    coordinator = data.pop("coordinator")
-    data.update(coordinator.data)
-    _LOGGER.debug("Updating device with HAss data: %s", data)
-    firmware_file = data["firmware_file"]
-    is_simple = data["simple_update"]
-    is_force = data["force_update"]
-    available_os_version = data["available_os_version"]
+    coordinator = data["coordinator"]
+    data = {**data, **(coordinator.data or {})}
+
+    firmware_file = shlex.quote(data["firmware_file"])
+    is_simple = bool(data["simple_update"])
+    is_force = bool(data["force_update"])
+    available_os_version = shlex.quote(data["available_os_version"])
+    sysupgrade_command = (
+        f"nohup sysupgrade -v {firmware_file} >/tmp/sysupgrade.log 2>&1 &"
+    )
     if firmware_file and is_force:
         _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
+        update_command = f"sh -c '{sysupgrade_command}'"
         async with OpenWRTSSH(ip, key_path) as client:
-            return await client.exec_command(f"sysupgrade -v {firmware_file}")
+            return await client.exec_command(update_command, timeout=10)
     if is_simple:
-        url = data["snapshot_url"]
+        url = shlex.quote(data["snapshot_url"])
         try:
             _LOGGER.debug("Trying to simple update %s", ip)
             _LOGGER.debug("Downloading %s", url)
-            update_command = (
-                f"curl {url} --output /tmp/openwrt-{available_os_version}.bin"
-            )
+            update_command = f"curl -L --fail --silent --show-error {url} --output /tmp/openwrt-{available_os_version}.bin"
             if is_force:
-                update_command += (
-                    f" && sysupgrade -v /tmp/openwrt-{available_os_version}.bin"
-                )
+                update_command = f"sh -c '{update_command} && {sysupgrade_command}'"
             async with OpenWRTSSH(ip, key_path) as client:
-                output = await client.exec_command(update_command)
+                output = await client.exec_command(update_command, timeout=900)
             _LOGGER.debug("Update result: %s", output)
-        except Exception as e:
-            _LOGGER.error("Failed to run update script: %s", e)
+        except Exception:
+            _LOGGER.error("Failed to run simple update for %s", ip)
             return None
         else:
             return output
     else:
         builder_location = conf["builder_location"]
-        config_type = data["config_type"]
+        config_type = shlex.quote(data["config_type"])
         update_strategy = "install" if is_force else "copy"
         update_command = f"cd {builder_location} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
         master_node = conf["master_node"].split("@")
@@ -69,10 +71,12 @@ async def trigger_update(
                 key_path=key_path,
                 username=master_node[0],
             ) as master:
-                output = await master.exec_command(update_command)
+                output = await master.exec_command(
+                    f"sh -c '{update_command}'", timeout=1800
+                )
             _LOGGER.debug("Update result: %s", output)
-        except Exception as e:
-            _LOGGER.error("Failed to run update script: %s", e)
+        except Exception:
+            _LOGGER.error("Failed to run builder script on %s", ip)
             return None
         else:
             return output
@@ -81,16 +85,16 @@ async def trigger_update(
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     """Updater entity declaration."""
 
-    def __init__(self, config_entry, coordinator, device, update_callback) -> None:
+    def __init__(self, config_entry, coordinator, ip, update_callback) -> None:
         """Initialize updater entity."""
         super().__init__(coordinator)
         # helpers
-        self.device = device
+        place_name = config_entry.data["place_name"]
         self.config_entry = config_entry
 
         # device properties
-        self._ip = device["ip"]
-        self._attr_device_info = get_device_info(self.device["place_name"], self._ip)
+        self._ip = ip
+        self._attr_device_info = get_device_info(place_name, self._ip)
 
         # base entity properties
         self._attr_name = f"Firmware ({self._ip})"
@@ -102,7 +106,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_extra_state_attributes = {"force": False}
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def installed_version(self):
@@ -142,7 +146,6 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    place_name = config_entry.data["place_name"]
     devices = config_entry.options.get("devices", {})
     ssh_key_path = hass.data.get(DOMAIN, {}).get("config", {}).get("ssh_key_path", "")
 
@@ -151,12 +154,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     async def update_callback(entry_id, ip):
         await trigger_update(hass, entry_id, ip, ssh_key_path)
 
-    for ip, device in devices.items():
-        device["place_name"] = place_name
+    for ip in devices:
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
-                OpenWRTUpdateEntity(config_entry, coordinator, device, update_callback),
+                OpenWRTUpdateEntity(config_entry, coordinator, ip, update_callback),
             ]
         )
 

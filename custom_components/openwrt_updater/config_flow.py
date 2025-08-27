@@ -1,6 +1,4 @@
 """Configuration flow description."""
-# TODO prettify select (name instead code)
-# TODO validate IP
 
 import logging
 
@@ -8,7 +6,6 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import callback
-from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN, INTEGRATION_DEFAULTS
 from .helpers import build_device_schema, build_global_options_schema, upsert_device

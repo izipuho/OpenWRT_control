@@ -1,6 +1,19 @@
 {
   "title": "OpenWRT Updater",
   "config": {
+    "abort": {
+      "toh_unavailable": "Device catalog (TOH) is not available right now. Try again later.",
+      "yaml_invalid": "Invalid YAML file. Please fix your config_types.yaml.",
+      "already_configured": "This integration is already configured."
+    },
+    "error": {
+      "invalid_master_node": "Master node must be in the form user@host.",
+      "invalid_ip": "Enter a valid IPv4 address.",
+      "invalid_path": "Path does not exist or is not readable.",
+      "ssh_key_not_found": "SSH key file not found.",
+      "connection_failed": "Unable to connect to device.",
+      "missing_required": "Please fill in all required fields."
+    },
     "step": {
       "user": {},
       "global": {
@@ -21,18 +34,18 @@
         "description": "Enter the details of your place.",
         "data": {
           "place_name": "Place name",
-          "place_ipmask": "IP mask (prefix)"
+          "place_ipmask": "IP mask (first 3 octets)"
         }
       },
       "add_device": {
         "title": "Add OpenWRT Device",
         "description": "Enter the details of your OpenWRT device.",
         "data": {
-          "ip": "IP Address",
-          "config_type": "Config Type",
-          "simple_update": "Support simple update",
-          "force_update": "Force update",
-          "add_another": "Add anoter device"
+          "ip": "Device IP",
+          "config_type": "Config type",
+          "simple_update": "Simple update (curl from OpenWRT.org vs custom builder)",
+          "force_update": "Install immediately (sysupgrade -v)",
+          "add_another": "Add another after saving"
         }
       }
     }
@@ -40,6 +53,12 @@
   "options": {
     "step": {
       "user": {},
+      "init": {
+        "menu_options": {
+          "add_device": "Add device",
+          "remove_device": "Remove device"
+        }
+      },
       "global": {
         "title": "Set global options",
         "description": "Master node, SSH keys and so on.",
@@ -47,7 +66,7 @@
           "master_node": "Master node (user@host)",
           "builder_location": "Builder location (directory on master node)",
           "ssh_key_path": "SSH key path (inside of config directory)",
-          "TOH_url": "TOH url",
+          "toh_url": "TOH url",
           "config_types_file": "Config types file (inside of integration directory)",
           "toh_timeout_hours": "TOH coordinator interval (hours)",
           "device_timeout_minutes": "Device coordinator interval (minutes)"
@@ -57,11 +76,18 @@
         "title": "Add OpenWRT Device",
         "description": "Enter the details of your OpenWRT device.",
         "data": {
-          "ip": "IP Address",
-          "config_type": "Config Type",
-          "simple_update": "Support simple update",
-          "force_update": "Force update",
-          "add_another": "Add anoter device"
+          "ip": "Device IP",
+          "config_type": "Config type",
+          "simple_update": "Simple update (curl from OpenWRT.org vs custom builder)",
+          "force_update": "Install immediately (sysupgrade -v)",
+          "add_another": "Add another after saving"
+        }
+      },
+      "remove_device": {
+        "title": "Remove OpenWRT Device",
+        "description": "Select device to remove.",
+        "data": {
+          "ip": "Device IP"
         }
       }
     }

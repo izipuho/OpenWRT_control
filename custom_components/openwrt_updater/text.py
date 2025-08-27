@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, get_device_info
+from .coordinators.device import OpenWRTDeviceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: OpenWRTDeviceCoordinator,
         place_name: str,
         ip: str,
         name: str,
@@ -44,7 +45,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_icon = entity_icon
         self._attr_entity_category = entity_category
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def native_value(self):

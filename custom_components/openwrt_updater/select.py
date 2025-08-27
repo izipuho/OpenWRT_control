@@ -4,6 +4,7 @@
 import logging
 
 from homeassistant.components.select import SelectEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 
@@ -18,7 +19,7 @@ class OpenWRTSelect(SelectEntity):
 
     def __init__(
         self,
-        entry,
+        entry: ConfigEntry,
         ip: str,
         name: str,
         key: str,
@@ -33,13 +34,12 @@ class OpenWRTSelect(SelectEntity):
         self._entry = entry
         self._config_types = config_types
         self._key = key
+        place_name = entry.data["place_name"]
 
         # device properties
         self._ip = ip
         self._name = name
-        self._attr_device_info = get_device_info(
-            self._entry.data["place_name"], self._ip
-        )
+        self._attr_device_info = get_device_info(place_name, self._ip)
 
         # base entry properties
         self._attr_name = f"{name} ({self._ip})"
@@ -53,7 +53,7 @@ class OpenWRTSelect(SelectEntity):
         self._attr_available = True
         self._attr_should_poll = False
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def current_option(self):

@@ -45,7 +45,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         # specific entity properties
         self._attr_device_class = device_class
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def is_on(self) -> bool:
@@ -69,7 +69,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
-    place = config_entry.data
+    place_name = config_entry.data["place_name"]
     devices = list(config_entry.options.get("devices", {}).keys())
 
     entities = []
@@ -79,7 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             [
                 OpenWRTBinarySensor(
                     coordinator,
-                    place["place_name"],
+                    place_name,
                     ip,
                     "Status",
                     "status",
@@ -88,7 +88,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 ),
                 OpenWRTBinarySensor(
                     coordinator,
-                    place["place_name"],
+                    place_name,
                     ip,
                     "Firmware downloaded",
                     "firmware_downloaded",

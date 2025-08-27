@@ -28,7 +28,7 @@ class OpenWRTSSH:
         key_path: str,
         username: str = "root",
         connect_timeout: float = 5.0,
-        command_timeout: float = 5.0,
+        command_timeout: float | None = 5.0,
     ) -> None:
         """Initialize wrapper."""
         self.ip = ip
@@ -50,19 +50,18 @@ class OpenWRTSSH:
 
     async def connect(self) -> bool:
         """Connect handler."""
-        _LOGGER.info(
-            "Trying to connect to %s@%s with key %s",
+        _LOGGER.debug(
+            "Trying to connect to %s@%s",
             self.username,
             self.ip,
-            self.key_path,
         )
         if self._conn is not None:
             return None
 
         key_file = Path(self.key_path)
-        key_text = await asyncio.to_thread(Path(self.key_path).read_text)
-        private_key = asyncssh.import_private_key(key_text)
         if key_file.exists():
+            key_text = await asyncio.to_thread(Path(self.key_path).read_text)
+            private_key = asyncssh.import_private_key(key_text)
             client_keys = [private_key]
         else:
             _LOGGER.warning(
@@ -110,16 +109,15 @@ class OpenWRTSSH:
 
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
-            result = await asyncio.wait_for(
-                self._conn.run(command), timeout or self.command_timeout
-            )
+            effective_timeout = self.command_timeout if timeout is None else timeout
+            result = await asyncio.wait_for(self._conn.run(command), effective_timeout)
         except TimeoutError as err:
             _LOGGER.warning(
                 "SSH command timed out on %s: %s, %s", self.ip, command, err
             )
             return None
-        except Exception as err:
-            _LOGGER.error("Unexpected error running SSH command '%s': %s", command, err)
+        except Exception:
+            _LOGGER.exception("Unexpected error running SSH command '%s'", command)
             return None
         else:
             if result.exit_status != 0:
@@ -182,7 +180,7 @@ class OpenWRTSSH:
                 hostname = await self.read_hostname()
                 fw_file, fw_downloaded = await self.find_downloaded_firmware()
         except (TimeoutError, asyncssh.Error, OSError) as e:
-            _LOGGER.error("Device info over SSH fetch failed: %s", e)
+            _LOGGER.debug("Device info over SSH fetch failed: %s", e)
             return None, False, None, None, None
         else:
             return (

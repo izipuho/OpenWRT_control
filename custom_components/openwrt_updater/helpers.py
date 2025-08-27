@@ -7,6 +7,7 @@ from pathlib import Path
 import voluptuous as vol
 import yaml
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -15,16 +16,19 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-def load_device_option(entry, ip, key, default=None):
+def load_device_option(
+    entry: ConfigEntry, ip: str, key: str, default: str | None
+) -> dict:
     """Load a value for a device from config entry options."""
     devices = entry.options.get("devices", {})
     return devices.get(ip, {}).get(key, default)
 
 
-def save_device_option(hass: HomeAssistant, entry, ip, key, value):
+def save_device_option(
+    hass: HomeAssistant | None, entry: ConfigEntry, ip: str, key: str, value: str
+) -> None:
     """Save a value for a device into config entry options."""
     # Deep copy to avoid in-place mutation
-    # options = copy.deepcopy(entry.options)
     options = dict(entry.options)
     devices = dict(options.get("devices", {}))
 
@@ -48,15 +52,15 @@ def load_config_types(config_path: str) -> dict:
     except FileNotFoundError:
         _LOGGER.debug("Configuration file not found: %s", config_path)
         return {}
-    except yaml.YAMLError as err:
-        _LOGGER.error("Error parsing YAML from %s: %s", config_path, err)
-        # raise HomeAssistantError(f"Invalid YAML in {config_path}") from err
-    except Exception as err:
-        _LOGGER.error("Unexpected error loading config from %s: %s", config_path, err)
-        # raise HomeAssistantError(f"Error loading config from {config_path}") from err
+    except yaml.YAMLError:
+        _LOGGER.error("Error parsing YAML from %s", config_path)
+    except Exception:
+        _LOGGER.error("Unexpected error loading config from %s", config_path)
 
 
-def build_global_options_schema(hass, defaults=None):
+def build_global_options_schema(
+    hass: HomeAssistant | None, defaults=None
+) -> vol.Schema:
     """Unified global options schema."""
     return vol.Schema(
         {
@@ -83,7 +87,9 @@ def build_global_options_schema(hass, defaults=None):
     )
 
 
-def build_device_schema(hass, defaults=None):
+def build_device_schema(
+    hass: HomeAssistant | None, defaults: dict | None
+) -> vol.Schema:
     """Unified device add schema."""
     config_types_path = (
         hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
@@ -94,7 +100,7 @@ def build_device_schema(hass, defaults=None):
     d = defaults or {}
     return vol.Schema(
         {
-            vol.Required("ip", default=d.get("ip", "")): str,
+            vol.Required("ip", default=d.get("ip", "")): cv.string,
             vol.Required(
                 "config_type",
                 default=d.get("config_type", choices[0] if choices else ""),
@@ -116,34 +122,3 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
         "force_update": user_input["force_update"],
     }
     return devices
-
-
-async def dump_toh_json(
-    hass: HomeAssistant,
-    data,
-    filename: str = "toh_dump.json",
-    to_config: bool = False,
-) -> None:
-    """Persist raw TOH JSON for debugging.
-
-    If to_config=True -> writes to /config/<filename>.
-    Else -> writes to the integration root (custom_components/openwrt_updater/<filename>).
-    """
-    try:
-        if to_config:
-            # Safer, always writable and visible from UI add-ons
-            path = Path(hass.config.path(filename))
-        else:
-            # This module lives under custom_components/openwrt_updater/helpers/debug_dump.py
-            # parents[1] -> custom_components/openwrt_updater
-            path = Path(__file__).resolve().parents[1] / filename
-
-        text = json.dumps(data, ensure_ascii=False, indent=2)
-
-        def _write() -> None:
-            path.write_text(text, encoding="utf-8")
-
-        await hass.async_add_executor_job(_write)
-        _LOGGER.warning("TOH dump saved to: %s", path)
-    except Exception as exc:  # noqa: BLE001
-        _LOGGER.error("Failed to dump TOH JSON: %s", exc)

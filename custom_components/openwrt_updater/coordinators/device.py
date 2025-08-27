@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -12,18 +13,24 @@ from ..helpers import load_config_types
 from ..ssh_client import OpenWRTSSH
 from ..types import DeviceData
 
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
+
 _LOGGER = logging.getLogger(__name__)
 _DEVICE_SCAN_INTERVAL = timedelta(minutes=10)
 
 
-class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
+class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Polls device state over SSH and enriches it with TOH cache.
 
     This coordinator must not perform any network calls to TOH. It reads TOH
     information via the shared TohCacheCoordinator instance stored in hass.data.
     """
 
-    def __init__(self, hass, config_entry, ip: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant | None, config_entry: ConfigEntry, ip: str
+    ) -> None:
         """Initialize the device coordinator for a specific IP."""
         super().__init__(
             hass=hass,
@@ -53,6 +60,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
         # 1) Fetch live device state
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
         client = OpenWRTSSH(self.ip, key_path)
+
         (
             os_version,
             status,
@@ -63,14 +71,17 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[DeviceData]):
 
         # 2) Resolve TOH for this device from the shared cache
         toh_coord = self.hass.data[DOMAIN].get("toh_cache")
+        if not toh_coord:
+            _LOGGER.debug("TOH cache is not read; keeping previous snapshot")
+            return self.data or {}
         toh_item = toh_coord.get_for_devid(openwrt_devid)
 
         # 3) Produce a typed snapshot for entities
         result = {
             "current_os_version": os_version,
             "status": status,
-            "available_os_version": toh_item.version,
-            "snapshot_url": toh_item.snapshot_url,
+            "available_os_version": getattr(toh_item, "version", None),
+            "snapshot_url": getattr(toh_item, "snapshot_url", None),
             "firmware_downloaded": fw_downloaded,
             "firmware_file": fw_file,
             "hostname": hostname,
