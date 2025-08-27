@@ -55,8 +55,8 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 self._toh.load(cached)
                 _LOGGER.debug("TOH first refresh")
-            except Exception as e:
-                _LOGGER.warning("Failed to preload TOH cache: %s", e)
+            except Exception:
+                _LOGGER.warning("Failed to preload TOH cache", exc_info=True)
         await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -70,8 +70,10 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raw = await self._toh.fetch()
             await self._store.async_save(raw)
             _LOGGER.debug("Updating TOH cache: %d rows", len(raw))
-        except Exception as e:
-            _LOGGER.warning("TOH update failed, using cached data if available: %s", e)
+        except Exception:
+            _LOGGER.warning(
+                "TOH update failed, using cached data if available", exc_info=True
+            )
             if cached:
                 with contextlib.suppress(Exception):
                     self._toh.load(cached)
