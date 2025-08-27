@@ -45,7 +45,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_icon = entity_icon
         self._attr_entity_category = entity_category
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def native_value(self):

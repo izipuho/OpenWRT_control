@@ -46,7 +46,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
         # specific entity properties
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     async def async_press(self) -> None:
         """Handle button press."""

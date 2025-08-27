@@ -51,7 +51,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
             self._default_state,
         )
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     async def async_added_to_hass(self):
         """Persist changes. Dunno how."""

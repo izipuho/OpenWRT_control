@@ -53,7 +53,7 @@ class OpenWRTSelect(SelectEntity):
         self._attr_available = True
         self._attr_should_poll = False
 
-        _LOGGER.debug(repr(self))
+        _LOGGER.debug("%r", self)
 
     @property
     def current_option(self):
