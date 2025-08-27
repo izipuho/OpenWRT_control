@@ -53,8 +53,8 @@ async def trigger_update(
             async with OpenWRTSSH(ip, key_path) as client:
                 output = await client.exec_command(update_command, timeout=900)
             _LOGGER.debug("Update result: %s", output)
-        except Exception as e:
-            _LOGGER.error("Failed to run update script: %s", e)
+        except Exception:
+            _LOGGER.error("Failed to run simple update for %s", ip)
             return None
         else:
             return output
@@ -75,8 +75,8 @@ async def trigger_update(
                     f"sh -c '{update_command}'", timeout=1800
                 )
             _LOGGER.debug("Update result: %s", output)
-        except Exception as e:
-            _LOGGER.error("Failed to run update script: %s", e)
+        except Exception:
+            _LOGGER.error("Failed to run builder script on %s", ip)
             return None
         else:
             return output
