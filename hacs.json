@@ -1,9 +1,9 @@
 {
-  "name": "OpenWRT Control",
+  "name": "OpenWRT Updater",
   "content_in_root": false,
   "country": "ru",
   "zip_release": false,
-  "filename": "custom_components/openwrt_control/manifest.json",
+  "filename": "custom_components/openwrt_updater/manifest.json",
   "render_readme": true,
   "homeassistant": "2025.5.2"
 }
