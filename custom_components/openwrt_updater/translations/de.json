@@ -1,38 +1,51 @@
 {
-  "title": "OpenWRT Updater",
+  "title": "OpenWRT-Aktualisierung",
   "config": {
+    "abort": {
+      "toh_unavailable": "Das Gerätekatalog (TOH) ist derzeit nicht verfügbar. Bitte später erneut versuchen.",
+      "yaml_invalid": "Ungültige YAML-Datei. Bitte config_types.yaml korrigieren.",
+      "already_configured": "Diese Integration ist bereits konfiguriert."
+    },
+    "error": {
+      "invalid_master_node": "Master-Node muss im Format user@host angegeben werden.",
+      "invalid_ip": "Bitte eine gültige IPv4-Adresse eingeben.",
+      "invalid_path": "Pfad existiert nicht oder ist nicht lesbar.",
+      "ssh_key_not_found": "SSH-Privatschlüssel wurde nicht gefunden.",
+      "connection_failed": "Verbindung zum Gerät fehlgeschlagen.",
+      "missing_required": "Bitte alle Pflichtfelder ausfüllen."
+    },
     "step": {
       "user": {},
       "global": {
-        "title": "Globale Optionen",
-        "description": "Master-Node, SSH-Schlüssel und mehr.",
+        "title": "Globale Einstellungen",
+        "description": "Master-Node, SSH-Schlüssel usw. konfigurieren.",
         "data": {
           "master_node": "Master-Node (user@host)",
-          "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
-          "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
+          "builder_location": "Builder-Verzeichnis (auf dem Master)",
+          "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
           "toh_url": "TOH-URL",
-          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)",
+          "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",
           "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
-          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)"
+          "device_timeout_minutes": "Gerätekoordinator-Intervall (Minuten)"
         }
       },
       "add_place": {
         "title": "Standort hinzufügen",
         "description": "Geben Sie die Details Ihres Standorts ein.",
         "data": {
-          "place_name": "Name des Standorts",
-          "place_ipmask": "IP-Maske (Präfix)"
+          "place_name": "Standortname",
+          "place_ipmask": "IP-Maske (erste 3 Oktette)"
         }
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
         "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
         "data": {
-          "ip": "IP-Adresse",
+          "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfache Aktualisierung unterstützen",
-          "force_update": "Aktualisierung erzwingen",
-          "add_another": "Weiteres Gerät hinzufügen"
+          "simple_update": "Einfaches Update (Download vom OpenWRT.org; optional Installation)",
+          "force_update": "Sofort installieren (sysupgrade -v)",
+          "add_another": "Nach dem Speichern weiteres hinzufügen"
         }
       }
     }
@@ -40,28 +53,41 @@
   "options": {
     "step": {
       "user": {},
+      "init": {
+        "menu_options": {
+          "add_device": "Gerät hinzufügen",
+          "remove_device": "Gerät entfernen"
+        }
+      },
       "global": {
         "title": "Globale Optionen",
-        "description": "Master-Node, SSH-Schlüssel und mehr.",
+        "description": "Builder-/SSH-Einstellungen und TOH-URL aktualisieren.",
         "data": {
           "master_node": "Master-Node (user@host)",
-          "builder_location": "Builder-Verzeichnis (auf dem Master-Node)",
-          "ssh_key_path": "Pfad zum SSH-Schlüssel (im config-Ordner)",
+          "builder_location": "Builder-Verzeichnis (auf dem Master)",
+          "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
           "toh_url": "TOH-URL",
-          "config_types_file": "Konfigurationstyp-Datei (im Integrationsordner)",
+          "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",
           "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
-          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)"
+          "device_timeout_minutes": "Gerätekoordinator-Intervall (Minuten)"
         }
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
+        "description": "Neues Gerät in dieser Integration registrieren.",
         "data": {
-          "ip": "IP-Adresse",
+          "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfache Aktualisierung unterstützen",
-          "force_update": "Aktualisierung erzwingen",
-          "add_another": "Weiteres Gerät hinzufügen"
+          "simple_update": "Einfaches Update (Download vom OpenWRT.org; optional Installation)",
+          "force_update": "Sofort installieren (sysupgrade -v)",
+          "add_another": "Nach dem Speichern weiteres hinzufügen"
+        }
+      },
+      "remove_device": {
+        "title": "OpenWRT-Gerät entfernen",
+        "description": "Wählen Sie ein Gerät zum Entfernen.",
+        "data": {
+          "ip": "Geräte-IP"
         }
       }
     }

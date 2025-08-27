@@ -1,38 +1,51 @@
 {
-  "title": "OpenWRT Updater",
+  "title": "Mise à jour OpenWRT",
   "config": {
+    "abort": {
+      "toh_unavailable": "Le catalogue des appareils (TOH) est indisponible pour le moment. Réessayez plus tard.",
+      "yaml_invalid": "Fichier YAML invalide. Corrigez config_types.yaml.",
+      "already_configured": "Cette intégration est déjà configurée."
+    },
+    "error": {
+      "invalid_master_node": "Le master doit être au format user@host.",
+      "invalid_ip": "Saisissez une adresse IPv4 valide.",
+      "invalid_path": "Le chemin n’existe pas ou n’est pas lisible.",
+      "ssh_key_not_found": "Clé privée SSH introuvable.",
+      "connection_failed": "Échec de la connexion à l’appareil.",
+      "missing_required": "Veuillez remplir tous les champs obligatoires."
+    },
     "step": {
       "user": {},
       "global": {
         "title": "Paramètres globaux",
-        "description": "Nœud maître, clés SSH et autres.",
+        "description": "Configurez le master, les clés SSH, etc.",
         "data": {
-          "master_node": "Nœud maître (user@host)",
-          "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
-          "ssh_key_path": "Chemin de la clé SSH (dans config)",
+          "master_node": "Master (user@host)",
+          "builder_location": "Emplacement du builder (répertoire sur le master)",
+          "ssh_key_path": "Chemin de la clé privée SSH",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans l’intégration)",
+          "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
-          "device_timeout_minutes": "Intervalle du coordinateur des périphériques (minutes)"
+          "device_timeout_minutes": "Intervalle du coordinateur d’appareil (minutes)"
         }
       },
       "add_place": {
         "title": "Ajouter un site",
-        "description": "Entrez les détails de votre site.",
+        "description": "Renseignez les informations de votre site.",
         "data": {
           "place_name": "Nom du site",
-          "place_ipmask": "Masque IP (préfixe)"
+          "place_ipmask": "Masque IP (3 premiers octets)"
         }
       },
       "add_device": {
-        "title": "Ajouter un périphérique OpenWRT",
-        "description": "Entrez les détails de votre périphérique OpenWRT.",
+        "title": "Ajouter un appareil OpenWRT",
+        "description": "Renseignez les informations de votre appareil OpenWRT.",
         "data": {
-          "ip": "Adresse IP",
+          "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
-          "simple_update": "Support de mise à jour simple",
-          "force_update": "Forcer la mise à jour",
-          "add_another": "Ajouter un autre périphérique"
+          "simple_update": "Mise à jour simple (téléchargement depuis OpenWRT.org ; installation optionnelle)",
+          "force_update": "Installer immédiatement (sysupgrade -v)",
+          "add_another": "Ajouter un autre après l’enregistrement"
         }
       }
     }
@@ -40,28 +53,41 @@
   "options": {
     "step": {
       "user": {},
+      "init": {
+        "menu_options": {
+          "add_device": "Ajouter un appareil",
+          "remove_device": "Supprimer un appareil"
+        }
+      },
       "global": {
-        "title": "Paramètres globaux",
-        "description": "Nœud maître, clés SSH et autres.",
+        "title": "Options globales",
+        "description": "Mettre à jour les paramètres du builder/SSH et l’URL TOH.",
         "data": {
-          "master_node": "Nœud maître (user@host)",
-          "builder_location": "Emplacement du builder (répertoire sur le nœud maître)",
-          "ssh_key_path": "Chemin de la clé SSH (dans config)",
+          "master_node": "Master (user@host)",
+          "builder_location": "Emplacement du builder (répertoire sur le master)",
+          "ssh_key_path": "Chemin de la clé privée SSH",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans l’intégration)",
+          "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
-          "device_timeout_minutes": "Intervalle du coordinateur des périphériques (minutes)"
+          "device_timeout_minutes": "Intervalle du coordinateur d’appareil (minutes)"
         }
       },
       "add_device": {
-        "title": "Ajouter un périphérique OpenWRT",
-        "description": "Entrez les détails de votre périphérique OpenWRT.",
+        "title": "Ajouter un appareil OpenWRT",
+        "description": "Enregistrer un nouvel appareil dans l’intégration.",
         "data": {
-          "ip": "Adresse IP",
+          "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
-          "simple_update": "Support de mise à jour simple",
-          "force_update": "Forcer la mise à jour",
-          "add_another": "Ajouter un autre périphérique"
+          "simple_update": "Mise à jour simple (téléchargement depuis OpenWRT.org ; installation optionnelle)",
+          "force_update": "Installer immédiatement (sysupgrade -v)",
+          "add_another": "Ajouter un autre après l’enregistrement"
+        }
+      },
+      "remove_device": {
+        "title": "Supprimer un appareil OpenWRT",
+        "description": "Sélectionnez l’appareil à supprimer.",
+        "data": {
+          "ip": "IP de l’appareil"
         }
       }
     }
