@@ -20,8 +20,7 @@
         "title": "Ajustes globales",
         "description": "Configura el nodo maestro, las claves SSH, etc.",
         "data": {
-          "master_node": "Nodo maestro (user@host)",
-          "builder_location": "Ubicación del builder (directorio en el maestro)",
+          "builder_location": "Ubicación del builder (username@host:/builderdir)",
           "ssh_key_path": "Ruta de la clave privada SSH",
           "toh_url": "URL de TOH",
           "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",
@@ -63,8 +62,7 @@
         "title": "Opciones globales",
         "description": "Actualizar la configuración del builder/SSH y la URL de TOH.",
         "data": {
-          "master_node": "Nodo maestro (user@host)",
-          "builder_location": "Ubicación del builder (directorio en el maestro)",
+          "builder_location": "Ubicación del builder (username@host:/builderdir)",
           "ssh_key_path": "Ruta de la clave privada SSH",
           "toh_url": "URL de TOH",
           "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",

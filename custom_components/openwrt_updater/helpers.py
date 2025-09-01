@@ -64,7 +64,6 @@ def build_global_options_schema(
     """Unified global options schema."""
     return vol.Schema(
         {
-            vol.Optional("master_node", default=defaults["master_node"]): cv.string,
             vol.Optional(
                 "builder_location",
                 default=defaults["builder_location"],
@@ -122,3 +121,34 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
         "force_update": user_input["force_update"],
     }
     return devices
+
+
+async def dump_toh_json(
+    hass: HomeAssistant,
+    data,
+    filename: str = "toh_dump.json",
+    to_config: bool = False,
+) -> None:
+    """Persist raw TOH JSON for debugging.
+
+    If to_config=True -> writes to /config/<filename>.
+    Else -> writes to the integration root (custom_components/openwrt_updater/<filename>).
+    """
+    try:
+        if to_config:
+            # Safer, always writable and visible from UI add-ons
+            path = Path(hass.config.path(filename))
+        else:
+            # This module lives under custom_components/openwrt_updater/helpers/debug_dump.py
+            # parents[1] -> custom_components/openwrt_updater
+            path = Path(__file__).resolve().parents[1] / filename
+
+        text = json.dumps(data, ensure_ascii=False, indent=2)
+
+        def _write() -> None:
+            path.write_text(text, encoding="utf-8")
+
+        await hass.async_add_executor_job(_write)
+        _LOGGER.warning("TOH dump saved to: %s", path)
+    except Exception as exc:  # noqa: BLE001
+        _LOGGER.error("Failed to dump TOH JSON: %s", exc)

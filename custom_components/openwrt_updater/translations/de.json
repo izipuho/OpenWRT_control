@@ -20,8 +20,7 @@
         "title": "Globale Einstellungen",
         "description": "Master-Node, SSH-Schlüssel usw. konfigurieren.",
         "data": {
-          "master_node": "Master-Node (user@host)",
-          "builder_location": "Builder-Verzeichnis (auf dem Master)",
+          "builder_location": "Builder-Verzeichnis (username@host:/builderdir)",
           "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
           "toh_url": "TOH-URL",
           "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",
@@ -63,8 +62,7 @@
         "title": "Globale Optionen",
         "description": "Builder-/SSH-Einstellungen und TOH-URL aktualisieren.",
         "data": {
-          "master_node": "Master-Node (user@host)",
-          "builder_location": "Builder-Verzeichnis (auf dem Master)",
+          "builder_location": "Builder-Verzeichnis (username@host:/builderdir)",
           "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
           "toh_url": "TOH-URL",
           "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",

@@ -20,8 +20,7 @@
         "title": "Paramètres globaux",
         "description": "Configurez le master, les clés SSH, etc.",
         "data": {
-          "master_node": "Master (user@host)",
-          "builder_location": "Emplacement du builder (répertoire sur le master)",
+          "builder_location": "Emplacement du builder (username@host:/builderdir)",
           "ssh_key_path": "Chemin de la clé privée SSH",
           "toh_url": "URL TOH",
           "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",
@@ -63,8 +62,7 @@
         "title": "Options globales",
         "description": "Mettre à jour les paramètres du builder/SSH et l’URL TOH.",
         "data": {
-          "master_node": "Master (user@host)",
-          "builder_location": "Emplacement du builder (répertoire sur le master)",
+          "builder_location": "Emplacement du builder (username@host:/builderdir)",
           "ssh_key_path": "Chemin de la clé privée SSH",
           "toh_url": "URL TOH",
           "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",

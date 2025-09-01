@@ -20,8 +20,7 @@
         "title": "Set global options",
         "description": "Master node, SSH keys and so on.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Builder location (directory on master node)",
+          "builder_location": "Builder location (username@host:/builderdir)",
           "ssh_key_path": "SSH key path (inside of config directory)",
           "toh_url": "TOH url",
           "config_types_file": "Config types file (inside of integration directory)",
@@ -63,8 +62,7 @@
         "title": "Set global options",
         "description": "Master node, SSH keys and so on.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Builder location (directory on master node)",
+          "builder_location": "Builder location (username@host:/builderdir)",
           "ssh_key_path": "SSH key path (inside of config directory)",
           "toh_url": "TOH url",
           "config_types_file": "Config types file (inside of integration directory)",

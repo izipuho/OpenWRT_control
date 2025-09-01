@@ -20,8 +20,7 @@
         "title": "Глобальные настройки",
         "description": "Настройте master node, SSH-ключ и прочее.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Путь сборщика (каталог на master)",
+          "builder_location": "Путь сборщика (username@host:/builderdir)",
           "ssh_key_path": "Путь к приватному SSH-ключу",
           "toh_url": "TOH URL",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",
@@ -63,8 +62,7 @@
         "title": "Глобальные опции",
         "description": "Обновите настройки сборщика/SSH и TOH.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Путь сборщика (каталог на master)",
+          "builder_location": "Путь сборщика (username@host:/builderdir)",
           "ssh_key_path": "Путь к приватному SSH-ключу",
           "toh_url": "TOH URL",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",

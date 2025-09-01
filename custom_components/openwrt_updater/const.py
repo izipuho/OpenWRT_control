@@ -3,8 +3,7 @@
 DOMAIN = "openwrt_updater"
 
 INTEGRATION_DEFAULTS = {
-    "master_node": "zip@10.8.25.20",
-    "builder_location": "/home/zip/OpenWrt-bulder/",
+    "builder_location": "zip@10.8.25.20:/home/zip/OpenWrt-builder/",
     "ssh_key_path": "ssh_keys/id_ed25519",
     "toh_url": "https://openwrt.org/toh.json",
     "config_types_file": "config_types.yaml",
