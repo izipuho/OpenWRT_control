@@ -1,6 +1,7 @@
 """Updater entity declaration."""
 
 import logging
+import re
 import shlex
 
 from homeassistant.components.update import (
@@ -37,11 +38,15 @@ async def trigger_update(
     sysupgrade_command = (
         f"nohup sysupgrade -v {firmware_file} >/tmp/sysupgrade.log 2>&1 &"
     )
+
+    # Force update if firmware is downloaded
     if firmware_file and is_force:
         _LOGGER.debug("Trying to update %s with local file %s", ip, firmware_file)
         update_command = f"sh -c '{sysupgrade_command}'"
         async with OpenWRTSSH(ip, key_path) as client:
             return await client.exec_command(update_command, timeout=10)
+
+    # Simple update. Download TOH snapshot and sysupgrade if needed.
     if is_simple:
         url = shlex.quote(data["snapshot_url"])
         try:
@@ -58,18 +63,22 @@ async def trigger_update(
             return None
         else:
             return output
+
+    # Custom update. Build custom firmware based on config.
     else:
-        builder_location = conf["builder_location"]
+        builder_location = re.fullmatch(
+            r"([^@]+)@([^:]+):(.+)", conf["builder_location"]
+        )
+        username, host, builder_dir = builder_location.groups()
         config_type = shlex.quote(data["config_type"])
         update_strategy = "install" if is_force else "copy"
-        update_command = f"cd {builder_location} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
-        master_node = conf["master_node"].split("@")
+        update_command = f"cd {builder_dir} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
         try:
             _LOGGER.debug("Trying to update %s with %s", ip, update_command)
             async with OpenWRTSSH(
-                ip=master_node[1],
+                ip=host,
                 key_path=key_path,
-                username=master_node[0],
+                username=username,
             ) as master:
                 output = await master.exec_command(
                     f"sh -c '{update_command}'", timeout=1800
