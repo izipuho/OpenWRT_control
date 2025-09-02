@@ -67,7 +67,11 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             fw_downloaded,
             fw_file,
             hostname,
-        ) = await client.async_get_device_state()
+            distribution,
+            target,
+            board_name,
+            pkgs,
+        ) = await client.async_get_device_info()
 
         # 2) Resolve TOH for this device from the shared cache
         toh_coord = self.hass.data[DOMAIN].get("toh_cache")
@@ -82,9 +86,14 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": status,
             "available_os_version": getattr(toh_item, "version", None),
             "snapshot_url": getattr(toh_item, "snapshot_url", None),
+            "compatibles": getattr(toh_item, "compatibles", None),
             "firmware_downloaded": fw_downloaded,
             "firmware_file": fw_file,
             "hostname": hostname,
+            "distribution": distribution,
+            "target": target,
+            "board_name": board_name,
+            "packages": pkgs,
         }
         _LOGGER.debug(
             "Coordinator data: %s",
