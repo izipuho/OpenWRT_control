@@ -64,6 +64,8 @@ def build_global_options_schema(
     """Unified global options schema."""
     return vol.Schema(
         {
+            vol.Optional("use_asu", default=defaults["use_asu"]): cv.boolean,
+            vol.Optional("asu_base_url", default=defaults["asu_base_url"]): cv.string,
             vol.Optional(
                 "builder_location",
                 default=defaults["builder_location"],

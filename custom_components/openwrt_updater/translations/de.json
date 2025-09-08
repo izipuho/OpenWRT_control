@@ -1,48 +1,50 @@
 {
-  "title": "OpenWRT-Aktualisierung",
+  "title": "OpenWRT Updater",
   "config": {
     "abort": {
-      "toh_unavailable": "Das Gerätekatalog (TOH) ist derzeit nicht verfügbar. Bitte später erneut versuchen.",
-      "yaml_invalid": "Ungültige YAML-Datei. Bitte config_types.yaml korrigieren.",
+      "toh_unavailable": "Der Gerätekatalog (TOH) ist derzeit nicht verfügbar. Bitte später erneut versuchen.",
+      "yaml_invalid": "Ungültige YAML-Datei. Bitte korrigiere deine config_types.yaml.",
       "already_configured": "Diese Integration ist bereits konfiguriert."
     },
     "error": {
-      "invalid_master_node": "Master-Node muss im Format user@host angegeben werden.",
-      "invalid_ip": "Bitte eine gültige IPv4-Adresse eingeben.",
+      "invalid_master_node": "Master-Knoten muss die Form user@host haben.",
+      "invalid_ip": "Gib eine gültige IPv4-Adresse ein.",
       "invalid_path": "Pfad existiert nicht oder ist nicht lesbar.",
-      "ssh_key_not_found": "SSH-Privatschlüssel wurde nicht gefunden.",
-      "connection_failed": "Verbindung zum Gerät fehlgeschlagen.",
-      "missing_required": "Bitte alle Pflichtfelder ausfüllen."
+      "ssh_key_not_found": "SSH-Schlüsseldatei nicht gefunden.",
+      "connection_failed": "Verbindung zum Gerät nicht möglich.",
+      "missing_required": "Bitte fülle alle Pflichtfelder aus."
     },
     "step": {
       "user": {},
       "global": {
-        "title": "Globale Einstellungen",
-        "description": "Master-Node, SSH-Schlüssel usw. konfigurieren.",
+        "title": "Globale Optionen festlegen",
+        "description": "Master-Node, SSH-Schlüssel usw.",
         "data": {
-          "builder_location": "Builder-Verzeichnis (username@host:/builderdir)",
-          "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
+          "builder_location": "Builder-Standort (username@host:/builderdir)",
+          "ssh_key_path": "Pfad zum SSH-Schlüssel (im Config-Verzeichnis)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",
-          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
-          "device_timeout_minutes": "Gerätekoordinator-Intervall (Minuten)"
+          "config_types_file": "Datei der Konfigurationstypen (im Integrationsverzeichnis)",
+          "toh_timeout_hours": "Intervall des TOH-Koordinators (Stunden)",
+          "device_timeout_minutes": "Intervall des Gerätekoordinators (Minuten)",
+          "use_asu": "ASU verwenden",
+          "asu_base_url": "ASU-Basis-URL"
         }
       },
       "add_place": {
-        "title": "Standort hinzufügen",
-        "description": "Geben Sie die Details Ihres Standorts ein.",
+        "title": "Ort hinzufügen",
+        "description": "Gib die Details deines Standorts ein.",
         "data": {
-          "place_name": "Standortname",
+          "place_name": "Name des Orts",
           "place_ipmask": "IP-Maske (erste 3 Oktette)"
         }
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
+        "description": "Gib die Details deines OpenWRT-Geräts ein.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfaches Update (Download vom OpenWRT.org; optional Installation)",
+          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. benutzerdefinierter Builder)",
           "force_update": "Sofort installieren (sysupgrade -v)",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
         }
@@ -59,31 +61,33 @@
         }
       },
       "global": {
-        "title": "Globale Optionen",
-        "description": "Builder-/SSH-Einstellungen und TOH-URL aktualisieren.",
+        "title": "Globale Optionen festlegen",
+        "description": "Master-Node, SSH-Schlüssel usw.",
         "data": {
-          "builder_location": "Builder-Verzeichnis (username@host:/builderdir)",
-          "ssh_key_path": "Pfad zum SSH-Privatschlüssel",
+          "builder_location": "Builder-Standort (username@host:/builderdir)",
+          "ssh_key_path": "Pfad zum SSH-Schlüssel (im Config-Verzeichnis)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Datei mit Konfigurationstypen (im Integrationsverzeichnis)",
-          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
-          "device_timeout_minutes": "Gerätekoordinator-Intervall (Minuten)"
+          "config_types_file": "Datei der Konfigurationstypen (im Integrationsverzeichnis)",
+          "toh_timeout_hours": "Intervall des TOH-Koordinators (Stunden)",
+          "device_timeout_minutes": "Intervall des Gerätekoordinators (Minuten)",
+          "use_asu": "ASU verwenden",
+          "asu_base_url": "ASU-Basis-URL"
         }
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Neues Gerät in dieser Integration registrieren.",
+        "description": "Gib die Details deines OpenWRT-Geräts ein.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfaches Update (Download vom OpenWRT.org; optional Installation)",
+          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. benutzerdefinierter Builder)",
           "force_update": "Sofort installieren (sysupgrade -v)",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
         }
       },
       "remove_device": {
         "title": "OpenWRT-Gerät entfernen",
-        "description": "Wählen Sie ein Gerät zum Entfernen.",
+        "description": "Zu entfernendes Gerät wählen.",
         "data": {
           "ip": "Geräte-IP"
         }

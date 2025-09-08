@@ -25,7 +25,9 @@
           "toh_url": "TOH url",
           "config_types_file": "Config types file (inside of integration directory)",
           "toh_timeout_hours": "TOH coordinator interval (hours)",
-          "device_timeout_minutes": "Device coordinator interval (minutes)"
+          "device_timeout_minutes": "Device coordinator interval (minutes)",
+          "use_asu": "Use ASU branch",
+          "asu_base_url": "ASU base URL"
         }
       },
       "add_place": {
@@ -67,7 +69,9 @@
           "toh_url": "TOH url",
           "config_types_file": "Config types file (inside of integration directory)",
           "toh_timeout_hours": "TOH coordinator interval (hours)",
-          "device_timeout_minutes": "Device coordinator interval (minutes)"
+          "device_timeout_minutes": "Device coordinator interval (minutes)",
+          "use_asu": "Use ASU branch",
+          "asu_base_url": "ASU base URL"
         }
       },
       "add_device": {

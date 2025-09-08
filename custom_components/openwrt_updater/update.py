@@ -17,7 +17,6 @@ from .const import DOMAIN, get_device_info
 from .ssh_client import OpenWRTSSH
 
 _LOGGER = logging.getLogger(__name__)
-ASU = True
 
 
 async def trigger_update(
@@ -33,6 +32,7 @@ async def trigger_update(
     coordinator = data["coordinator"]
     data = {**data, **(coordinator.data or {})}
 
+    place_name = hass.data[DOMAIN][entry_id]["data"]["place_name"]
     firmware_file = shlex.quote(data["firmware_file"])
     is_simple = bool(data["simple_update"])
     is_force = bool(data["force_update"])
@@ -67,35 +67,57 @@ async def trigger_update(
             return output
 
     # Custom update. Build custom firmware based on config.
-    ## New version with ASU
-    elif ASU:
-        return None
-    ## Old version with local builder
     else:
-        # Parse builder location from username@host:/dir
-        builder_location = re.fullmatch(
-            r"([^@]+)@([^:]+):(.+)", conf["builder_location"]
-        )
-        username, host, builder_dir = builder_location.groups()
-        config_type = shlex.quote(data["config_type"])
-        update_strategy = "install" if is_force else "copy"
-        update_command = f"cd {builder_dir} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
-        try:
-            _LOGGER.debug("Trying to update %s with %s", ip, update_command)
-            async with OpenWRTSSH(
-                ip=host,
-                key_path=key_path,
-                username=username,
-            ) as master:
-                output = await master.exec_command(
-                    f"sh -c '{update_command}'", timeout=1800
-                )
-            _LOGGER.debug("Update result: %s", output)
-        except Exception:
-            _LOGGER.error("Failed to run builder script on %s", ip)
+        ASU = conf.get("use_asu", True)
+        ## New version with ASU
+        if ASU:
+            ASU_BASE_URL = conf["asu_base_url"]
+            client = ASUClient(base_url=ASU_BASE_URL)
+            req = await client.build_request(
+                version=available_os_version,
+                target=data["target"],
+                board_name=data["board_name"],
+                packages=data["packages"],
+                client_name=f"OpenWRT {place_name} {ip}",
+            )
+            _LOGGER.warning("Build request: %s", req.get("request_hash"))
+            bin_dir, file_name = await client.poll_build_request(
+                request_hash=req.get("request_hash")
+            )
+            fw_url = f"{client.base_url}/store/{bin_dir}/{file_name}"
+            _LOGGER.warning("Build URL: %s", fw_url)
+            update_command = f"curl -L --fail --silent --show-error {fw_url} --output /tmp/openwrt-{available_os_version}-asu.bin"
+            if is_force:
+                update_command = f"sh -c '{update_command} && {sysupgrade_command}'"
+            async with OpenWRTSSH(ip, key_path) as client:
+                output = await client.exec_command(update_command, timeout=900)
             return None
+        ## Old version with local builder
         else:
-            return output
+            # Parse builder location from username@host:/dir
+            builder_location = re.fullmatch(
+                r"([^@]+)@([^:]+):(.+)", conf["builder_location"]
+            )
+            username, host, builder_dir = builder_location.groups()
+            config_type = shlex.quote(data["config_type"])
+            update_strategy = "install" if is_force else "copy"
+            update_command = f"cd {builder_dir} && make C={config_type} HOST={ip} RELEASE={available_os_version} {update_strategy}"
+            try:
+                _LOGGER.debug("Trying to update %s with %s", ip, update_command)
+                async with OpenWRTSSH(
+                    ip=host,
+                    key_path=key_path,
+                    username=username,
+                ) as master:
+                    output = await master.exec_command(
+                        f"sh -c '{update_command}'", timeout=1800
+                    )
+                _LOGGER.debug("Update result: %s", output)
+            except Exception:
+                _LOGGER.error("Failed to run builder script on %s", ip)
+                return None
+            else:
+                return output
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):

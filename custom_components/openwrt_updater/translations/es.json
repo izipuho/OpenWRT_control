@@ -1,39 +1,41 @@
 {
-  "title": "Actualizador de OpenWRT",
+  "title": "OpenWRT Updater",
   "config": {
     "abort": {
-      "toh_unavailable": "El catálogo de dispositivos (TOH) no está disponible en este momento. Inténtalo más tarde.",
-      "yaml_invalid": "Archivo YAML no válido. Corrige config_types.yaml.",
+      "toh_unavailable": "El catálogo de dispositivos (TOH) no está disponible en este momento. Inténtalo de nuevo más tarde.",
+      "yaml_invalid": "Archivo YAML no válido. Corrige tu config_types.yaml.",
       "already_configured": "Esta integración ya está configurada."
     },
     "error": {
       "invalid_master_node": "El nodo maestro debe tener el formato user@host.",
       "invalid_ip": "Introduce una dirección IPv4 válida.",
       "invalid_path": "La ruta no existe o no es legible.",
-      "ssh_key_not_found": "No se encontró la clave privada SSH.",
-      "connection_failed": "No se pudo conectar al dispositivo.",
+      "ssh_key_not_found": "No se encontró el archivo de clave SSH.",
+      "connection_failed": "No se puede conectar con el dispositivo.",
       "missing_required": "Completa todos los campos obligatorios."
     },
     "step": {
       "user": {},
       "global": {
-        "title": "Ajustes globales",
-        "description": "Configura el nodo maestro, las claves SSH, etc.",
+        "title": "Configurar opciones globales",
+        "description": "Nodo maestro, claves SSH, etc.",
         "data": {
           "builder_location": "Ubicación del builder (username@host:/builderdir)",
-          "ssh_key_path": "Ruta de la clave privada SSH",
+          "ssh_key_path": "Ruta de la clave SSH (dentro del directorio config)",
           "toh_url": "URL de TOH",
-          "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",
+          "config_types_file": "Archivo de tipos de configuración (dentro del directorio de la integración)",
           "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
-          "device_timeout_minutes": "Intervalo del coordinador del dispositivo (minutos)"
+          "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
+          "use_asu": "Usar ASU",
+          "asu_base_url": "URL base de ASU"
         }
       },
       "add_place": {
-        "title": "Añadir sitio",
-        "description": "Introduce los detalles de tu sitio.",
+        "title": "Añadir ubicación",
+        "description": "Introduce los detalles de tu ubicación.",
         "data": {
-          "place_name": "Nombre del sitio",
-          "place_ipmask": "Máscara IP (3 primeros octetos)"
+          "place_name": "Nombre de la ubicación",
+          "place_ipmask": "Máscara IP (primeros 3 octetos)"
         }
       },
       "add_device": {
@@ -42,9 +44,9 @@
         "data": {
           "ip": "IP del dispositivo",
           "config_type": "Tipo de configuración",
-          "simple_update": "Actualización simple (descarga desde OpenWRT.org; instalación opcional)",
+          "simple_update": "Actualización simple (curl desde OpenWRT.org vs. builder personalizado)",
           "force_update": "Instalar inmediatamente (sysupgrade -v)",
-          "add_another": "Añadir otro después de guardar"
+          "add_another": "Añadir otro al guardar"
         }
       }
     }
@@ -59,26 +61,28 @@
         }
       },
       "global": {
-        "title": "Opciones globales",
-        "description": "Actualizar la configuración del builder/SSH y la URL de TOH.",
+        "title": "Configurar opciones globales",
+        "description": "Nodo maestro, claves SSH, etc.",
         "data": {
           "builder_location": "Ubicación del builder (username@host:/builderdir)",
-          "ssh_key_path": "Ruta de la clave privada SSH",
+          "ssh_key_path": "Ruta de la clave SSH (dentro del directorio config)",
           "toh_url": "URL de TOH",
-          "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",
+          "config_types_file": "Archivo de tipos de configuración (dentro del directorio de la integración)",
           "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
-          "device_timeout_minutes": "Intervalo del coordinador del dispositivo (minutos)"
+          "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
+          "use_asu": "Usar ASU",
+          "asu_base_url": "URL base de ASU"
         }
       },
       "add_device": {
         "title": "Añadir dispositivo OpenWRT",
-        "description": "Registrar un dispositivo nuevo en la integración.",
+        "description": "Introduce los detalles de tu dispositivo OpenWRT.",
         "data": {
           "ip": "IP del dispositivo",
           "config_type": "Tipo de configuración",
-          "simple_update": "Actualización simple (descarga desde OpenWRT.org; instalación opcional)",
+          "simple_update": "Actualización simple (curl desde OpenWRT.org vs. builder personalizado)",
           "force_update": "Instalar inmediatamente (sysupgrade -v)",
-          "add_another": "Añadir otro después de guardar"
+          "add_another": "Añadir otro al guardar"
         }
       },
       "remove_device": {
