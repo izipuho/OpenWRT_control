@@ -104,7 +104,7 @@ class ASUClient:
             RuntimeError if timeout expires before result is ready.
 
         """
-        status_url = f"{self.base_url}/api/v1/build/{request_hash}"
+        status_url = f"/api/v1/build/{request_hash}"
         _LOGGER.error("Request url: %s", status_url)
         deadline = asyncio.get_running_loop().time() + timeout
         last_payload: dict | None = None
