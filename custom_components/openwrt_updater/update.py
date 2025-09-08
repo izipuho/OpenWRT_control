@@ -12,10 +12,12 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .asu_client import ASUClient
 from .const import DOMAIN, get_device_info
 from .ssh_client import OpenWRTSSH
 
 _LOGGER = logging.getLogger(__name__)
+ASU = True
 
 
 async def trigger_update(
@@ -65,7 +67,12 @@ async def trigger_update(
             return output
 
     # Custom update. Build custom firmware based on config.
+    ## New version with ASU
+    elif ASU:
+        return None
+    ## Old version with local builder
     else:
+        # Parse builder location from username@host:/dir
         builder_location = re.fullmatch(
             r"([^@]+)@([^:]+):(.+)", conf["builder_location"]
         )
