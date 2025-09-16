@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import logging
-
 import asyncio
+import logging
 
 import aiohttp
 
@@ -77,7 +76,7 @@ class ASUClient:
             "target": target,
             "profile": board_name,
             "packages": packages,
-            "diff_packages": "true",
+            "diff_packages": True,
             "client": client_name,
         }
         return await self._post_json("/api/v1/build", payload, timeout=timeout)
@@ -88,7 +87,7 @@ class ASUClient:
         *,
         interval: float = 2.0,
         timeout: float = 900.0,
-    ) -> dict:
+    ) -> tuple[str, str]:
         """Poll upgrade-request status until ready or error.
 
         Args:
@@ -104,17 +103,16 @@ class ASUClient:
             RuntimeError if timeout expires before result is ready.
 
         """
-        status_url = f"/api/v1/build/{request_hash}"
-        _LOGGER.error("Request url: %s", status_url)
+        status_path = f"/api/v1/build/{request_hash}"
         deadline = asyncio.get_running_loop().time() + timeout
-        last_payload: dict | None = None
+        build_payload: dict | None = None
 
         while True:
-            last_payload = await self._get_json(status_url, timeout=60.0)
-            state = str(last_payload.get("detail") or "").lower()
+            build_payload = await self._get_json(status_path, timeout=60.0)
+            state = str(build_payload.get("detail") or "").lower()
             if state == "done":
-                bin_dir = last_payload.get("bin_dir")
-                file_name = last_payload.get("images")[0].get("name")
+                bin_dir = build_payload.get("bin_dir")
+                file_name = build_payload.get("images")[0].get("name")
                 return bin_dir, file_name
 
             if asyncio.get_running_loop().time() > deadline:

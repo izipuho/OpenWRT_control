@@ -8,14 +8,13 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
 from .coordinators import OpenWRTDeviceCoordinator, TohCacheCoordinator
+from .helpers.const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    "button",
     "select",
     "switch",
     "text",

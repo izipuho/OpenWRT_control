@@ -7,8 +7,8 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, get_device_info
 from .coordinators.device import OpenWRTDeviceCoordinator
+from .helpers.const import DOMAIN, get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 

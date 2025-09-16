@@ -9,8 +9,8 @@ INTEGRATION_DEFAULTS = {
     "config_types_file": "config_types.yaml",
     "toh_timeout_hours": 24,
     "device_timeout_minutes": 10,
-    "asu_base_url": "https://sysupgrade.openwrt.org",
-    "use_asu": True
+    "asu_base_url": "https://sysupgrade.openwrt.org/",
+    "use_asu": True,
 }
 
 

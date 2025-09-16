@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..const import DOMAIN
-from ..helpers import load_config_types
-from ..ssh_client import OpenWRTSSH
-from ..types import DeviceData
+from ..helpers.const import DOMAIN
+from ..helpers.helpers import load_config_types
+from ..helpers.ssh_client import OpenWRTSSH
+from ..helpers.types import DeviceData
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -86,7 +86,6 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "status": status,
             "available_os_version": getattr(toh_item, "version", None),
             "snapshot_url": getattr(toh_item, "snapshot_url", None),
-            "compatibles": getattr(toh_item, "compatibles", None),
             "firmware_downloaded": fw_downloaded,
             "firmware_file": fw_file,
             "hostname": hostname,
