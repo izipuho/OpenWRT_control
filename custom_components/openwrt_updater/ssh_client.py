@@ -128,9 +128,7 @@ class OpenWRTSSH:
 
     async def read_os_version(self) -> str | None:
         """Read OS version."""
-        os_version_command = (
-            "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
-        )
+        os_version_command = """sed -n "s/.*RELEASE='\\([^']*\\)'.*/\\1/p" /etc/openwrt_release"""
         res = await self.exec_command(os_version_command)
         return _first_line(res.stdout)
 
