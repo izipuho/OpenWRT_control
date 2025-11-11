@@ -10,7 +10,7 @@ Register your OpenWRT devices via config flow.
 ### Update
 - See available firmware updates and trigger upgrades.
 - Change configuration type (device model) dynamically.
-- Select simple update with standart snapshot for your device or with custom image builder
+- Select simple update with standard snapshot for your device or with custom image builder
 - Choose between force update or soft one that requires manual sysupgrade launch.
 ### Monitoring
 Monitor device status (online/offline).
