@@ -1,32 +1,34 @@
 {
-  "title": "Обновление OpenWRT",
+  "title": "OpenWRT Updater",
   "config": {
     "abort": {
-      "toh_unavailable": "Каталог устройств (TOH) сейчас недоступен. Попробуйте позже.",
-      "yaml_invalid": "Недопустимый YAML-файл. Исправьте config_types.yaml.",
+      "toh_unavailable": "Каталог устройств (TOH) сейчас недоступен. Повторите попытку позже.",
+      "yaml_invalid": "Некорректный файл YAML. Исправьте config_types.yaml.",
       "already_configured": "Эта интеграция уже настроена."
     },
     "error": {
-      "invalid_master_node": "Master node должен быть в формате user@host.",
-      "invalid_ip": "Введите корректный IPv4-адрес.",
+      "invalid_master_node": "Master-узел должен быть в формате user@host.",
+      "invalid_ip": "Введите корректный адрес IPv4.",
       "invalid_path": "Путь не существует или недоступен для чтения.",
-      "ssh_key_not_found": "Файл приватного ключа SSH не найден.",
+      "ssh_key_not_found": "Файл SSH-ключа не найден.",
       "connection_failed": "Не удалось подключиться к устройству.",
       "missing_required": "Заполните все обязательные поля."
     },
     "step": {
       "user": {},
       "global": {
-        "title": "Глобальные настройки",
-        "description": "Настройте master node, SSH-ключ и прочее.",
+        "title": "Глобальные параметры",
+        "description": "Master-узел, SSH-ключи и т. п.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Путь сборщика (каталог на master)",
-          "ssh_key_path": "Путь к приватному SSH-ключу",
-          "toh_url": "TOH URL",
+          "builder_location": "Расположение builder’а (username@host:/builderdir)",
+          "ssh_key_path": "Путь к SSH-ключу (внутри каталога config)",
+          "toh_url": "URL TOH",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
-          "device_timeout_minutes": "Интервал координатора устройства (минуты)"
+          "device_timeout_minutes": "Интервал координатора устройств (минуты)",
+          "use_asu": "Использовать ASU",
+          "asu_base_url": "Базовый URL ASU",
+          "download_base_url": "Базовый URL для загрузок"
         }
       },
       "add_place": {
@@ -39,12 +41,12 @@
       },
       "add_device": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Укажите параметры вашего устройства.",
+        "description": "Укажите параметры устройства OpenWRT.",
         "data": {
           "ip": "IP устройства",
           "config_type": "Тип конфигурации",
-          "simple_update": "Простой апдейт (загрузка с OpenWRT.org; опционально — установка)",
-          "force_update": "Установить сразу (sysupgrade -v)",
+          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
+          "force_update": "Установить немедленно (sysupgrade -v)",
           "add_another": "Добавить ещё одно после сохранения"
         }
       }
@@ -60,26 +62,28 @@
         }
       },
       "global": {
-        "title": "Глобальные опции",
-        "description": "Обновите настройки сборщика/SSH и TOH.",
+        "title": "Глобальные параметры",
+        "description": "Master-узел, SSH-ключи и т. п.",
         "data": {
-          "master_node": "Master node (user@host)",
-          "builder_location": "Путь сборщика (каталог на master)",
-          "ssh_key_path": "Путь к приватному SSH-ключу",
-          "toh_url": "TOH URL",
+          "builder_location": "Расположение builder’а (username@host:/builderdir)",
+          "ssh_key_path": "Путь к SSH-ключу (внутри каталога config)",
+          "toh_url": "URL TOH",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
-          "device_timeout_minutes": "Интервал координатора устройства (минуты)"
+          "device_timeout_minutes": "Интервал координатора устройств (минуты)",
+          "use_asu": "Использовать ASU",
+          "asu_base_url": "Базовый URL ASU",
+          "download_base_url": "Базовый URL для загрузок"
         }
       },
       "add_device": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Зарегистрируйте новое устройство в интеграции.",
+        "description": "Укажите параметры устройства OpenWRT.",
         "data": {
           "ip": "IP устройства",
           "config_type": "Тип конфигурации",
-          "simple_update": "Простой апдейт (загрузка с OpenWRT.org; опционально — установка)",
-          "force_update": "Установить сразу (sysupgrade -v)",
+          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
+          "force_update": "Установить немедленно (sysupgrade -v)",
           "add_another": "Добавить ещё одно после сохранения"
         }
       },

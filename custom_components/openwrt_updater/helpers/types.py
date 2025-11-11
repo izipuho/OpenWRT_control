@@ -13,6 +13,7 @@ class TohItem:
     target: str | None = None
     subtarget: str | None = None
     snapshot_url: str | None = None
+    compatibles: str | None = None
 
 
 @dataclass(slots=True)

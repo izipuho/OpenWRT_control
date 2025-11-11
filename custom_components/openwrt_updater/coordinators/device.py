@@ -6,12 +6,16 @@ from datetime import timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.core import callback
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..const import DOMAIN
-from ..helpers import load_config_types
-from ..ssh_client import OpenWRTSSH
-from ..types import DeviceData
+from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
+from ..helpers.helpers import load_config_types
+from ..helpers.ssh_client import OpenWRTSSH
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -42,12 +46,20 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.entry = config_entry
         self.ip = ip
 
-    async def _async_update_data(self) -> DeviceData:
+        self._toh = hass.data[DOMAIN]["toh_index"]
+        self._unsub_toh = self._toh.async_add_listener(self._on_toh_update)
+
+    def _on_toh_update(self) -> None:
+        """TOH changed -> update my entities WITHOUT SSH."""
+        self.hass.async_create_task(self.async_request_refresh())
+
+    async def _async_update_data(self):
         """Fetch device state and compose a DeviceData snapshot.
 
         - Live device state is fetched via `get_dev_state()`.
         - TOH info is resolved from the shared TohCacheCoordinator (no network).
         """
+        _LOGGER.debug("Update coordinator for %s", self.ip)
         config_types_path = self.hass.data[DOMAIN]["config"]["config_types_path"]
         config_types = await self.hass.async_add_executor_job(
             load_config_types, config_types_path
@@ -55,7 +67,6 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         config_type = self.hass.data[DOMAIN][self.entry.entry_id][self.ip][
             "config_type"
         ]
-        openwrt_devid = config_types.get(config_type, {}).get("openwrt-devid")
 
         # 1) Fetch live device state
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
@@ -67,24 +78,35 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             fw_downloaded,
             fw_file,
             hostname,
-        ) = await client.async_get_device_state()
+            distribution,
+            target,
+            board_name,
+            pkgs,
+            has_asu,
+        ) = await client.async_get_device_info()
+        # 1.1) Gather boards
+        if target and board_name:
+            boards_registry = self.hass.data[DOMAIN]["boards"]
+            boards_registry.setdefault(target, set()).add(board_name)
+            async_dispatcher_send(self.hass, SIGNAL_BOARDS_CHANGED)
 
         # 2) Resolve TOH for this device from the shared cache
-        toh_coord = self.hass.data[DOMAIN].get("toh_cache")
-        if not toh_coord:
-            _LOGGER.debug("TOH cache is not read; keeping previous snapshot")
-            return self.data or {}
-        toh_item = toh_coord.get_for_devid(openwrt_devid)
+        version, sysupgrade_url = self._toh.get_os_info(target, board_name)
 
         # 3) Produce a typed snapshot for entities
         result = {
             "current_os_version": os_version,
             "status": status,
-            "available_os_version": getattr(toh_item, "version", None),
-            "snapshot_url": getattr(toh_item, "snapshot_url", None),
+            "available_os_version": version,
+            "snapshot_url": sysupgrade_url,
             "firmware_downloaded": fw_downloaded,
             "firmware_file": fw_file,
             "hostname": hostname,
+            "distribution": distribution,
+            "target": target,
+            "board_name": board_name,
+            "has_asu": has_asu,
+            "packages": pkgs,
         }
         _LOGGER.debug(
             "Coordinator data: %s",

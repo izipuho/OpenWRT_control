@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.helpers.storage import Store
+from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from ..helpers.const import DOMAIN
-from ..helpers.toh_parser import TOH
+from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
+from ..helpers.toh_builder import LocalTOH
 from ..helpers.types import TohItem
 
 if TYPE_CHECKING:
@@ -21,16 +21,12 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_STORE_VERSION = 1
-_STORE_KEY = f"{DOMAIN}_toh_raw"
 
-
-class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Maintains a persisted TOH cache and exposes a simple lookup.
 
     - Periodically fetches TOH from the network and saves raw JSON to HA Store.
     - On startup loads raw JSON from HA Store (so entities work offline).
-    - Provides `get_for_devid()` to resolve a device id into a normalized TohItem.
     """
 
     def __init__(self, hass: HomeAssistant, update_interval: timedelta) -> None:
@@ -38,11 +34,26 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass=hass,
             logger=_LOGGER,
-            name=f"{DOMAIN}-toh-cache",
+            name=f"{DOMAIN}_sysupgrade_info",
             update_interval=update_interval,
         )
-        self._store = Store(hass, _STORE_VERSION, _STORE_KEY)
-        self._toh = TOH(hass)
+        self._toh = LocalTOH(hass)
+
+        self._unsub_signal = async_dispatcher_connect(
+            hass, SIGNAL_BOARDS_CHANGED, self._on_boards_changed
+        )
+
+    @callback
+    async def _on_boards_changed(self) -> None:
+        """React to new (target, board) pairs by requesting a refresh."""
+        await self.async_request_refresh()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubsribe from signals."""
+        await super().async_will_remove_from_hass()
+        if getattr(self, "_unsub_signal", None):
+            self._unsub_signal()
+            self._unsub_signal = None
 
     async def async_config_entry_first_refresh(self) -> None:
         """Preload cached TOH before the very first refresh so lookups work offline.
@@ -50,43 +61,30 @@ class TohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         This loads raw TOH from the Store into the TOH instance, then performs
         the regular first refresh lifecycle to try a network update.
         """
-        cached = await self._store.async_load()
-        if cached:
-            try:
-                self._toh.load(cached)
-                _LOGGER.debug("TOH first refresh")
-            except Exception:
-                _LOGGER.warning("Failed to preload TOH cache", exc_info=True)
         await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Refresh TOH from network and persist it; fallback to cached raw data.
+        """Refresh TOH from network; fallback to cached raw data.
 
-        Returns the raw TOH dict (as downloaded). Entities should not parse
+        Returns builded index. Entities should not parse
         this directly — use `get_for_devid()` for a normalized view.
         """
-        cached = await self._store.async_load() or {}
         try:
-            raw = await self._toh.fetch()
-            await self._store.async_save(raw)
-            _LOGGER.debug("Updating TOH cache: %d rows", len(raw))
+            raw = await self._toh.download_overview()
+            await self._toh.build_index(raw)
+            result = self._toh.index
         except Exception:
             _LOGGER.warning(
                 "TOH update failed, using cached data if available", exc_info=True
             )
-            if cached:
-                with contextlib.suppress(Exception):
-                    self._toh.load(cached)
-                return cached
-            raise
         else:
-            return raw
+            return result
 
-    def get_for_devid(self, devid: str | None) -> TohItem:
-        """Return normalized TOH info for a given device id.
-
-        This never touches the network; it reads the in-memory TOH index.
-        """
-        if not devid:
-            return TohItem()
-        return self._toh.get_device_info(devid)
+    def get_os_info(self, target, board):
+        """Parse index and return OS info for selected board."""
+        os_info = (
+            self.hass.data[DOMAIN]["toh_index"].data.get(target, {}).get(board, {})
+        )
+        if os_info == {}:
+            return None, None
+        return os_info["version"], os_info["sysupgrade_url"]

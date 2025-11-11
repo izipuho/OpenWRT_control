@@ -1,6 +1,7 @@
 """SSH utils."""
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 
@@ -14,11 +15,7 @@ class OpenWRTSSH:
     """Async SSH client wrapper around asyncssh with small convenience helpers.
 
     Usage:
-        async with OpenWRTSSHClient("10.0.0.1") as cli:
-            version = await cli.read_os_version()
-            fw_file, fw_downloaded = await cli.find_downloaded_firmware()
-
-    Or call the high-level method:
+        Call the high-level method:
         data = await OpenWRTSSHClient("10.0.0.1").async_get_device_info()
     """
 
@@ -122,17 +119,24 @@ class OpenWRTSSH:
         else:
             if result.exit_status != 0:
                 _LOGGER.error(
-                    "Update failed: %s | %s", result.exit_status, result.stderr
+                    "Command \n\t%s\nrun failed: %s | %s",
+                    command,
+                    result.exit_status,
+                    result.stderr,
                 )
             return result
 
-    async def read_os_version(self) -> str | None:
-        """Read OS version."""
-        os_version_command = (
-            "cat /etc/openwrt_release | grep -oP \"(?<=RELEASE=\\').*?(?=\\')\""
-        )
-        res = await self.exec_command(os_version_command)
-        return _first_line(res.stdout)
+    async def list_installed_packages(self) -> list[str]:
+        """Return the list of installed package names on the device.
+
+        Uses `opkg list-installed` and strips versions, keeping only names.
+        Falls back to empty list if command fails.
+        """
+        cmd = "opkg list-installed | cut -d' ' -f1"
+        res = await self.exec_command(cmd)
+        packages = [line.strip() for line in res.stdout.splitlines() if line.strip()]
+        _LOGGER.debug("Installed packages on %s: %d found", self.ip, len(packages))
+        return packages
 
     async def find_downloaded_firmware(self) -> tuple[str | None, bool]:
         """Check for a downloaded firmware image; adjust glob/path to your flow.
@@ -147,16 +151,32 @@ class OpenWRTSSH:
         fw_file = _first_line(res.stdout)
         return (fw_file or None, bool(fw_file))
 
-    async def read_hostname(self) -> str | None:
-        """Read device hostname with tolerant fallbacks for OpenWRT."""
-        cmd = (
-            'sh -c "'
-            "uci -q get system.@system[0].hostname || "
-            "cat /proc/sys/kernel/hostname || "
-            'hostname"'
-        )
+    async def check_cached_firmware(
+        self, builder_dir: str, os: str, filename: str
+    ) -> tuple[str | None, bool]:
+        """Check for a cached firmware image on master node.
+
+        Returns:
+            (firmware_file_path, firmware_cached_flag)
+
+        """
+        command = f"{builder_dir}cache/{os}/{filename}"
+        res = await self.exec_command(f'sh -c "ls -1 {command} 2>/dev/null | head -n1"')
+        fw_file = _first_line(res.stdout)
+        return (fw_file, bool(fw_file))
+
+    async def read_board(self) -> dict:
+        """Read board info."""
+        cmd = "ubus call system board"
         res = await self.exec_command(cmd)
-        return _first_line(res.stdout)
+        board = json.loads(res.stdout)
+        return (
+            board["hostname"],
+            board["release"]["version"],
+            board["release"]["distribution"],
+            board["release"]["target"],
+            board["board_name"],
+        )
 
     async def close(self) -> None:
         """Close the SSH connection."""
@@ -169,19 +189,28 @@ class OpenWRTSSH:
             finally:
                 self._conn = None
 
-    async def async_get_device_state(
+    async def async_get_device_info(
         self,
-    ) -> tuple[str | None, bool, bool | None, str | None, str | None]:
+    ) -> tuple[str | None, bool, bool | None, str | None, str | None, list[str], bool]:
         """Get device info: status, hostname, os version, firmware file presence."""
         try:
             async with self:
                 status = True
-                os_version = await self.read_os_version()
-                hostname = await self.read_hostname()
                 fw_file, fw_downloaded = await self.find_downloaded_firmware()
+                (
+                    hostname,
+                    os_version,
+                    distribution,
+                    target,
+                    board_name,
+                ) = await self.read_board()
+                pkgs = await self.list_installed_packages()
+                has_asu = False
+                if "owut" in pkgs or "auc" in pkgs:
+                    has_asu = True
         except (TimeoutError, asyncssh.Error, OSError) as e:
             _LOGGER.debug("Device info over SSH fetch failed: %s", e)
-            return None, False, None, None, None
+            return None, False, None, None, None, None, None, None, [], False
         else:
             return (
                 os_version,
@@ -189,6 +218,11 @@ class OpenWRTSSH:
                 fw_downloaded,
                 fw_file,
                 hostname,
+                distribution,
+                target,
+                board_name,
+                pkgs,
+                has_asu,
             )
 
 
