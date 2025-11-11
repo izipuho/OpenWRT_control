@@ -21,11 +21,11 @@ class OpenWRTUpdater:
         self.ip = ip
         self.config = hass.data[DOMAIN].get("config", {})
         data = hass.data[DOMAIN][config_entry_id].get(self.ip, {})
-        coordinator = data["coordinator"]
+        coordinator = data["coordinator"].data
         # merge all dicts
         self.data = {
             **data,
-            **coordinator.data,
+            **coordinator,
             **hass.data[DOMAIN][config_entry_id].get("data", {}),
         }
 
@@ -42,10 +42,11 @@ class OpenWRTUpdater:
         self.is_force = bool(self.data["force_update"])
         self.available_os_version = shlex.quote(self.data["available_os_version"])
         self.snapshot_url = shlex.quote(self.data["snapshot_url"])
+        self._sanitized_filename = f"{self._sanitize(self.data['target'])}-{self._sanitize(self.data['board_name'])}-sysupgrade.bin"
 
     def _sysupgrade_command(self, firmware_file: str) -> str:
         """Compose sysupgrade command."""
-        return f"nohup sysupgrade -v /tmp/{firmware_file} >/tmp/sysupgrade.log 2>&1 &"
+        return f"sysupgrade -v /tmp/{firmware_file} >/tmp/sysupgrade.log 2>&1 &"
 
     def _sanitize(self, s: str):
         return re.sub(
@@ -58,20 +59,13 @@ class OpenWRTUpdater:
             ),
         ).strip("-")
 
-    async def cache_firmware(
-        self, type: str, firmware_url: str, target: str, board_name: str
-    ):
+    async def cache_asu_firmware(self, firmware_url: str):
         """Cache builded FW on master node."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
         ) as master:
-            filename = (
-                f"{self._sanitize(target)}-{self._sanitize(board_name)}-sysupgrade.bin"
-            )
-
-            command = f"curl -L --fail --silent --show-error --create-dirs {firmware_url} --output {self.builder_dir}/cache/{self.available_os_version}/{type}/{filename}"
+            command = f"curl -L --fail --silent --show-error --create-dirs {firmware_url} --output {self.builder_dir}cache/{self.available_os_version}/{self._sanitized_filename}"
             await master.exec_command(command=command, timeout=900)
-            return filename
 
     async def sysupgrade(self, firmware_file: str):
         """Launch sysupgrade with given file."""
@@ -103,30 +97,57 @@ class OpenWRTUpdater:
         """Trigger ASU upgrade."""
         ASU_BASE_URL = self.config["asu_base_url"]
         try:
-            async with ASUClient(base_url=ASU_BASE_URL) as client:
-                req = await client.build_request(
+            fw_file, cached = await self._check_cache()
+            if not cached:
+                asu_client = ASUClient(base_url=ASU_BASE_URL)
+                target = self.data["target"]
+                board_name = self.data["board_name"]
+                req = await asu_client.build_request(
                     version=self.available_os_version,
-                    target=self.data["target"],
-                    board_name=self.data["board_name"],
+                    target=target,
+                    board_name=board_name,
                     packages=self.data["packages"],
                     client_name=f"OpenWRT {self.place_name} {self.ip}",
                 )
-                _LOGGER.warning("Build request: %s", req.get("request_hash"))
-                bin_dir, file_name = await client.poll_build_request(
+                _LOGGER.debug("Build request: %s", req.get("request_hash"))
+                bin_dir, file_name = await asu_client.poll_build_request(
                     request_hash=req.get("request_hash")
                 )
-                fw_url = f"{client.base_url}/store/{bin_dir}/{file_name}"
-                _LOGGER.warning("Build URL: %s", fw_url)
+                fw_url = f"{ASU_BASE_URL}store/{bin_dir}/{file_name}"
+                _LOGGER.debug("Build URL: %s", fw_url)
+                await self.cache_asu_firmware(firmware_url=fw_url)
                 update_command = f"curl -L --fail --silent --show-error {fw_url} --output /tmp/openwrt-{self.available_os_version}-asu.bin"
-                if self.is_force:
-                    update_command = f"sh -c '{update_command} && {self._sysupgrade_command(f'openwrt-{self.available_os_version}-asu.bin')}'"
-                async with OpenWRTSSH(self.ip, self.key_path) as client:
-                    output = await client.exec_command(update_command, timeout=900)
-        except Exception:
-            _LOGGER.error("Failed to run simple update for %s", self.ip)
+                async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
+                    output = await ssh_client.exec_command(update_command, timeout=900)
+            else:
+                update_command = f"sh -c 'scp -O {fw_file} root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin'"
+                async with OpenWRTSSH(
+                    ip=self.master_host,
+                    username=self.master_username,
+                    key_path=self.key_path,
+                ) as master:
+                    output = await master.exec_command(update_command)
+            if self.is_force:
+                update_command = f"sh -c '{self._sysupgrade_command(f'openwrt-{self.available_os_version}-asu.bin')}'"
+                async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
+                    output = await ssh_client.exec_command(update_command, timeout=900)
+                    _LOGGER.error("Sysupgrade output: %s", output)
+
+        except Exception as err:
+            _LOGGER.error("Failed to run ASU update for %s: %s", self.ip, err)
             return None
         else:
             return output
+
+    async def _check_cache(self) -> bool:
+        """Check cached build."""
+        async with OpenWRTSSH(
+            ip=self.master_host, username=self.master_username, key_path=self.key_path
+        ) as master:
+            fw_file, cached = await master.check_cached_firmware(
+                self.builder_dir, self.available_os_version, self._sanitized_filename
+            )
+        return fw_file, cached
 
     async def custom_build_upgrade(self):
         """Trigger custom build on master node."""
@@ -144,8 +165,8 @@ class OpenWRTUpdater:
                     f"sh -c '{update_command}'", timeout=1800
                 )
             _LOGGER.debug("Update result: %s", output)
-        except Exception:
-            _LOGGER.error("Failed to run builder script on %s", self.ip)
+        except Exception as err:
+            _LOGGER.error("Failed to run builder script on %s: %s", self.ip, err)
             return None
         else:
             return output

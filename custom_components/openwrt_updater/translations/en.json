@@ -27,7 +27,8 @@
           "toh_timeout_hours": "TOH coordinator interval (hours)",
           "device_timeout_minutes": "Device coordinator interval (minutes)",
           "use_asu": "Use ASU branch",
-          "asu_base_url": "ASU base URL"
+          "asu_base_url": "ASU base URL",
+          "download_base_url": "Base URL for downloads"
         }
       },
       "add_place": {
@@ -71,7 +72,8 @@
           "toh_timeout_hours": "TOH coordinator interval (hours)",
           "device_timeout_minutes": "Device coordinator interval (minutes)",
           "use_asu": "Use ASU branch",
-          "asu_base_url": "ASU base URL"
+          "asu_base_url": "ASU base URL",
+          "download_base_url": "Base URL for downloads"
         }
       },
       "add_device": {

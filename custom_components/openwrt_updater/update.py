@@ -79,8 +79,8 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
         # await self._update_callback(self.config_entry.entry_id, self._ip)
-        with OpenWRTUpdater(self.hass, self.config_entry.entry_id, self.ip) as updater:
-            await updater.trigger_upgrade()
+        updater = OpenWRTUpdater(self.hass, self.config_entry.entry_id, self._ip)
+        await updater.trigger_upgrade()
         await self.coordinator.async_request_refresh()
 
     def __repr__(self):
@@ -93,12 +93,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Asyncronious entry setup."""
     devices = config_entry.options.get("devices", {})
-    # ssh_key_path = hass.data.get(DOMAIN, {}).get("config", {}).get("ssh_key_path", "")
-
     entities = []
-
-    # async def update_callback(entry_id, ip):
-    #    await trigger_update(hass, entry_id, ip, ssh_key_path)
 
     for ip in devices:
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
@@ -108,7 +103,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     config_entry,
                     coordinator,
                     ip,
-                    # , update_callback
                 ),
             ]
         )

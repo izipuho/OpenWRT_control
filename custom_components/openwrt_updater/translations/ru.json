@@ -27,7 +27,8 @@
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
           "use_asu": "Использовать ASU",
-          "asu_base_url": "Базовый URL ASU"
+          "asu_base_url": "Базовый URL ASU",
+          "download_base_url": "Базовый URL для загрузок"
         }
       },
       "add_place": {
@@ -71,7 +72,8 @@
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
           "use_asu": "Использовать ASU",
-          "asu_base_url": "Базовый URL ASU"
+          "asu_base_url": "Базовый URL ASU",
+          "download_base_url": "Базовый URL для загрузок"
         }
       },
       "add_device": {

@@ -119,7 +119,10 @@ class OpenWRTSSH:
         else:
             if result.exit_status != 0:
                 _LOGGER.error(
-                    "Command run failed: %s | %s", result.exit_status, result.stderr
+                    "Command \n\t%s\nrun failed: %s | %s",
+                    command,
+                    result.exit_status,
+                    result.stderr,
                 )
             return result
 
@@ -148,6 +151,20 @@ class OpenWRTSSH:
         fw_file = _first_line(res.stdout)
         return (fw_file or None, bool(fw_file))
 
+    async def check_cached_firmware(
+        self, builder_dir: str, os: str, filename: str
+    ) -> tuple[str | None, bool]:
+        """Check for a cached firmware image on master node.
+
+        Returns:
+            (firmware_file_path, firmware_cached_flag)
+
+        """
+        command = f"{builder_dir}cache/{os}/{filename}"
+        res = await self.exec_command(f'sh -c "ls -1 {command} 2>/dev/null | head -n1"')
+        fw_file = _first_line(res.stdout)
+        return (fw_file, bool(fw_file))
+
     async def read_board(self) -> dict:
         """Read board info."""
         cmd = "ubus call system board"
@@ -174,7 +191,7 @@ class OpenWRTSSH:
 
     async def async_get_device_info(
         self,
-    ) -> tuple[str | None, bool, bool | None, str | None, str | None, list[str]]:
+    ) -> tuple[str | None, bool, bool | None, str | None, str | None, list[str], bool]:
         """Get device info: status, hostname, os version, firmware file presence."""
         try:
             async with self:
@@ -188,9 +205,12 @@ class OpenWRTSSH:
                     board_name,
                 ) = await self.read_board()
                 pkgs = await self.list_installed_packages()
+                has_asu = False
+                if "owut" in pkgs or "auc" in pkgs:
+                    has_asu = True
         except (TimeoutError, asyncssh.Error, OSError) as e:
             _LOGGER.debug("Device info over SSH fetch failed: %s", e)
-            return None, False, None, None, None, None, None, None, []
+            return None, False, None, None, None, None, None, None, [], False
         else:
             return (
                 os_version,
@@ -202,6 +222,7 @@ class OpenWRTSSH:
                 target,
                 board_name,
                 pkgs,
+                has_asu,
             )
 
 

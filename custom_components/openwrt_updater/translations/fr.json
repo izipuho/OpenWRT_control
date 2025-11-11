@@ -27,7 +27,8 @@
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
           "device_timeout_minutes": "Intervalle du coordinateur d’appareil (minutes)",
           "use_asu": "Utiliser ASU",
-          "asu_base_url": "URL de base d’ASU"
+          "asu_base_url": "URL de base d’ASU",
+          "download_base_url": "URL de base pour les téléchargements"
         }
       },
       "add_place": {
@@ -71,7 +72,8 @@
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
           "device_timeout_minutes": "Intervalle du coordinateur d’appareil (minutes)",
           "use_asu": "Utiliser ASU",
-          "asu_base_url": "URL de base d’ASU"
+          "asu_base_url": "URL de base d’ASU",
+          "download_base_url": "URL de base pour les téléchargements"
         }
       },
       "add_device": {

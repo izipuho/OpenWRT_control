@@ -23,11 +23,12 @@
           "builder_location": "Ubicación del builder (username@host:/builderdir)",
           "ssh_key_path": "Ruta de la clave SSH (dentro del directorio config)",
           "toh_url": "URL de TOH",
-          "config_types_file": "Archivo de tipos de configuración (dentro del directorio de la integración)",
+          "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",
           "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
           "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
           "use_asu": "Usar ASU",
-          "asu_base_url": "URL base de ASU"
+          "asu_base_url": "URL base de ASU",
+          "download_base_url": "URL base para descargas"
         }
       },
       "add_place": {
@@ -67,11 +68,12 @@
           "builder_location": "Ubicación del builder (username@host:/builderdir)",
           "ssh_key_path": "Ruta de la clave SSH (dentro del directorio config)",
           "toh_url": "URL de TOH",
-          "config_types_file": "Archivo de tipos de configuración (dentro del directorio de la integración)",
+          "config_types_file": "Archivo de tipos de configuración (en el directorio de la integración)",
           "toh_timeout_hours": "Intervalo del coordinador TOH (horas)",
           "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
           "use_asu": "Usar ASU",
-          "asu_base_url": "URL base de ASU"
+          "asu_base_url": "URL base de ASU",
+          "download_base_url": "URL base para descargas"
         }
       },
       "add_device": {

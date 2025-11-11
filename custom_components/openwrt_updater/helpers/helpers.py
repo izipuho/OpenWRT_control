@@ -67,6 +67,9 @@ def build_global_options_schema(
             vol.Optional("use_asu", default=defaults["use_asu"]): cv.boolean,
             vol.Optional("asu_base_url", default=defaults["asu_base_url"]): cv.string,
             vol.Optional(
+                "download_base_url", default=defaults["download_base_url"]
+            ): cv.string,
+            vol.Optional(
                 "builder_location",
                 default=defaults["builder_location"],
             ): cv.string,

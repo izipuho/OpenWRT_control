@@ -95,6 +95,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     device_class=BinarySensorDeviceClass.OCCUPANCY,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),
+                OpenWRTBinarySensor(
+                    coordinator,
+                    place_name,
+                    ip,
+                    "Has ASU",
+                    "has_asu",
+                    device_class=BinarySensorDeviceClass.OCCUPANCY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
             ]
         )
 
