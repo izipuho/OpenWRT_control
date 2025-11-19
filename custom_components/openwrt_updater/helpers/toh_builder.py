@@ -150,7 +150,11 @@ class LocalTOH:
                 # Try JSON regardless of Content-Type
                 try:
                     raw = await resp.json(content_type=None)
-                    _LOGGER.debug("Got web data: %d rows", len(raw))
+                    _LOGGER.warning(
+                        "Got web data: %d rows, %s",
+                        len(raw),
+                        list(raw["branches"].keys())[:3],
+                    )
                 except Exception as json_err:
                     _LOGGER.error(
                         "Response .json() failed, falling back to text parse: %s",

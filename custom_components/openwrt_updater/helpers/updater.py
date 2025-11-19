@@ -2,7 +2,6 @@
 
 import logging
 import re
-import shlex
 
 from homeassistant.core import HomeAssistant
 
@@ -40,8 +39,8 @@ class OpenWRTUpdater:
         self.place_name = self.data["place_name"]
         self.is_simple = bool(self.data["simple_update"])
         self.is_force = bool(self.data["force_update"])
-        self.available_os_version = shlex.quote(self.data["available_os_version"])
-        self.snapshot_url = shlex.quote(self.data["snapshot_url"])
+        self.available_os_version = self.data["available_os_version"]
+        self.snapshot_url = self.data["snapshot_url"]
         self._sanitized_filename = f"{self._sanitize(self.data['target'])}-{self._sanitize(self.data['board_name'])}-sysupgrade.bin"
 
     def _sysupgrade_command(self, firmware_file: str) -> str:
@@ -120,15 +119,17 @@ class OpenWRTUpdater:
                 async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
                     output = await ssh_client.exec_command(update_command, timeout=900)
             else:
-                update_command = f"sh -c 'scp -O {fw_file} root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin'"
                 async with OpenWRTSSH(
                     ip=self.master_host,
                     username=self.master_username,
                     key_path=self.key_path,
                 ) as master:
-                    output = await master.exec_command(update_command)
+                    output = await master.scp(
+                        fw_file,
+                        f"root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin",
+                    )
             if self.is_force:
-                update_command = f"sh -c '{self._sysupgrade_command(f'openwrt-{self.available_os_version}-asu.bin')}'"
+                update_command = f"{self._sysupgrade_command(f'openwrt-{self.available_os_version}-asu.bin')}"
                 async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
                     output = await ssh_client.exec_command(update_command, timeout=900)
                     _LOGGER.error("Sysupgrade output: %s", output)
@@ -151,7 +152,7 @@ class OpenWRTUpdater:
 
     async def custom_build_upgrade(self):
         """Trigger custom build on master node."""
-        config_type = shlex.quote(self.data["config_type"])
+        config_type = self.data["config_type"]
         update_strategy = "install" if self.is_force else "copy"
         update_command = f"cd {self.builder_dir} && make C={config_type} HOST={self.ip} RELEASE={self.available_os_version} {update_strategy}"
         try:
@@ -161,9 +162,7 @@ class OpenWRTUpdater:
                 key_path=self.key_path,
                 username=self.master_username,
             ) as master:
-                output = await master.exec_command(
-                    f"sh -c '{update_command}'", timeout=1800
-                )
+                output = await master.exec_command({update_command}, timeout=1800)
             _LOGGER.debug("Update result: %s", output)
         except Exception as err:
             _LOGGER.error("Failed to run builder script on %s: %s", self.ip, err)

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+import shlex
 
 import asyncssh
 
@@ -107,7 +108,9 @@ class OpenWRTSSH:
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
             effective_timeout = self.command_timeout if timeout is None else timeout
-            result = await asyncio.wait_for(self._conn.run(command), effective_timeout)
+            result = await asyncio.wait_for(
+                self._conn.run(f"sh -c {shlex.quote(command)}"), effective_timeout
+            )
         except TimeoutError as err:
             _LOGGER.warning(
                 "SSH command timed out on %s: %s, %s", self.ip, command, err
@@ -125,6 +128,15 @@ class OpenWRTSSH:
                     result.stderr,
                 )
             return result
+
+    async def scp(self, filename: str, target_path: str):
+        """Copy local file over scp to remote server."""
+        try:
+            await asyncssh.scp(filename, (self._conn, target_path))
+        except (asyncssh.SFTPError, asyncssh.ProcessError) as err:
+            _LOGGER.error("SCP failed: remote refused transfer (%s)", err)
+        except (TimeoutError, OSError, asyncssh.Error) as err:
+            _LOGGER.error("SCP failed: connection or IO error (%s)", err)
 
     async def list_installed_packages(self) -> list[str]:
         """Return the list of installed package names on the device.
@@ -145,9 +157,7 @@ class OpenWRTSSH:
             (firmware_file_path, firmware_downloaded_flag)
 
         """
-        res = await self.exec_command(
-            'sh -c "ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1"'
-        )
+        res = await self.exec_command("ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1")
         fw_file = _first_line(res.stdout)
         return (fw_file or None, bool(fw_file))
 
@@ -161,7 +171,7 @@ class OpenWRTSSH:
 
         """
         command = f"{builder_dir}cache/{os}/{filename}"
-        res = await self.exec_command(f'sh -c "ls -1 {command} 2>/dev/null | head -n1"')
+        res = await self.exec_command(f"ls -1 {command} 2>/dev/null | head -n1")
         fw_file = _first_line(res.stdout)
         return (fw_file, bool(fw_file))
 
