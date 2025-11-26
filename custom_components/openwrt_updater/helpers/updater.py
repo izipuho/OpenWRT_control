@@ -45,7 +45,11 @@ class OpenWRTUpdater:
 
     def _sysupgrade_command(self, firmware_file: str) -> str:
         """Compose sysupgrade command."""
-        return f"sysupgrade -v /tmp/{firmware_file} >/tmp/sysupgrade.log 2>&1 &"
+        return (
+            # f"/sbin/sysupgrade -T -v /tmp/{firmware_file} >/tmp/sysupgrade.log 2>&1 &"
+            f"/sbin/sysupgrade -v /tmp/{firmware_file} >/tmp/sysupgrade.log 2>&1"
+            # f"sysupgrade -v /tmp/{firmware_file}"
+        )
 
     def _sanitize(self, s: str):
         return re.sub(
@@ -68,12 +72,13 @@ class OpenWRTUpdater:
 
     async def sysupgrade(self, firmware_file: str):
         """Launch sysupgrade with given file."""
-        _LOGGER.debug(
-            "Trying to update %s with local file %s", self.ip, self.firmware_file
-        )
-        update_command = f"sh -c '{self._sysupgrade_command(firmware_file)}'"
+        _LOGGER.debug("Trying to update %s with local file %s", self.ip, firmware_file)
+        update_command = self._sysupgrade_command(firmware_file)
         async with OpenWRTSSH(self.ip, self.key_path) as client:
-            return await client.exec_command(update_command, timeout=10)
+            _LOGGER.debug(
+                "Start sysupgrade on %s with command %s", self.ip, update_command
+            )
+            return await client.exec_command(update_command, timeout=1800)
 
     async def simple_upgrade(self):
         """Trigger simple update. Download snapshot from TOH."""
@@ -129,13 +134,16 @@ class OpenWRTUpdater:
                         f"root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin",
                     )
             if self.is_force:
-                update_command = f"{self._sysupgrade_command(f'openwrt-{self.available_os_version}-asu.bin')}"
-                async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
-                    output = await ssh_client.exec_command(update_command, timeout=900)
-                    _LOGGER.error("Sysupgrade output: %s", output)
+                output = await self.sysupgrade(
+                    f"openwrt-{self.available_os_version}-asu.bin"
+                )
+                exit_status = getattr(output, "exit_status", None)
+                return_code = getattr(output, "return_code", None)
+                if exit_status not in (0, None) or return_code not in (0, None):
+                    _LOGGER.error("Failed to sysupgrade: %s", output)
 
         except Exception as err:
-            _LOGGER.error("Failed to run ASU update for %s: %s", self.ip, err)
+            _LOGGER.error("Failed to run ASU upgrade for %s: %s", self.ip, err)
             return None
         else:
             return output

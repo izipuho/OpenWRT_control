@@ -89,7 +89,9 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(self, command: str, timeout: float | None = None) -> str:
+    async def exec_command(
+        self, command: str, sh_wrap: bool = False, timeout: float | None = None
+    ) -> str:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
@@ -129,14 +131,24 @@ class OpenWRTSSH:
                 )
             return result
 
-    async def scp(self, filename: str, target_path: str):
+    async def scp(self, filename: str, target_path: str) -> bool:
         """Copy local file over scp to remote server."""
         try:
-            await asyncssh.scp(filename, (self._conn, target_path))
-        except (asyncssh.SFTPError, asyncssh.ProcessError) as err:
-            _LOGGER.error("SCP failed: remote refused transfer (%s)", err)
-        except (TimeoutError, OSError, asyncssh.Error) as err:
-            _LOGGER.error("SCP failed: connection or IO error (%s)", err)
+            scp_cmd = f"scp -O {filename} {target_path}"
+            result = await self.exec_command(scp_cmd)
+        except Exception as err:
+            _LOGGER.error(
+                "SCP failed for (%s): connection or IO error (%s)", self.ip, err
+            )
+            return False
+
+        if not result:
+            _LOGGER.error(
+                "SCP failed for (%s): unable to run remote scp command", self.ip
+            )
+            return False
+
+        return True
 
     async def list_installed_packages(self) -> list[str]:
         """Return the list of installed package names on the device.
