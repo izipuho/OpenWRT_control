@@ -10,6 +10,7 @@ from typing import Any
 
 from aiohttp import ClientTimeout
 
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN
@@ -27,7 +28,7 @@ class TOH:
     - Build an in-memory index for O(1) lookups by openwrt_devid.
     """
 
-    def __init__(self, hass) -> None:
+    def __init__(self, hass: HomeAssistant) -> None:
         """Initialize TOH wrapper."""
         self.hass = hass
         self.data: dict[str, Any] = {}
@@ -150,6 +151,7 @@ class TOH:
                 # Try JSON regardless of Content-Type
                 try:
                     raw = await resp.json(content_type=None)
+                    _LOGGER.debug("Got web data: %d rows", len(raw))
                 except Exception as json_err:  # noqa: BLE001
                     _LOGGER.debug(
                         "Response .json() failed, falling back to text parse: %s",
@@ -210,7 +212,6 @@ class TOH:
         Args:
             columns_map: Mapping of column name to index from TOH payload.
             candidates: Ordered list of possible names for the column.
-            default: Optional fallback index.
 
         Returns:
             int | None: Column index if found, otherwise default.
@@ -240,8 +241,7 @@ class TOH:
             return None
         if idx < 0 or idx >= len(row):
             return None
-        result = row[idx]
-        return result
+        return row[idx]
 
     @staticmethod
     def _normalize_snapshot_url(value: Any) -> str | None:

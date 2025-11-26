@@ -10,7 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, get_device_info
+from .helpers.const import DOMAIN, get_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,6 +92,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     ip,
                     "Firmware downloaded",
                     "firmware_downloaded",
+                    device_class=BinarySensorDeviceClass.OCCUPANCY,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                ),
+                OpenWRTBinarySensor(
+                    coordinator,
+                    place_name,
+                    ip,
+                    "Has ASU client",
+                    "has_asu_client",
                     device_class=BinarySensorDeviceClass.OCCUPANCY,
                     entity_category=EntityCategory.DIAGNOSTIC,
                 ),

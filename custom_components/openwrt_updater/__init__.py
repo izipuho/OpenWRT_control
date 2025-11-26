@@ -8,14 +8,13 @@ from pathlib import Path
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
-from .coordinators import OpenWRTDeviceCoordinator, TohCacheCoordinator
+from .coordinators import LocalTohCacheCoordinator, OpenWRTDeviceCoordinator
+from .helpers.const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    # "button",
     "select",
     "switch",
     "text",
@@ -33,6 +32,7 @@ async def async_setup(hass: HomeAssistant, config):
     """
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault("global_ready", asyncio.Event())
+    hass.data[DOMAIN].setdefault("boards", {})
     return True
 
 
@@ -63,12 +63,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["config"] = component_config
         hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
         hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
+        hass.data[DOMAIN]["config"]["overview_url"] = (
+            "https://sysupgrade.openwrt.org/json/v1/overview.json"
+        )
 
-        toh_coordinator = TohCacheCoordinator(
+        toh_coordinator = LocalTohCacheCoordinator(
             hass, timedelta(hours=component_config["toh_timeout_hours"])
         )
         await toh_coordinator.async_config_entry_first_refresh()
-        hass.data[DOMAIN]["toh_cache"] = toh_coordinator
+        hass.data[DOMAIN]["toh_index"] = toh_coordinator
 
         hass.data[DOMAIN]["global_ready"].set()
     else:
@@ -88,7 +91,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             coordinator = OpenWRTDeviceCoordinator(hass, entry, ip)
             await coordinator.async_config_entry_first_refresh()
             hass.data[DOMAIN][entry.entry_id][ip]["coordinator"] = coordinator
-            # hass.data[DOMAIN][entry.entry_id][ip].update(coordinator.data)
 
             _LOGGER.debug(
                 "Initial HAss data: %s", hass.data[DOMAIN][entry.entry_id][ip]

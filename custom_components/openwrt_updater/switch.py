@@ -8,8 +8,8 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import get_device_info
-from .helpers import load_device_option, save_device_option
+from .helpers.const import get_device_info
+from .helpers.helpers import load_device_option, save_device_option
 
 _LOGGER = logging.getLogger(__name__)
 
