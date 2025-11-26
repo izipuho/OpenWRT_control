@@ -6,12 +6,11 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import callback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
 from ..helpers.toh_builder import LocalTOH
-from ..helpers.types import TohItem
 
 if TYPE_CHECKING:
     from datetime import timedelta
@@ -44,9 +43,9 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     @callback
-    async def _on_boards_changed(self) -> None:
+    def _on_boards_changed(self) -> None:
         """React to new (target, board) pairs by requesting a refresh."""
-        await self.async_request_refresh()
+        self.hass.async_create_task(self.async_request_refresh())
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubsribe from signals."""

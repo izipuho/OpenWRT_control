@@ -215,9 +215,9 @@ class OpenWRTSSH:
                     board_name,
                 ) = await self.read_board()
                 pkgs = await self.list_installed_packages()
-                has_asu = False
+                has_asu_client = False
                 if "owut" in pkgs or "auc" in pkgs:
-                    has_asu = True
+                    has_asu_client = True
         except (TimeoutError, asyncssh.Error, OSError) as e:
             _LOGGER.debug("Device info over SSH fetch failed: %s", e)
             return None, False, None, None, None, None, None, None, [], False
@@ -232,7 +232,7 @@ class OpenWRTSSH:
                 target,
                 board_name,
                 pkgs,
-                has_asu,
+                has_asu_client,
             )
 
 

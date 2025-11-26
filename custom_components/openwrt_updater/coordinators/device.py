@@ -6,15 +6,12 @@ from datetime import timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import (
-    async_dispatcher_connect,
-    async_dispatcher_send,
-)
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
-from ..helpers.helpers import load_config_types
+
+# from ..helpers.helpers import load_config_types
 from ..helpers.ssh_client import OpenWRTSSH
 
 if TYPE_CHECKING:
@@ -48,6 +45,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._toh = hass.data[DOMAIN]["toh_index"]
         self._unsub_toh = self._toh.async_add_listener(self._on_toh_update)
+        self._pair_registered = False
 
     def _on_toh_update(self) -> None:
         """TOH changed -> update my entities WITHOUT SSH."""
@@ -61,12 +59,8 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         _LOGGER.debug("Update coordinator for %s", self.ip)
         config_types_path = self.hass.data[DOMAIN]["config"]["config_types_path"]
-        config_types = await self.hass.async_add_executor_job(
-            load_config_types, config_types_path
-        )
-        config_type = self.hass.data[DOMAIN][self.entry.entry_id][self.ip][
-            "config_type"
-        ]
+        # config_types = await self.hass.async_add_executor_job(load_config_types, config_types_path)
+        # config_type = self.hass.data[DOMAIN][self.entry.entry_id][self.ip]["config_type"]
 
         # 1) Fetch live device state
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
@@ -82,13 +76,16 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             target,
             board_name,
             pkgs,
-            has_asu,
+            has_asu_client,
         ) = await client.async_get_device_info()
+
         # 1.1) Gather boards
-        if target and board_name:
+        if target and board_name and not self._pair_registered:
             boards_registry = self.hass.data[DOMAIN]["boards"]
-            boards_registry.setdefault(target, set()).add(board_name)
-            async_dispatcher_send(self.hass, SIGNAL_BOARDS_CHANGED)
+            if board_name not in boards_registry.setdefault(target, set()):
+                boards_registry[target].add(board_name)
+                async_dispatcher_send(self.hass, SIGNAL_BOARDS_CHANGED)
+            self._pair_registered = True
 
         # 2) Resolve TOH for this device from the shared cache
         version, sysupgrade_url = self._toh.get_os_info(target, board_name)
@@ -105,7 +102,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "distribution": distribution,
             "target": target,
             "board_name": board_name,
-            "has_asu": has_asu,
+            "has_asu_client": has_asu_client,
             "packages": pkgs,
         }
         _LOGGER.debug(
