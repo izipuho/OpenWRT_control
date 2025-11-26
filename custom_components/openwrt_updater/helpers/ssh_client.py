@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+import shlex
 
 import asyncssh
 
@@ -88,7 +89,9 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(self, command: str, timeout: float | None = None) -> str:
+    async def exec_command(
+        self, command: str, sh_wrap: bool = False, timeout: float | None = None
+    ) -> str:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
@@ -107,7 +110,9 @@ class OpenWRTSSH:
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
             effective_timeout = self.command_timeout if timeout is None else timeout
-            result = await asyncio.wait_for(self._conn.run(command), effective_timeout)
+            result = await asyncio.wait_for(
+                self._conn.run(f"sh -c {shlex.quote(command)}"), effective_timeout
+            )
         except TimeoutError as err:
             _LOGGER.warning(
                 "SSH command timed out on %s: %s, %s", self.ip, command, err
@@ -125,6 +130,25 @@ class OpenWRTSSH:
                     result.stderr,
                 )
             return result
+
+    async def scp(self, filename: str, target_path: str) -> bool:
+        """Copy local file over scp to remote server."""
+        try:
+            scp_cmd = f"scp -O {filename} {target_path}"
+            result = await self.exec_command(scp_cmd)
+        except Exception as err:
+            _LOGGER.error(
+                "SCP failed for (%s): connection or IO error (%s)", self.ip, err
+            )
+            return False
+
+        if not result:
+            _LOGGER.error(
+                "SCP failed for (%s): unable to run remote scp command", self.ip
+            )
+            return False
+
+        return True
 
     async def list_installed_packages(self) -> list[str]:
         """Return the list of installed package names on the device.
@@ -145,9 +169,7 @@ class OpenWRTSSH:
             (firmware_file_path, firmware_downloaded_flag)
 
         """
-        res = await self.exec_command(
-            'sh -c "ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1"'
-        )
+        res = await self.exec_command("ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1")
         fw_file = _first_line(res.stdout)
         return (fw_file or None, bool(fw_file))
 
@@ -161,7 +183,7 @@ class OpenWRTSSH:
 
         """
         command = f"{builder_dir}cache/{os}/{filename}"
-        res = await self.exec_command(f'sh -c "ls -1 {command} 2>/dev/null | head -n1"')
+        res = await self.exec_command(f"ls -1 {command} 2>/dev/null | head -n1")
         fw_file = _first_line(res.stdout)
         return (fw_file, bool(fw_file))
 
@@ -205,9 +227,9 @@ class OpenWRTSSH:
                     board_name,
                 ) = await self.read_board()
                 pkgs = await self.list_installed_packages()
-                has_asu = False
+                has_asu_client = False
                 if "owut" in pkgs or "auc" in pkgs:
-                    has_asu = True
+                    has_asu_client = True
         except (TimeoutError, asyncssh.Error, OSError) as e:
             _LOGGER.debug("Device info over SSH fetch failed: %s", e)
             return None, False, None, None, None, None, None, None, [], False
@@ -222,7 +244,7 @@ class OpenWRTSSH:
                 target,
                 board_name,
                 pkgs,
-                has_asu,
+                has_asu_client,
             )
 
 
