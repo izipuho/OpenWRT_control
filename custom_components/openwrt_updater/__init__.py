@@ -9,12 +9,13 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 
 from .coordinators import LocalTohCacheCoordinator, OpenWRTDeviceCoordinator
-from .helpers.const import DOMAIN
+from .helpers.const import DOMAIN, INTEGRATION_DEFAULTS
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
+    "button",
     "select",
     "switch",
     "text",
@@ -53,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
     if entry.unique_id == "__global__":
-        component_config = dict(entry.options)
+        component_config = dict(**INTEGRATION_DEFAULTS, **entry.options)
 
         ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
         config_types_path = str(
