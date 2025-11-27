@@ -15,8 +15,8 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    #"button",
-    #"select",
+    # "button",
+    # "select",
     "switch",
     "text",
     "update",
@@ -57,13 +57,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         component_config = {**INTEGRATION_DEFAULTS, **entry.options}
 
         ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
-        config_types_path = str(
-            Path(__file__).parent / component_config.get("config_types_file")
-        )
+        # config_types_path = str(
+        #    Path(__file__).parent / component_config.get("config_types_file")
+        # )
 
         hass.data[DOMAIN]["config"] = component_config
         hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
-        hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
+        # hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
         hass.data[DOMAIN]["config"]["overview_url"] = (
             f"{component_config['asu_base_url']}json/v1/overview.json"
         )
