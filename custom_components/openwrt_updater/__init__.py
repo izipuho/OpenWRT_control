@@ -65,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
         hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
         hass.data[DOMAIN]["config"]["overview_url"] = (
-            "https://sysupgrade.openwrt.org/json/v1/overview.json"
+            f"{component_config['asu_base_url']}json/v1/overview.json"
         )
 
         toh_coordinator = LocalTohCacheCoordinator(

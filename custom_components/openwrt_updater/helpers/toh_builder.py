@@ -150,7 +150,7 @@ class LocalTOH:
                 # Try JSON regardless of Content-Type
                 try:
                     raw = await resp.json(content_type=None)
-                    _LOGGER.warning(
+                    _LOGGER.debug(
                         "Got web data: %d rows, %s",
                         len(raw),
                         list(raw["branches"].keys())[:3],

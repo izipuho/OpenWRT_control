@@ -6,6 +6,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 
+from .helpers.const import DOMAIN
 from .helpers.helpers import (
     build_device_schema,
     build_global_options_schema,
@@ -26,8 +27,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
 
     def get_fresh_data(self):
         """Get fresh data all the time."""
-        entry = self.hass.config_entries.async_get_entry(self.config_entry.entry_id)
-        return dict(entry.options or {})
+        return dict(self.hass.data[DOMAIN]["config"])
 
     async def async_step_init(self, user_input=None):
         """Entry point."""
