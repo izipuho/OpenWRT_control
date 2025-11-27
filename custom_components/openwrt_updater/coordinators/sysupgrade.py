@@ -83,7 +83,7 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Parse index and return OS info for selected board."""
         toh_coordinator = self.hass.data[DOMAIN].get("toh_index")
         if toh_coordinator is None:
-            _LOGGER.debug("TOH index is not ready yet.")
+            _LOGGER.warning("TOH index is not ready yet")
             return None, None
 
         toh_index = toh_coordinator.data
