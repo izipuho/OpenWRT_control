@@ -46,7 +46,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_global(self, user_input=None):
         """Global options step."""
         if user_input is not None:
-            _LOGGER.warning("Saving data to global entry: %s", user_input)
+            _LOGGER.debug("Saving data to global entry: %s", user_input)
             return self.async_create_entry(title="", data=user_input)
         saved_options = self.get_fresh_data()
         schema = await self.hass.async_add_executor_job(
