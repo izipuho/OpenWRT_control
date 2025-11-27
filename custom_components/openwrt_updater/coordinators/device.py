@@ -58,7 +58,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         - TOH info is resolved from the shared TohCacheCoordinator (no network).
         """
         _LOGGER.debug("Update coordinator for %s", self.ip)
-        config_types_path = self.hass.data[DOMAIN]["config"]["config_types_path"]
+        # config_types_path = self.hass.data[DOMAIN]["config"]["config_types_path"]
         # config_types = await self.hass.async_add_executor_job(load_config_types, config_types_path)
         # config_type = self.hass.data[DOMAIN][self.entry.entry_id][self.ip]["config_type"]
 
