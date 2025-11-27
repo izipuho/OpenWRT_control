@@ -31,6 +31,10 @@ class OpenWRTUpdater:
         builder_location = re.fullmatch(
             r"([^@]+)@([^:]+):(.+)", self.config["builder_location"]
         )
+        if not builder_location:
+            raise ValueError(
+                f"Invalid builder_location: {self.config['builder_location']!r}, expected format 'user@host:/dir'"
+            )
         self.master_username, self.master_host, self.builder_dir = (
             builder_location.groups()
         )
@@ -183,8 +187,4 @@ class OpenWRTUpdater:
         if self.is_simple:
             await self.simple_upgrade()
         else:
-            ASU = self.config["use_asu"]
-            if ASU:
-                await self.asu_upgrade()
-            else:
-                await self.custom_build_upgrade()
+            await self.asu_upgrade()

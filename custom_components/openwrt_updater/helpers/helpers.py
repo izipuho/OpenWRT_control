@@ -64,7 +64,7 @@ def build_global_options_schema(
     """Unified global options schema."""
     return vol.Schema(
         {
-            vol.Optional("use_asu", default=defaults["use_asu"]): cv.boolean,
+            # vol.Optional("use_asu", default=defaults["use_asu"]): cv.boolean,
             vol.Optional("asu_base_url", default=defaults["asu_base_url"]): cv.string,
             vol.Optional(
                 "download_base_url", default=defaults["download_base_url"]
@@ -74,11 +74,11 @@ def build_global_options_schema(
                 default=defaults["builder_location"],
             ): cv.string,
             vol.Optional("ssh_key_path", default=defaults["ssh_key_path"]): cv.string,
-            vol.Optional("toh_url", default=defaults["toh_url"]): cv.string,
-            vol.Optional(
-                "config_types_file",
-                default=defaults["config_types_file"],
-            ): cv.string,
+            # vol.Optional("toh_url", default=defaults["toh_url"]): cv.string,
+            # vol.Optional(
+            #    "config_types_file",
+            #    default=defaults["config_types_file"],
+            # ): cv.string,
             vol.Optional(
                 "toh_timeout_hours",
                 default=defaults["toh_timeout_hours"],
@@ -105,10 +105,10 @@ def build_device_schema(
     return vol.Schema(
         {
             vol.Required("ip", default=d.get("ip", "")): cv.string,
-            vol.Required(
-                "config_type",
-                default=d.get("config_type", choices[0] if choices else ""),
-            ): vol.In(choices),
+            # vol.Required(
+            #    "config_type",
+            #    default=d.get("config_type", choices[0] if choices else ""),
+            # ): vol.In(choices),
             vol.Required("simple_update", default=d.get("simple_update", True)): bool,
             vol.Required("force_update", default=d.get("force_update", False)): bool,
             vol.Optional("add_another", default=d.get("add_another", False)): bool,
@@ -121,7 +121,7 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
     ip = user_input["ip"]
     devices[ip] = {
         "ip": ip,
-        "config_type": user_input["config_type"],
+        # "config_type": user_input["config_type"],
         "simple_update": user_input["simple_update"],
         "force_update": user_input["force_update"],
     }
@@ -155,5 +155,5 @@ async def dump_toh_json(
 
         await hass.async_add_executor_job(_write)
         _LOGGER.warning("TOH dump saved to: %s", path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         _LOGGER.error("Failed to dump TOH JSON: %s", exc)
