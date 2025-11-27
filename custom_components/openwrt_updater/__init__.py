@@ -54,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
     if entry.unique_id == "__global__":
-        component_config = dict(**INTEGRATION_DEFAULTS, **entry.options)
+        component_config = {**INTEGRATION_DEFAULTS, **entry.options}
 
         ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
         config_types_path = str(
