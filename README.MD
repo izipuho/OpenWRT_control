@@ -31,8 +31,6 @@ Set **global options** (stored in a special config entry):
 - ASU base URL (default: `https://sysupgrade.openwrt.org/`)
 - Base URL for downloads (default: `https://downloads.openwrt.org/`)
 - SSH key path - path to the private SSH key (default: `/config/ssh_keys/id_ed25519`).
-- TOH URL — URL to Table of Hardware JSON (default: `https://openwrt.org/toh.json`).
-- Config types file — YAML file with device type mappings (default: `config_types.yaml`) (will be deprecated soon).
 - TOH polling interval in hours — refresh interval for TOH cache.
 - Device polling interval in minutes — timeout for device polling.
 
@@ -40,36 +38,25 @@ Set **global options** (stored in a special config entry):
 After global options are configured, create a **Place** (config entry for grouping devices).  
 Then add devices by specifying:
 - Device IP
-- Configuration type (list of available types is loaded from the YAML file defined in `config_types_file`).
-
-You can define config types in `config_types_file` like this:
-```yaml
-zip-3200:
-  openwrt-devid: linksys:linksys_wrt3200acm
-  name: WRT3200-ACM
-```
 
 ## Firmware Updates
 
 The integration supports two update mechanisms, both controlled by configuration options:
 
-### ASU mode (optional)
+### ASU mode 
 If ASU support is enabled and available on the device:
 - The integration requests the build from ASU
 - Downloads the firmware image using the callback information
 - Transfers the image to the device
 - Performs `sysupgrade`
 
-### Sysupgrade overview mode
+### Simple mode
 If enabled:
 - The integration queries the official OpenWRT “sysupgrade overview”
 - Retrieves a matching firmware entry for the device
 - Downloads the referenced image
 - Transfers the image to the device
 - Performs `sysupgrade`
-
-Both mechanisms are independent toggles.  
-Sysupgrade overview is **not** a fallback mode: it is an explicit alternative update source.
 
 ## Dashboards
 
