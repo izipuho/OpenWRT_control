@@ -15,8 +15,8 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    "button",
-    "select",
+    #"button",
+    #"select",
     "switch",
     "text",
     "update",
