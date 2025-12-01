@@ -3,6 +3,8 @@
 import logging
 import re
 
+from asyncssh import scp
+
 from homeassistant.core import HomeAssistant
 
 from .asu_client import ASUClient
@@ -133,10 +135,28 @@ class OpenWRTUpdater:
                     username=self.master_username,
                     key_path=self.key_path,
                 ) as master:
-                    output = await master.scp(
-                        fw_file,
-                        f"root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin",
+                    router = await master.connect_tunneled(
+                        host=self.ip, key_path=self.key_path
                     )
+                    output = None
+                    try:
+                        await scp(
+                            (master.conn, fw_file),
+                            (
+                                router,
+                                f"/tmp/openwrt-{self.available_os_version}-asu.bin",
+                            ),
+                            preserve=True,
+                        )
+                    except Exception as e:
+                        _LOGGER.error("SCP failed with %s", e)
+                    finally:
+                        router.close()
+                        await router.wait_closed()
+                    # output = await master.scp(
+                    #    fw_file,
+                    #    f"root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin",
+                    # )
             if self.is_force:
                 output = await self.sysupgrade(
                     f"openwrt-{self.available_os_version}-asu.bin"

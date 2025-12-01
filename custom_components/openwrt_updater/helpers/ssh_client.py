@@ -34,7 +34,7 @@ class OpenWRTSSH:
         self.username = username
         self.connect_timeout = connect_timeout
         self.command_timeout = command_timeout
-        self._conn: asyncssh.SSHClientConnection | None = None
+        self.conn: asyncssh.SSHClientConnection | None = None
         self.available = False
 
     async def __aenter__(self) -> "OpenWRTSSH":
@@ -53,7 +53,7 @@ class OpenWRTSSH:
             self.username,
             self.ip,
         )
-        if self._conn is not None:
+        if self.conn is not None:
             return None
 
         key_file = Path(self.key_path)
@@ -66,7 +66,7 @@ class OpenWRTSSH:
                 "SSH key not found at %s; attempting agent/defaults", self.key_path
             )
         try:
-            self._conn = await asyncssh.connect(
+            self.conn = await asyncssh.connect(
                 host=self.ip,
                 username=self.username,
                 client_keys=client_keys,
@@ -76,7 +76,7 @@ class OpenWRTSSH:
             )
         except (TimeoutError, asyncssh.Error, OSError) as exc:
             _LOGGER.warning("SSH connect to %s failed: %s", self.ip, exc)
-            self._conn = None
+            self.conn = None
             self.available = False
             raise
         except Exception as err:
@@ -89,19 +89,17 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(
-        self, command: str, sh_wrap: bool = False, timeout: float | None = None
-    ) -> str:
+    async def exec_command(self, command: str, timeout: float | None = None) -> str:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
             asyncssh.SSHCompletedProcess with attributes: stdout, stderr, returncode.
 
         """
-        if self._conn is None:
+        if self.conn is None:
             await self.connect()
 
-        assert self._conn is not None
+        assert self.conn is not None
 
         if not self.available:
             _LOGGER.debug("SSH client not available, skipping command: %s", command)
@@ -111,7 +109,7 @@ class OpenWRTSSH:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
             effective_timeout = self.command_timeout if timeout is None else timeout
             result = await asyncio.wait_for(
-                self._conn.run(f"sh -c {shlex.quote(command)}"), effective_timeout
+                self.conn.run(f"sh -c {shlex.quote(command)}"), effective_timeout
             )
         except TimeoutError as err:
             _LOGGER.warning(
@@ -131,8 +129,8 @@ class OpenWRTSSH:
                 )
             return result
 
-    async def scp(self, filename: str, target_path: str) -> bool:
-        """Copy local file over scp to remote server."""
+    async def scp_with_command(self, filename: str, target_path: str) -> bool:
+        """Copy local file over scp to remote server using scp shell command."""
         try:
             scp_cmd = f"scp -O {filename} {target_path}"
             result = await self.exec_command(scp_cmd)
@@ -149,6 +147,19 @@ class OpenWRTSSH:
             return False
 
         return True
+
+    async def connect_tunneled(self, host: str, key_path: Path, username: str = "root"):
+        """Open SSH connection to host tunneled inside current connection."""
+        if self.conn is None:
+            raise RuntimeError("Base connection is not active")
+
+        return await self.conn.connect_ssh(
+            host=host,
+            username=username,
+            client_keys=[str(key_path)],
+            known_hosts=None,
+            connect_timeout=self.connect_timeout,
+        )
 
     async def list_installed_packages(self) -> list[str]:
         """Return the list of installed package names on the device.
@@ -202,14 +213,14 @@ class OpenWRTSSH:
 
     async def close(self) -> None:
         """Close the SSH connection."""
-        if self._conn is not None:
+        if self.conn is not None:
             try:
-                self._conn.close()
-                await self._conn.wait_closed()
+                self.conn.close()
+                await self.conn.wait_closed()
             except Exception:
                 _LOGGER.exception("Error closing SSH connection to %s", self.ip)
             finally:
-                self._conn = None
+                self.conn = None
 
     async def async_get_device_info(
         self,
