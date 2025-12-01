@@ -9,11 +9,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinators.device import OpenWRTDeviceCoordinator
-from .helpers.asu_client import ASUClient
 from .helpers.const import DOMAIN, get_device_info
 from .helpers.ssh_client import OpenWRTSSH
-from .helpers.updater import OpenWRTUpdater
-from .helpers.toh_builder import LocalTOH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +26,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         name: str,
         key: str,
         entity_category: EntityCategory,
+        entity_icon: str | None = None,
     ) -> None:
         """Initialize simple update class."""
         super().__init__(coordinator)
@@ -47,6 +45,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         self._attr_name = f"{name} ({self._ip})"
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_entity_category = entity_category
+        self._attr_icon = entity_icon
 
         # specific entity properties
 
@@ -54,13 +53,19 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle button press."""
-        await self.coordinator.async_request_refresh()
-        await self.hass.data[DOMAIN]["toh_index"].async_request_refresh()
-        entry_data = self.hass.data[DOMAIN][self._config_entry.entry_id]
-        dev = entry_data[self._ip]
-        _LOGGER.error("Config: %s", self.hass.data[DOMAIN]["config"])
-        _LOGGER.warning("Device data: %s", dev)
-        _LOGGER.error("Coordinator data: %s", dev["coordinator"].data)
+        if self._key == "debug":
+            await self.coordinator.async_request_refresh()
+            await self.hass.data[DOMAIN]["toh_index"].async_request_refresh()
+            entry_data = self.hass.data[DOMAIN][self._config_entry.entry_id]
+            dev = entry_data[self._ip]
+            _LOGGER.error("Config: %s", self.hass.data[DOMAIN]["config"])
+            _LOGGER.warning("Device data: %s", dev)
+            _LOGGER.error("Coordinator data: %s", dev["coordinator"].data)
+        elif self._key == "reboot":
+            _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
+            async with OpenWRTSSH(self._ip, _key_path) as client:
+                result = await client.exec_command("reboot", timeout=1800)
+                _LOGGER.warning("Reboot command ended with %s", result)
 
     def __repr__(self):
         """Repesent the object."""
@@ -78,13 +83,23 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
+                #OpenWRTButton(
+                #    coordinator=coordinator,
+                #    config_entry=config_entry,
+                #    ip=ip,
+                #    name="Debug",
+                #    key="debug",
+                #    entity_category=EntityCategory.DIAGNOSTIC,
+                #    entity_icon="mdi:bug-play",
+                #),
                 OpenWRTButton(
                     coordinator=coordinator,
                     config_entry=config_entry,
                     ip=ip,
-                    name="Debug",
-                    key="debug",
+                    name="Reboot",
+                    key="reboot",
                     entity_category=EntityCategory.DIAGNOSTIC,
+                    entity_icon="mdi:reload",
                 ),
             ]
         )
