@@ -26,6 +26,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         name: str,
         key: str,
         entity_category: EntityCategory,
+        entity_icon: str | None = None,
     ) -> None:
         """Initialize simple update class."""
         super().__init__(coordinator)
@@ -44,6 +45,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         self._attr_name = f"{name} ({self._ip})"
         self._attr_unique_id = f"{name.lower().replace(' ', '_')}_{self._ip}"
         self._attr_entity_category = entity_category
+        self._attr_icon = entity_icon
 
         # specific entity properties
 
@@ -88,6 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                 #    name="Debug",
                 #    key="debug",
                 #    entity_category=EntityCategory.DIAGNOSTIC,
+                #    entity_icon="mdi:bug-play",
                 #),
                 OpenWRTButton(
                     coordinator=coordinator,
@@ -96,6 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     name="Reboot",
                     key="reboot",
                     entity_category=EntityCategory.DIAGNOSTIC,
+                    entity_icon="mdi:reload",
                 ),
             ]
         )
