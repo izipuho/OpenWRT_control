@@ -95,11 +95,11 @@ def build_device_schema(
     hass: HomeAssistant | None, defaults: dict | None
 ) -> vol.Schema:
     """Unified device add schema."""
-    config_types_path = (
-        hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
-    )
-    config_types = load_config_types(config_types_path)
-    choices = sorted(config_types.keys())
+    # config_types_path = (
+    #    hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
+    # )
+    # config_types = load_config_types(config_types_path)
+    # choices = sorted(config_types.keys())
 
     d = defaults or {}
     return vol.Schema(
