@@ -5,26 +5,39 @@ button_card_templates:
     show_name: false
     show_icon: true
     show_state: false
+    tap_action:
+      action: url
+      url_path: |
+        [[[
+          let e = 'text.ip_address_' + variables.ip;
+          let ip = states[e]?.state;
+          return 'http://' + ip;
+        ]]]
     styles:
-      grid:
-        - grid-template-areas: '"name name name i" "update simple versions versions"'
-        - grid-template-columns: 1fr 1fr 1fr 1fr
-        - grid-template-rows: 1fr 1fr
-      state:
-        - font-size: 35px
-        - justify-self: start
-        - padding-left: 20px
       card:
-        - padding-bottom: 0
+        - padding: 0
+        - margin: 0
+        - border: 0
+        - box-shadow: 0
+      grid:
+        - grid-template-areas: '"name name name name i" "update reboot force versions versions"'
+        - grid-template-columns: 2fr 1fr 1fr 1fr 1fr
+        - grid-template-rows: auto
+      icon:
+        - top: 0
+        - right: 0
+        - position: absolute
+        - opacity: 50%
+        - transform: scale(5)
       custom_fields:
         name:
           - text-align: left
           - font-size-adjust: 0.5
-          - padding: 5px
+          - padding: 3px
         versions:
           - text-align: right
-          - font-size-adjust: 0.3
-          - padding: 5px
+          - font-size-adjust: 0.4
+          - padding: 3px
     entity: |
       [[[ return 'binary_sensor.status_' + (variables.ip || 'unknown_ip') ]]]
     custom_fields:
@@ -36,18 +49,33 @@ button_card_templates:
           let ip = states[i]?.state
           return `<b>${name}</b><br>${ip}`;
         ]]]
-      simple:
+      reboot:
         card:
           type: button
           entity: |
-            [[[ return 'switch.simple_update_' + variables.ip ]]]
-          show_name: false
+            [[[ return 'button.reboot_' + variables.ip ]]]
+          show_name: true
           show_icon: true
-          icon_height: 50px
+          name: R
           card_mod:
             style: |
               ha-card {
                 border: none;
+                font-size-adjust: 0.3;
+              }
+      force:
+        card:
+          type: button
+          entity: |
+            [[[ return 'switch.force_update_' + variables.ip ]]]
+          show_name: true
+          show_icon: true
+          name: F
+          card_mod:
+            style: |
+              ha-card {
+                border: none;
+                font-size-adjust: 0.3;
               }
       update:
         card:
