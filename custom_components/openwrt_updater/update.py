@@ -1,8 +1,6 @@
 """Updater entity declaration."""
 
 import logging
-import re
-import shlex
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -12,9 +10,7 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .helpers.asu_client import ASUClient
 from .helpers.const import DOMAIN, get_device_info
-from .helpers.ssh_client import OpenWRTSSH
 from .helpers.updater import OpenWRTUpdater
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,7 +41,6 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         self._attr_unique_id = f"firmware_{self._ip}"
 
         # specific entity properties
-        # self._update_callback = update_callback
         self._attr_supported_features = UpdateEntityFeature.INSTALL
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_extra_state_attributes = {"force": False}

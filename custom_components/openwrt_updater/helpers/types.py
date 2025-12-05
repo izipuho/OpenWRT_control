@@ -14,16 +14,3 @@ class TohItem:
     subtarget: str | None = None
     snapshot_url: str | None = None
     compatibles: str | None = None
-
-
-@dataclass(slots=True)
-class DeviceData:
-    """Data snapshot produced by the device coordinator for entities to consume."""
-
-    current_os_version: str | None = None
-    status: bool | None = None
-    available_os_version: str | None = None
-    snapshot_url: str | None = None
-    firmware_downloaded: bool | None = None
-    firmware_file: str | None = None
-    hostname: str | None = None

@@ -3,7 +3,6 @@
 import asyncio
 from datetime import timedelta
 import logging
-from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
@@ -15,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    # "button",
+    "button",
     # "select",
     "switch",
     "text",
