@@ -132,25 +132,6 @@ class OpenWRTSSH:
                 )
             return result
 
-    async def scp_with_command(self, filename: str, target_path: str) -> bool:
-        """Copy local file over scp to remote server using scp shell command."""
-        try:
-            scp_cmd = f"scp -O {filename} {target_path}"
-            result = await self.exec_command(scp_cmd)
-        except Exception as err:
-            _LOGGER.error(
-                "SCP failed for (%s): connection or IO error (%s)", self.ip, err
-            )
-            return False
-
-        if not result:
-            _LOGGER.error(
-                "SCP failed for (%s): unable to run remote scp command", self.ip
-            )
-            return False
-
-        return True
-
     async def connect_tunneled(self, host: str, key_path: Path, username: str = "root"):
         """Open SSH connection to host tunneled inside current connection."""
         if self.conn is None:
