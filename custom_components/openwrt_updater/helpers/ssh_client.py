@@ -56,6 +56,7 @@ class OpenWRTSSH:
         if self.conn is not None:
             return None
 
+        client_keys: list | None = None
         key_file = Path(self.key_path)
         if key_file.exists():
             key_text = await asyncio.to_thread(Path(self.key_path).read_text)
@@ -89,11 +90,13 @@ class OpenWRTSSH:
             self.available = True
         return self.available
 
-    async def exec_command(self, command: str, timeout: float | None = None) -> str:
+    async def exec_command(
+        self, command: str, timeout: float | None = None
+    ) -> asyncssh.SSHCompletedProcess | None:
         """Run a remote command with a hard timeout; never raises on non-zero exit.
 
         Returns:
-            asyncssh.SSHCompletedProcess with attributes: stdout, stderr, returncode.
+            asyncssh.SSHCompletedProcess on success or None if command failed.
 
         """
         if self.conn is None:
@@ -161,7 +164,7 @@ class OpenWRTSSH:
             connect_timeout=self.connect_timeout,
         )
 
-    async def list_installed_packages(self) -> list[str]:
+    async def _list_installed_packages(self) -> list[str]:
         """Return the list of installed package names on the device.
 
         Uses `opkg list-installed` and strips versions, keeping only names.
@@ -169,11 +172,18 @@ class OpenWRTSSH:
         """
         cmd = "opkg list-installed | cut -d' ' -f1"
         res = await self.exec_command(cmd)
+        if res is None or not res.stdout:
+            _LOGGER.warning(
+                "Failed to fetch installed packages on %s, returning empty list",
+                self.ip,
+            )
+            return []
+
         packages = [line.strip() for line in res.stdout.splitlines() if line.strip()]
         _LOGGER.debug("Installed packages on %s: %d found", self.ip, len(packages))
         return packages
 
-    async def find_downloaded_firmware(self) -> tuple[str | None, bool]:
+    async def _find_downloaded_firmware(self) -> tuple[str | None, bool]:
         """Check for a downloaded firmware image; adjust glob/path to your flow.
 
         Returns:
@@ -181,8 +191,10 @@ class OpenWRTSSH:
 
         """
         res = await self.exec_command("ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1")
+        if res is None or not res.stdout:
+            return None, False
         fw_file = _first_line(res.stdout)
-        return (fw_file or None, bool(fw_file))
+        return fw_file, bool(fw_file)
 
     async def check_cached_firmware(
         self, builder_dir: str, os: str, filename: str
@@ -195,14 +207,33 @@ class OpenWRTSSH:
         """
         command = f"{builder_dir}cache/{os}/{filename}"
         res = await self.exec_command(f"ls -1 {command} 2>/dev/null | head -n1")
+        if res is None or not res.stdout:
+            return None, False
         fw_file = _first_line(res.stdout)
-        return (fw_file, bool(fw_file))
+        return fw_file, bool(fw_file)
 
-    async def read_board(self) -> dict:
-        """Read board info."""
+    async def _read_board(self) -> tuple:
+        """Read board info using `ubus call system board`.
+
+        Returns:
+            Tuple of (hostname, os_version, distribution, target, board_name).
+
+        Raises:
+            RuntimeError: If board info could not be read or parsed.
+
+        """
         cmd = "ubus call system board"
         res = await self.exec_command(cmd)
-        board = json.loads(res.stdout)
+
+        if res is None or not res.stdout:
+            _LOGGER.error("Device %s did not respond about board", self.ip)
+            return None, None, None, None, None
+
+        try:
+            board = json.loads(res.stdout)
+        except json.JSONDecodeError as err:
+            raise RuntimeError("Failed to parse board info JSON") from err
+
         return (
             board["hostname"],
             board["release"]["version"],
@@ -224,39 +255,76 @@ class OpenWRTSSH:
 
     async def async_get_device_info(
         self,
-    ) -> tuple[str | None, bool, bool | None, str | None, str | None, list[str], bool]:
-        """Get device info: status, hostname, os version, firmware file presence."""
+    ) -> tuple[
+        str | None,  # os_version
+        bool,  # status (online)
+        bool | None,  # firmware_downloaded
+        str | None,  # firmware_file
+        str | None,  # hostname
+        str | None,  # distribution
+        str | None,  # target
+        str | None,  # board_name
+        list[str],  # installed packages
+        bool,  # has_asu_client
+    ]:
+        """Get device info: OS, status, firmware info and installed packages."""
+
+        offline_result = (
+            None,  # os_version
+            False,  # status
+            None,  # firmware_downloaded
+            None,  # firmware_file
+            None,  # hostname
+            None,  # distribution
+            None,  # target
+            None,  # board_name
+            [],  # installed packages
+            False,  # has_asu_client
+        )
+
         try:
             async with self:
                 status = True
-                fw_file, fw_downloaded = await self.find_downloaded_firmware()
+
+                fw_file, fw_downloaded = await self._find_downloaded_firmware()
+
                 (
                     hostname,
                     os_version,
                     distribution,
                     target,
                     board_name,
-                ) = await self.read_board()
-                pkgs = await self.list_installed_packages()
-                has_asu_client = False
-                if "owut" in pkgs or "auc" in pkgs:
-                    has_asu_client = True
-        except (TimeoutError, asyncssh.Error, OSError) as e:
-            _LOGGER.debug("Device info over SSH fetch failed: %s", e)
-            return None, False, None, None, None, None, None, None, [], False
-        else:
-            return (
-                os_version,
-                status,
-                fw_downloaded,
-                fw_file,
-                hostname,
-                distribution,
-                target,
-                board_name,
-                pkgs,
-                has_asu_client,
+                ) = await self._read_board()
+
+                pkgs = await self._list_installed_packages()
+                has_asu_client = "owut" in pkgs or "auc" in pkgs
+
+        except (TimeoutError, asyncssh.Error, OSError, RuntimeError) as exc:
+            # Expected runtime problems: SSH/transport issues, invalid board JSON, etc.
+            _LOGGER.debug("Device info over SSH fetch failed for %s: %s", self.ip, exc)
+            return offline_result
+
+        except Exception as exc:
+            # Truly unexpected error – log full traceback, but keep consistent return type.
+            _LOGGER.error(
+                "Unexpected error while fetching device info over SSH for %s: %s",
+                self.ip,
+                exc,
             )
+            return offline_result
+
+        return (
+            os_version,
+            status,
+            fw_downloaded,
+            fw_file,
+            hostname,
+            distribution,
+            target,
+            board_name,
+            pkgs,
+            has_asu_client,
+        )
 
 
 def _first_line(text: str) -> str:
