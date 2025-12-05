@@ -314,7 +314,7 @@ class OpenWRTSSH:
         )
 
 
-def _first_line(text: str) -> str:
+def _first_line(text: str | None) -> str | None:
     """Return the first non-empty line from text, or None."""
     if not text:
         return None
