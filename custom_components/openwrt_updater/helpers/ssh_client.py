@@ -47,14 +47,19 @@ class OpenWRTSSH:
         await self.close()
 
     async def connect(self) -> bool:
-        """Connect handler."""
+        """Establish SSH connection if it is not already open.
+
+        Returns:
+            True if connection is available, False otherwise.
+
+        """
         _LOGGER.debug(
             "Trying to connect to %s@%s",
             self.username,
             self.ip,
         )
         if self.conn is not None:
-            return None
+            return True
 
         client_keys: list | None = None
         key_file = Path(self.key_path)
@@ -233,6 +238,7 @@ class OpenWRTSSH:
                 _LOGGER.exception("Error closing SSH connection to %s", self.ip)
             finally:
                 self.conn = None
+                self.available = False
 
     async def async_get_device_info(
         self,
