@@ -111,11 +111,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload entry."""
     if entry.unique_id == "__global__":
         hass.data[DOMAIN]["config"] = {}
-        unload_ok = True
-    else:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-        if unload_ok:
-            hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop("toh_index", None)
+        global_ready = hass.data[DOMAIN].get("global_ready")
+        if global_ready:
+            global_ready.clear()
+
+        return True
+
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
 
@@ -130,7 +135,8 @@ async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
             hass, timedelta(hours=component_config["toh_timeout_hours"])
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
-        hass.data[DOMAIN]["global_entry"].set()
+        await toh_coordinator.async_config_entry_first_refresh()
+        hass.data[DOMAIN]["global_ready"].set()
         # reread all device-entries
         tasks = [
             hass.config_entries.async_reload(e.entry_id)
