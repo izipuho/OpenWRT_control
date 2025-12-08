@@ -7,7 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
 
@@ -67,18 +67,23 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
         client = OpenWRTSSH(self.ip, key_path)
 
-        (
-            os_version,
-            status,
-            fw_downloaded,
-            fw_file,
-            hostname,
-            distribution,
-            target,
-            board_name,
-            pkgs,
-            has_asu_client,
-        ) = await client.async_get_device_info()
+        try:
+            (
+                os_version,
+                status,
+                fw_downloaded,
+                fw_file,
+                hostname,
+                distribution,
+                target,
+                board_name,
+                pkgs,
+                has_asu_client,
+            ) = await client.async_get_device_info()
+        except Exception as err:
+            raise UpdateFailed(
+                f"Error fetching device info for {self.ip}: {err}"
+            ) from err
 
         # 1.1) Gather boards
         if target and board_name and not self._pair_registered:
