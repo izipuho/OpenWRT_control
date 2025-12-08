@@ -45,6 +45,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._toh = hass.data[DOMAIN]["toh_index"]
         self._unsub_toh = self._toh.async_add_listener(self._on_toh_update)
+        config_entry.async_on_unload(self._unsub_toh)
         self._pair_registered = False
 
     def _on_toh_update(self) -> None:
