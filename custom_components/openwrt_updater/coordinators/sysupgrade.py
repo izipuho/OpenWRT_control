@@ -71,13 +71,11 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             raw = await self._toh.download_overview()
             await self._toh.build_index(raw)
-            result = self._toh.index
         except Exception:
             _LOGGER.warning(
                 "TOH update failed, using cached data if available", exc_info=True
             )
-        else:
-            return result
+        return self._toh.index
 
     def get_os_info(self, target: str, board: str):
         """Parse index and return OS info for selected board."""

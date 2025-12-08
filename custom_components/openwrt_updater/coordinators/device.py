@@ -29,9 +29,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     information via the shared TohCacheCoordinator instance stored in hass.data.
     """
 
-    def __init__(
-        self, hass: HomeAssistant | None, config_entry: ConfigEntry, ip: str
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, ip: str) -> None:
         """Initialize the device coordinator for a specific IP."""
         super().__init__(
             hass=hass,
