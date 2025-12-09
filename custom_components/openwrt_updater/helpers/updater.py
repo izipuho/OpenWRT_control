@@ -109,12 +109,20 @@ class OpenWRTUpdater:
                 "raw": None,
             }
         else:
+            if output is None:
+                exit_status = None
+                return_code = None
+                success = False
+            else:
+                exit_status = getattr(output, "exit_status", None)
+                return_code = getattr(output, "return_code", None)
+                success = True
             return {
-                "success": True,
+                "success": success,
                 "method": "simple",
                 "message": None,
-                "exit_status": getattr(output, "exit_status", None),
-                "return_code": getattr(output, "return_code", None),
+                "exit_status": exit_status,
+                "return_code": return_code,
                 "cached": None,
                 "raw": output,
             }
@@ -126,8 +134,12 @@ class OpenWRTUpdater:
             fw_file, cached = await self._check_cache()
 
             sysupgrade_raw = None
+            exit_status = None
+            return_code = None
+            success = True  # be optimistic
 
             if not cached:
+                # Cache builded FW on master node
                 asu_client = ASUClient(base_url=ASU_BASE_URL)
                 target = self.data["target"]
                 board_name = self.data["board_name"]
@@ -165,18 +177,29 @@ class OpenWRTUpdater:
                     )
                 except Exception as e:
                     _LOGGER.error("SCP failed with %s", e)
+                    success = False
                 finally:
                     router.close()
                     await router.wait_closed()
 
-            if self.is_force:
+            if success and self.is_force:
                 sysupgrade_raw = await self.sysupgrade(
                     f"openwrt-{self.available_os_version}-asu.bin"
                 )
-                exit_status = getattr(sysupgrade_raw, "exit_status", None)
-                return_code = getattr(sysupgrade_raw, "return_code", None)
-                if exit_status not in (0, None) or return_code not in (0, None):
-                    _LOGGER.error("Failed to sysupgrade: %s", sysupgrade_raw)
+                if sysupgrade_raw is None:
+                    _LOGGER.error("Sysupgrade failed or timed out on %s", self.ip)
+                    success = False
+                else:
+                    exit_status = getattr(sysupgrade_raw, "exit_status", None)
+                    return_code = getattr(sysupgrade_raw, "return_code", None)
+                    success = exit_status in (0, None) and return_code in (
+                        0,
+                        None,
+                    )
+                    if not success:
+                        _LOGGER.error(
+                            "Failed to sysupgrade %s: %s", self.ip, sysupgrade_raw
+                        )
 
         except Exception as err:
             _LOGGER.error("Failed to run ASU upgrade for %s: %s", self.ip, err)
@@ -191,7 +214,7 @@ class OpenWRTUpdater:
             }
         else:
             return {
-                "success": True,
+                "success": success,
                 "method": "asu",
                 "message": None,
                 "exit_status": exit_status,

@@ -81,7 +81,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
     def __repr__(self):
         """Represent the object."""
         repr_str = f"\nName: {self.name}"
-        repr_str += f"\n\tValue: {self._attr_latest_version}"
+        repr_str += f"\n\tValue: {self.latest_version}"
         return repr_str
 
 
