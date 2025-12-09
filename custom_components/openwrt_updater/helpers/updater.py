@@ -93,22 +93,53 @@ class OpenWRTUpdater:
             _LOGGER.debug("Downloading %s", self.snapshot_url)
             update_command = f"curl -L --fail --silent --show-error {self.snapshot_url} --output /tmp/openwrt-{self.available_os_version}-simple.bin"
             if self.is_force:
-                update_command = f"sh -c '{update_command} && {self._sysupgrade_command(f'openwrt-{self.available_os_version}-simple.bin')}'"
+                update_command = f"{update_command} && {self._sysupgrade_command(f'openwrt-{self.available_os_version}-simple.bin')}"
             async with OpenWRTSSH(self.ip, self.key_path) as client:
                 output = await client.exec_command(update_command, timeout=900)
             _LOGGER.debug("Update result: %s", output)
-        except Exception:
-            _LOGGER.error("Failed to run simple update for %s", self.ip)
-            return None
+        except Exception as err:
+            _LOGGER.error("Failed to run simple update for %s: %s", self.ip, err)
+            return {
+                "success": False,
+                "method": "simple",
+                "message": err,
+                "exit_status": None,
+                "return_code": None,
+                "cached": None,
+                "raw": None,
+            }
         else:
-            return output
+            if output is None:
+                exit_status = None
+                return_code = None
+                success = False
+            else:
+                exit_status = getattr(output, "exit_status", None)
+                return_code = getattr(output, "return_code", None)
+                success = True
+            return {
+                "success": success,
+                "method": "simple",
+                "message": None,
+                "exit_status": exit_status,
+                "return_code": return_code,
+                "cached": None,
+                "raw": output,
+            }
 
     async def asu_upgrade(self):
         """Trigger ASU upgrade."""
         ASU_BASE_URL = self.config["asu_base_url"]
         try:
             fw_file, cached = await self._check_cache()
+
+            sysupgrade_raw = None
+            exit_status = None
+            return_code = None
+            success = True  # be optimistic
+
             if not cached:
+                # Cache builded FW on master node
                 asu_client = ASUClient(base_url=ASU_BASE_URL)
                 target = self.data["target"]
                 board_name = self.data["board_name"]
@@ -126,53 +157,73 @@ class OpenWRTUpdater:
                 fw_url = f"{ASU_BASE_URL}store/{bin_dir}/{file_name}"
                 _LOGGER.debug("Build URL: %s", fw_url)
                 await self.cache_asu_firmware(firmware_url=fw_url)
-                update_command = f"curl -L --fail --silent --show-error {fw_url} --output /tmp/openwrt-{self.available_os_version}-asu.bin"
-                async with OpenWRTSSH(self.ip, self.key_path) as ssh_client:
-                    output = await ssh_client.exec_command(update_command, timeout=900)
-            else:
-                async with OpenWRTSSH(
-                    ip=self.master_host,
-                    username=self.master_username,
-                    key_path=self.key_path,
-                ) as master:
-                    router = await master.connect_tunneled(
-                        host=self.ip, key_path=self.key_path
+
+            async with OpenWRTSSH(
+                ip=self.master_host,
+                username=self.master_username,
+                key_path=self.key_path,
+            ) as master:
+                router = await master.connect_tunneled(
+                    host=self.ip, key_path=self.key_path
+                )
+                try:
+                    await scp(
+                        (master.conn, fw_file),
+                        (
+                            router,
+                            f"/tmp/openwrt-{self.available_os_version}-asu.bin",
+                        ),
+                        preserve=True,
                     )
-                    output = None
-                    try:
-                        await scp(
-                            (master.conn, fw_file),
-                            (
-                                router,
-                                f"/tmp/openwrt-{self.available_os_version}-asu.bin",
-                            ),
-                            preserve=True,
-                        )
-                    except Exception as e:
-                        _LOGGER.error("SCP failed with %s", e)
-                    finally:
-                        router.close()
-                        await router.wait_closed()
-                    # output = await master.scp(
-                    #    fw_file,
-                    #    f"root@{self.ip}:/tmp/openwrt-{self.available_os_version}-asu.bin",
-                    # )
-            if self.is_force:
-                output = await self.sysupgrade(
+                except Exception as e:
+                    _LOGGER.error("SCP failed with %s", e)
+                    success = False
+                finally:
+                    router.close()
+                    await router.wait_closed()
+
+            if success and self.is_force:
+                sysupgrade_raw = await self.sysupgrade(
                     f"openwrt-{self.available_os_version}-asu.bin"
                 )
-                exit_status = getattr(output, "exit_status", None)
-                return_code = getattr(output, "return_code", None)
-                if exit_status not in (0, None) or return_code not in (0, None):
-                    _LOGGER.error("Failed to sysupgrade: %s", output)
+                if sysupgrade_raw is None:
+                    _LOGGER.error("Sysupgrade failed or timed out on %s", self.ip)
+                    success = False
+                else:
+                    exit_status = getattr(sysupgrade_raw, "exit_status", None)
+                    return_code = getattr(sysupgrade_raw, "return_code", None)
+                    success = exit_status in (0, None) and return_code in (
+                        0,
+                        None,
+                    )
+                    if not success:
+                        _LOGGER.error(
+                            "Failed to sysupgrade %s: %s", self.ip, sysupgrade_raw
+                        )
 
         except Exception as err:
             _LOGGER.error("Failed to run ASU upgrade for %s: %s", self.ip, err)
-            return None
+            return {
+                "success": False,
+                "method": "asu",
+                "message": err,
+                "exit_status": None,
+                "return_code": None,
+                "cached": None,
+                "raw": None,
+            }
         else:
-            return output
+            return {
+                "success": success,
+                "method": "asu",
+                "message": None,
+                "exit_status": exit_status,
+                "return_code": return_code,
+                "cached": None,
+                "raw": sysupgrade_raw,
+            }
 
-    async def _check_cache(self) -> bool:
+    async def _check_cache(self) -> tuple[str, bool]:
         """Check cached build."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
@@ -182,29 +233,8 @@ class OpenWRTUpdater:
             )
         return fw_file, cached
 
-    async def custom_build_upgrade(self):
-        """Trigger custom build on master node."""
-        config_type = self.data["config_type"]
-        update_strategy = "install" if self.is_force else "copy"
-        update_command = f"cd {self.builder_dir} && make C={config_type} HOST={self.ip} RELEASE={self.available_os_version} {update_strategy}"
-        try:
-            _LOGGER.debug("Trying to update %s with %s", self.ip, update_command)
-            async with OpenWRTSSH(
-                ip=self.master_host,
-                key_path=self.key_path,
-                username=self.master_username,
-            ) as master:
-                output = await master.exec_command({update_command}, timeout=1800)
-            _LOGGER.debug("Update result: %s", output)
-        except Exception as err:
-            _LOGGER.error("Failed to run builder script on %s: %s", self.ip, err)
-            return None
-        else:
-            return output
-
     async def trigger_upgrade(self):
         """Trigger upgrade. Wrapper."""
         if self.is_simple:
-            await self.simple_upgrade()
-        else:
-            await self.asu_upgrade()
+            return await self.simple_upgrade()
+        return await self.asu_upgrade()

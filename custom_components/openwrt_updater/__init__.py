@@ -3,7 +3,6 @@
 import asyncio
 from datetime import timedelta
 import logging
-from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
@@ -15,12 +14,28 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [
     "binary_sensor",
-    # "button",
+    "button",
     # "select",
     "switch",
     "text",
     "update",
 ]
+
+
+def _build_global_config(hass: HomeAssistant, entry: ConfigEntry) -> dict:
+    """Build global config from defaults and entry options."""
+    component_config: dict = {
+        **INTEGRATION_DEFAULTS,
+        **(entry.options or {}),
+    }
+
+    ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
+    component_config["ssh_key_path"] = ssh_key_path
+    component_config["overview_url"] = (
+        f"{component_config['asu_base_url']}json/v1/overview.json"
+    )
+
+    return component_config
 
 
 async def async_setup(hass: HomeAssistant, config):
@@ -54,25 +69,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
     if entry.unique_id == "__global__":
-        component_config = {**INTEGRATION_DEFAULTS, **entry.options}
-
-        ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
-        # config_types_path = str(
-        #    Path(__file__).parent / component_config.get("config_types_file")
-        # )
-
+        component_config = _build_global_config(hass, entry)
         hass.data[DOMAIN]["config"] = component_config
-        hass.data[DOMAIN]["config"]["ssh_key_path"] = ssh_key_path
-        # hass.data[DOMAIN]["config"]["config_types_path"] = config_types_path
-        hass.data[DOMAIN]["config"]["overview_url"] = (
-            f"{component_config['asu_base_url']}json/v1/overview.json"
-        )
 
         toh_coordinator = LocalTohCacheCoordinator(
             hass, timedelta(hours=component_config["toh_timeout_hours"])
         )
-        await toh_coordinator.async_config_entry_first_refresh()
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
+        await toh_coordinator.async_config_entry_first_refresh()
 
         hass.data[DOMAIN]["global_ready"].set()
     else:
@@ -82,7 +86,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN][entry.entry_id]["data"] = entry.data
 
         # Get devices info from config_entry
-        devices = entry.options.get("devices", [])
+        devices = entry.options.get("devices", {})
 
         # Save config-entry and coordinator data to hass.data for each device
         for ip, device in devices.items():
@@ -107,11 +111,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload entry."""
     if entry.unique_id == "__global__":
         hass.data[DOMAIN]["config"] = {}
-        unload_ok = True
-    else:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-        if unload_ok:
-            hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop("toh_index", None)
+        global_ready = hass.data[DOMAIN].get("global_ready")
+        if global_ready:
+            global_ready.clear()
+
+        return True
+
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
 
@@ -119,7 +128,15 @@ async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload on any change; if global – обновить всех."""
     if entry.unique_id == "__global__":
         # reread global config
-        hass.data[DOMAIN]["config"] = dict(entry.options or {})
+        component_config = _build_global_config(hass, entry)
+        hass.data[DOMAIN]["config"] = component_config
+        # recreate TOH coordinator
+        toh_coordinator = LocalTohCacheCoordinator(
+            hass, timedelta(hours=component_config["toh_timeout_hours"])
+        )
+        hass.data[DOMAIN]["toh_index"] = toh_coordinator
+        await toh_coordinator.async_config_entry_first_refresh()
+        hass.data[DOMAIN]["global_ready"].set()
         # reread all device-entries
         tasks = [
             hass.config_entries.async_reload(e.entry_id)

@@ -5,6 +5,7 @@ import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.helpers import device_registry as dr
 
 from .helpers.const import DOMAIN
 from .helpers.helpers import (
@@ -36,12 +37,13 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         self._devices = dict(self.config_entry.options.get("devices", {}))
         if self.config_entry.unique_id == "__global__":
             return await self.async_step_global()
-        return await self.async_step_add_device()
+        if not self._devices:
+            return await self.async_step_add_device()
         ## TODO remove device
-        # return self.async_show_menu(
-        #    step_id="init",
-        #    menu_options=["add_device", "remove_device"],
-        # )
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["add_device", "remove_device"],
+        )
 
     async def async_step_global(self, user_input=None):
         """Global options step."""
@@ -75,19 +77,32 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_remove_device(self, user_input=None):
         """Step to choose device for removal."""
-        devices = self._devices
-        if not devices:
+        if not self._devices:
             return self.async_abort(reason="no_devices")
 
         if user_input is not None:
             remove_ip = user_input["ip"]
-            new_devices = {ip: d for ip, d in devices.items() if ip != remove_ip}
+            _LOGGER.debug("Remove %s", remove_ip)
+            self._devices.pop(remove_ip, None)
+
+            new_options = dict(self.config_entry.options)
+            new_options["devices"] = self._devices
+
+            device_registry = dr.async_get(self.hass)
+            device_entry = device_registry.async_get_device(
+                identifiers={(DOMAIN, remove_ip)}
+            )
+            if device_entry is not None:
+                device_registry.async_remove_device(device_entry.id)
+
             return self.async_create_entry(
                 title="",
-                data={**self.config_entry.options, "devices": new_devices},
+                data=new_options,
             )
 
         return self.async_show_form(
             step_id="remove_device",
-            data_schema=vol.Schema({vol.Required("ip"): vol.In(list(devices.keys()))}),
+            data_schema=vol.Schema(
+                {vol.Required("ip"): vol.In(list(self._devices.keys()))}
+            ),
         )

@@ -7,7 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
 
@@ -29,9 +29,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     information via the shared TohCacheCoordinator instance stored in hass.data.
     """
 
-    def __init__(
-        self, hass: HomeAssistant | None, config_entry: ConfigEntry, ip: str
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, ip: str) -> None:
         """Initialize the device coordinator for a specific IP."""
         super().__init__(
             hass=hass,
@@ -45,6 +43,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._toh = hass.data[DOMAIN]["toh_index"]
         self._unsub_toh = self._toh.async_add_listener(self._on_toh_update)
+        config_entry.async_on_unload(self._unsub_toh)
         self._pair_registered = False
 
     def _on_toh_update(self) -> None:
@@ -66,18 +65,23 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
         client = OpenWRTSSH(self.ip, key_path)
 
-        (
-            os_version,
-            status,
-            fw_downloaded,
-            fw_file,
-            hostname,
-            distribution,
-            target,
-            board_name,
-            pkgs,
-            has_asu_client,
-        ) = await client.async_get_device_info()
+        try:
+            (
+                os_version,
+                status,
+                fw_downloaded,
+                fw_file,
+                hostname,
+                distribution,
+                target,
+                board_name,
+                pkgs,
+                has_asu_client,
+            ) = await client.async_get_device_info()
+        except Exception as err:
+            raise UpdateFailed(
+                f"Error fetching device info for {self.ip}: {err}"
+            ) from err
 
         # 1.1) Gather boards
         if target and board_name and not self._pair_registered:

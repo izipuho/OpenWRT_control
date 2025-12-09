@@ -1,8 +1,6 @@
 """Updater entity declaration."""
 
 import logging
-import re
-import shlex
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -10,11 +8,10 @@ from homeassistant.components.update import (
     UpdateEntityFeature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .helpers.asu_client import ASUClient
 from .helpers.const import DOMAIN, get_device_info
-from .helpers.ssh_client import OpenWRTSSH
 from .helpers.updater import OpenWRTUpdater
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,7 +42,6 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         self._attr_unique_id = f"firmware_{self._ip}"
 
         # specific entity properties
-        # self._update_callback = update_callback
         self._attr_supported_features = UpdateEntityFeature.INSTALL
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_extra_state_attributes = {"force": False}
@@ -80,13 +76,16 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         """Call update function."""
         # await self._update_callback(self.config_entry.entry_id, self._ip)
         updater = OpenWRTUpdater(self.hass, self.config_entry.entry_id, self._ip)
-        await updater.trigger_upgrade()
+        result = await updater.trigger_upgrade()
+        if not result.get("success", False):
+            _LOGGER.error("Update failed for %s: %s", self._ip, result)
+            raise HomeAssistantError(str(result.get("message", "")))
         await self.coordinator.async_request_refresh()
 
     def __repr__(self):
         """Represent the object."""
         repr_str = f"\nName: {self.name}"
-        repr_str += f"\n\tValue: {self._attr_latest_version}"
+        repr_str += f"\n\tValue: {self.latest_version}"
         return repr_str
 
 

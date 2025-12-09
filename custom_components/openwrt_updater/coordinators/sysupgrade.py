@@ -71,22 +71,15 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             raw = await self._toh.download_overview()
             await self._toh.build_index(raw)
-            result = self._toh.index
         except Exception:
             _LOGGER.warning(
                 "TOH update failed, using cached data if available", exc_info=True
             )
-        else:
-            return result
+        return self._toh.index
 
     def get_os_info(self, target: str, board: str):
         """Parse index and return OS info for selected board."""
-        toh_coordinator = self.hass.data[DOMAIN].get("toh_index")
-        if toh_coordinator is None:
-            _LOGGER.warning("TOH index is not ready yet")
-            return None, None
-
-        toh_index = toh_coordinator.data
+        toh_index = self.data or {}
         os_info = toh_index.get(target, {}).get(board, {})
         if os_info == {}:
             return None, None

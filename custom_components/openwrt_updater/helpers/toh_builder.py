@@ -48,7 +48,7 @@ class LocalTOH:
         my_targets = {target: set(boards) for target, boards in orig_boards.items()}
         branches = raw.get("branches", {})
         # Ignore snapshot branch
-        branches.pop("SNAPSHOT")
+        branches.pop("SNAPSHOT", None)
         # Iterate through branches
         for branch in branches.values():
             # Get last version from supported
