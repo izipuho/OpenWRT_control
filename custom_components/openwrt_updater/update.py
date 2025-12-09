@@ -8,6 +8,7 @@ from homeassistant.components.update import (
     UpdateEntityFeature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .helpers.const import DOMAIN, get_device_info
@@ -75,7 +76,10 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         """Call update function."""
         # await self._update_callback(self.config_entry.entry_id, self._ip)
         updater = OpenWRTUpdater(self.hass, self.config_entry.entry_id, self._ip)
-        await updater.trigger_upgrade()
+        result = await updater.trigger_upgrade()
+        if not result.get("success", False):
+            _LOGGER.error("Update failed for %s: %s", self._ip, result)
+            raise HomeAssistantError(str(result.get("message", "")))
         await self.coordinator.async_request_refresh()
 
     def __repr__(self):
