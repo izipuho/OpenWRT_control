@@ -82,6 +82,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             remove_ip = user_input["ip"]
+            _LOGGER.debug("Remove %s", remove_ip)
             self._devices.pop(remove_ip, None)
 
             new_options = dict(self.config_entry.options)
