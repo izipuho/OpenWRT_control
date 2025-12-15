@@ -1,5 +1,7 @@
 """Shared helpers. Persist states. Load config types."""
 
+import asyncio
+import contextlib
 import json
 import logging
 from pathlib import Path
@@ -157,3 +159,22 @@ async def dump_toh_json(
         _LOGGER.warning("TOH dump saved to: %s", path)
     except Exception as exc:
         _LOGGER.error("Failed to dump TOH JSON: %s", exc)
+
+
+async def async_check_alive(host: str, port: int = 22, timeout: float = 1.0) -> bool:
+    """Alive fast-check."""
+    try:
+        r, w = await asyncio.wait_for(
+            asyncio.open_connection(host=host, port=port), timeout=timeout
+        )
+    except (TimeoutError, OSError) as err:
+        _LOGGER.debug("Alive check for %s:%s failed: %s", host, port, err)
+        return False
+    except Exception as err:
+        _LOGGER.debug("Unexpected error for %s:%s: %s", host, port, err)
+        return False
+
+    w.close()
+    with contextlib.suppress(Exception):
+        await w.wait_closed()
+    return True

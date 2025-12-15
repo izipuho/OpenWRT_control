@@ -81,6 +81,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
             _LOGGER.error("Update failed for %s: %s", self._ip, result)
             raise HomeAssistantError(str(result.get("message", "")))
         await self.coordinator.async_request_refresh()
+        await self.coordinator.async_wait_for_alive()
 
     def __repr__(self):
         """Represent the object."""
