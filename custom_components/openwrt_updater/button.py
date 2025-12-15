@@ -66,6 +66,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
             async with OpenWRTSSH(self._ip, _key_path) as client:
                 result = await client.exec_command("reboot", timeout=1800)
                 _LOGGER.warning("Reboot command ended with %s", result)
+            await self.coordinator.async_wait_for_alive()
 
     def __repr__(self):
         """Repesent the object."""

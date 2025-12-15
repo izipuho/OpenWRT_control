@@ -72,6 +72,22 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         """Do not try to override picture."""
         return None
 
+    def _can_install(self) -> bool:
+        """Check intall possibility."""
+        installed = self.installed_version
+        latest = self.latest_version
+        if not installed or not latest:
+            return False
+        return self.version_is_newer(latest, installed)
+
+    @property
+    def supported_features(self) -> UpdateEntityFeature:
+        """Calc supported features."""
+        features = UpdateEntityFeature(0)
+        if self._can_install():
+            features |= UpdateEntityFeature.INSTALL
+        return features
+
     async def async_install(self, version: str | None, backup: bool, **kwargs):
         """Call update function."""
         # await self._update_callback(self.config_entry.entry_id, self._ip)
@@ -81,6 +97,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
             _LOGGER.error("Update failed for %s: %s", self._ip, result)
             raise HomeAssistantError(str(result.get("message", "")))
         await self.coordinator.async_request_refresh()
+        await self.coordinator.async_wait_for_alive()
 
     def __repr__(self):
         """Represent the object."""

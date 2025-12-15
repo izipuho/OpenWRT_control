@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 import logging
+import time
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
-
-# from ..helpers.helpers import load_config_types
+from ..helpers.helpers import async_check_alive
 from ..helpers.ssh_client import OpenWRTSSH
 
 if TYPE_CHECKING:
@@ -45,10 +46,52 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._unsub_toh = self._toh.async_add_listener(self._on_toh_update)
         config_entry.async_on_unload(self._unsub_toh)
         self._pair_registered = False
+        self._fast_alive_track: asyncio.Task | None = None
 
     def _on_toh_update(self) -> None:
         """TOH changed -> update my entities WITHOUT SSH."""
         self.hass.async_create_task(self.async_request_refresh())
+
+    async def async_wait_for_alive(
+        self, interval: float = 5.0, max_duration: float = 180.0, timeout: float = 1.0
+    ) -> None:
+        """Start fast alive wait loop if not already running.
+
+        Creates background task which polls TCP port 22 until device is back
+        or timeout is reached. Does not block caller.
+        """
+        # Do not start second fast-mode if one is already running
+        if self._fast_alive_track is not None and not self._fast_alive_track.done():
+            return
+
+        ip = self._ip  # или как у тебя поле называется
+        if not ip:
+            return
+
+        async def _runner() -> None:
+            """Background fast-alive loop."""
+            start = time.monotonic()
+            try:
+                while (time.monotonic() - start) < max_duration:
+                    is_alive = await async_check_alive(
+                        ip,
+                        22,
+                        timeout=timeout,
+                    )
+                    if is_alive:
+                        await self.async_request_refresh()
+                        return
+
+                    await asyncio.sleep(interval)
+            finally:
+                # Ensure flag is cleared when task finishes
+                self._fast_alive_track = None
+
+        # Create background task and store it
+        self._fast_alive_track = self.hass.async_create_task(
+            _runner(),
+            name=f"{self.name}-fast-alive",
+        )
 
     async def _async_update_data(self):
         """Fetch device state and compose a DeviceData snapshot.
@@ -57,9 +100,6 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         - TOH info is resolved from the shared TohCacheCoordinator (no network).
         """
         _LOGGER.debug("Update coordinator for %s", self.ip)
-        # config_types_path = self.hass.data[DOMAIN]["config"]["config_types_path"]
-        # config_types = await self.hass.async_add_executor_job(load_config_types, config_types_path)
-        # config_type = self.hass.data[DOMAIN][self.entry.entry_id][self.ip]["config_type"]
 
         # 1) Fetch live device state
         key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
