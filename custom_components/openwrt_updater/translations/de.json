@@ -3,49 +3,49 @@
   "config": {
     "abort": {
       "toh_unavailable": "Der Gerätekatalog (TOH) ist derzeit nicht verfügbar. Bitte später erneut versuchen.",
-      "yaml_invalid": "Ungültige YAML-Datei. Bitte korrigiere deine config_types.yaml.",
+      "yaml_invalid": "Ungültige YAML-Datei. Bitte config_types.yaml korrigieren.",
       "already_configured": "Diese Integration ist bereits konfiguriert."
     },
     "error": {
-      "invalid_master_node": "Master-Knoten muss die Form user@host haben.",
-      "invalid_ip": "Gib eine gültige IPv4-Adresse ein.",
+      "invalid_master_node": "Der Master-Knoten muss das Format benutzer@host haben.",
+      "invalid_ip": "Geben Sie eine gültige IPv4-Adresse ein.",
       "invalid_path": "Pfad existiert nicht oder ist nicht lesbar.",
       "ssh_key_not_found": "SSH-Schlüsseldatei nicht gefunden.",
       "connection_failed": "Verbindung zum Gerät nicht möglich.",
-      "missing_required": "Bitte fülle alle Pflichtfelder aus."
+      "missing_required": "Bitte alle Pflichtfelder ausfüllen."
     },
     "step": {
       "user": {},
       "global": {
         "title": "Globale Optionen festlegen",
-        "description": "Master-Node, SSH-Schlüssel usw.",
+        "description": "Master-Knoten, SSH-Schlüssel usw.",
         "data": {
-          "builder_location": "Builder-Standort (username@host:/builderdir)",
-          "ssh_key_path": "Pfad zum SSH-Schlüssel (im Config-Verzeichnis)",
+          "builder_location": "Builder-Standort (benutzer@host:/builderdir)",
+          "ssh_key_path": "SSH-Schlüsselpfad (im config-Verzeichnis)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Datei der Konfigurationstypen (im Integrationsverzeichnis)",
-          "toh_timeout_hours": "Intervall des TOH-Koordinators (Stunden)",
-          "device_timeout_minutes": "Intervall des Gerätekoordinators (Minuten)",
-          "use_asu": "ASU verwenden",
+          "config_types_file": "Config-Typen-Datei (im Integrationsverzeichnis)",
+          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
+          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)",
+          "use_asu": "ASU-Zweig verwenden",
           "asu_base_url": "ASU-Basis-URL",
           "download_base_url": "Basis-URL für Downloads"
         }
       },
       "add_place": {
         "title": "Ort hinzufügen",
-        "description": "Gib die Details deines Standorts ein.",
+        "description": "Geben Sie die Details des Ortes ein.",
         "data": {
-          "place_name": "Name des Orts",
+          "place_name": "Ortsname",
           "place_ipmask": "IP-Maske (erste 3 Oktette)"
         }
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Gib die Details deines OpenWRT-Geräts ein.",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. benutzerdefinierter Builder)",
+          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. eigener Builder)",
           "force_update": "Sofort installieren (sysupgrade -v)",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
         }
@@ -55,41 +55,128 @@
   "options": {
     "step": {
       "user": {},
-      "init": {
+      "init": {},
+      "device_menu": {
         "menu_options": {
-          "add_device": "Gerät hinzufügen",
-          "remove_device": "Gerät entfernen"
+          "device_add": "Gerät hinzufügen",
+          "device_remove": "Gerät entfernen"
+        }
+      },
+      "global_menu": {
+        "menu_options": {
+          "global": "Globale Optionen bearbeiten",
+          "lists_menu": "Paketlisten verwalten",
+          "profiles_menu": "Profile verwalten"
+        }
+      },
+      "lists_menu": {
+        "menu_options": {
+          "list_add": "Paketliste hinzufügen",
+          "list_edit_pick": "Paketliste bearbeiten",
+          "lists_delete_pick": "Paketlisten löschen"
+        }
+      },
+      "list_add": {
+        "title": "Paketliste hinzufügen",
+        "description": "Paketliste hinzufügen",
+        "data": {
+          "list_id": "Listen-ID",
+          "include": "Pakete einschließen",
+          "exclude": "Pakete ausschließen",
+          "add_another": "Eine weitere Liste hinzufügen"
+        }
+      },
+      "list_edit_pick": {
+        "title": "Liste zum Bearbeiten auswählen",
+        "description": "Liste zum Bearbeiten auswählen",
+        "data": {
+          "list_id": "Listen-ID"
+        }
+      },
+      "list_edit": {
+        "title": "Paketliste bearbeiten",
+        "description": "Paketliste bearbeiten",
+        "data": {
+          "list_id": "Listen-ID",
+          "include": "Pakete einschließen",
+          "exclude": "Pakete ausschließen"
+        }
+      },
+      "lists_delete_pick": {
+        "title": "Liste zum Löschen auswählen",
+        "description": "Liste zum Löschen auswählen",
+        "data": {
+          "list_id": "Listen-ID"
+        }
+      },
+      "profiles_menu": {
+        "menu_options": {
+          "profile_add": "Profil hinzufügen",
+          "profile_edit_pick": "Profil bearbeiten",
+          "profiles_delete_pick": "Profile löschen"
+        }
+      },
+      "profile_add": {
+        "title": "Profil hinzufügen",
+        "description": "Profil hinzufügen",
+        "data": {
+          "profile_id": "Profil-ID",
+          "lists": "Listen einschließen",
+          "add_another": "Ein weiteres Profil hinzufügen"
+        }
+      },
+      "profile_edit_pick": {
+        "title": "Profil zum Bearbeiten auswählen",
+        "description": "Profil zum Bearbeiten auswählen",
+        "data": {
+          "profile_id": "Profil-ID"
+        }
+      },
+      "profile_edit": {
+        "title": "Profil bearbeiten",
+        "description": "Profil bearbeiten",
+        "data": {
+          "profile_id": "Profil-ID",
+          "include": "Listen einschließen",
+          "exclude": "Listen ausschließen"
+        }
+      },
+      "profiles_delete_pick": {
+        "title": "Profil zum Löschen auswählen",
+        "description": "Profil zum Löschen auswählen",
+        "data": {
+          "profile_id": "Profil-ID"
         }
       },
       "global": {
-        "title": "Globale Optionen festlegen",
-        "description": "Master-Node, SSH-Schlüssel usw.",
+        "title": "Globale Optionen bearbeiten",
+        "description": "Master-Knoten, SSH-Schlüssel usw.",
         "data": {
-          "builder_location": "Builder-Standort (username@host:/builderdir)",
-          "ssh_key_path": "Pfad zum SSH-Schlüssel (im Config-Verzeichnis)",
+          "builder_location": "Builder-Standort (benutzer@host:/builderdir)",
+          "ssh_key_path": "SSH-Schlüsselpfad (im config-Verzeichnis)",
           "toh_url": "TOH-URL",
-          "config_types_file": "Datei der Konfigurationstypen (im Integrationsverzeichnis)",
-          "toh_timeout_hours": "Intervall des TOH-Koordinators (Stunden)",
-          "device_timeout_minutes": "Intervall des Gerätekoordinators (Minuten)",
-          "use_asu": "ASU verwenden",
+          "config_types_file": "Config-Typen-Datei (im Integrationsverzeichnis)",
+          "toh_timeout_hours": "TOH-Koordinator-Intervall (Stunden)",
+          "device_timeout_minutes": "Geräte-Koordinator-Intervall (Minuten)",
+          "use_asu": "ASU-Zweig verwenden",
           "asu_base_url": "ASU-Basis-URL",
           "download_base_url": "Basis-URL für Downloads"
         }
       },
-      "add_device": {
+      "device_add": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Gib die Details deines OpenWRT-Geräts ein.",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
-          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. benutzerdefinierter Builder)",
+          "simple_update": "Einfaches Update (curl von OpenWRT.org vs. eigener Builder)",
           "force_update": "Sofort installieren (sysupgrade -v)",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
         }
       },
-      "remove_device": {
+      "device_remove": {
         "title": "OpenWRT-Gerät entfernen",
-        "description": "Zu entfernendes Gerät wählen.",
+        "description": "Zu entfernendes Gerät auswählen.",
         "data": {
           "ip": "Geräte-IP"
         }

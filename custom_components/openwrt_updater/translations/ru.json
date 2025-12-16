@@ -2,38 +2,38 @@
   "title": "OpenWRT Updater",
   "config": {
     "abort": {
-      "toh_unavailable": "Каталог устройств (TOH) сейчас недоступен. Повторите попытку позже.",
-      "yaml_invalid": "Некорректный файл YAML. Исправьте config_types.yaml.",
+      "toh_unavailable": "Каталог устройств (TOH) сейчас недоступен. Попробуйте позже.",
+      "yaml_invalid": "Некорректный YAML-файл. Исправьте config_types.yaml.",
       "already_configured": "Эта интеграция уже настроена."
     },
     "error": {
-      "invalid_master_node": "Master-узел должен быть в формате user@host.",
-      "invalid_ip": "Введите корректный адрес IPv4.",
+      "invalid_master_node": "Мастер-узел должен быть в формате user@host.",
+      "invalid_ip": "Введите корректный IPv4-адрес.",
       "invalid_path": "Путь не существует или недоступен для чтения.",
       "ssh_key_not_found": "Файл SSH-ключа не найден.",
       "connection_failed": "Не удалось подключиться к устройству.",
-      "missing_required": "Заполните все обязательные поля."
+      "missing_required": "Пожалуйста, заполните все обязательные поля."
     },
     "step": {
       "user": {},
       "global": {
-        "title": "Глобальные параметры",
-        "description": "Master-узел, SSH-ключи и т. п.",
+        "title": "Задать глобальные параметры",
+        "description": "Мастер-узел, SSH-ключи и т.д.",
         "data": {
-          "builder_location": "Расположение builder’а (username@host:/builderdir)",
-          "ssh_key_path": "Путь к SSH-ключу (внутри каталога config)",
+          "builder_location": "Расположение билдера (user@host:/builderdir)",
+          "ssh_key_path": "Путь к SSH-ключу (в каталоге config)",
           "toh_url": "URL TOH",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
-          "use_asu": "Использовать ASU",
+          "use_asu": "Использовать ветку ASU",
           "asu_base_url": "Базовый URL ASU",
           "download_base_url": "Базовый URL для загрузок"
         }
       },
       "add_place": {
         "title": "Добавить площадку",
-        "description": "Укажите параметры вашей площадки.",
+        "description": "Введите параметры площадки.",
         "data": {
           "place_name": "Название площадки",
           "place_ipmask": "IP-маска (первые 3 октета)"
@@ -41,13 +41,13 @@
       },
       "add_device": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Укажите параметры устройства OpenWRT.",
+        "description": "Введите параметры устройства OpenWRT.",
         "data": {
-          "ip": "IP устройства",
+          "ip": "IP-адрес устройства",
           "config_type": "Тип конфигурации",
-          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
-          "force_update": "Установить немедленно (sysupgrade -v)",
-          "add_another": "Добавить ещё одно после сохранения"
+          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный билдер)",
+          "force_update": "Установить сразу (sysupgrade -v)",
+          "add_another": "Добавить ещё после сохранения"
         }
       }
     }
@@ -55,43 +55,130 @@
   "options": {
     "step": {
       "user": {},
-      "init": {
+      "init": {},
+      "device_menu": {
         "menu_options": {
-          "add_device": "Добавить устройство",
-          "remove_device": "Удалить устройство"
+          "device_add": "Добавить устройство",
+          "device_remove": "Удалить устройство"
+        }
+      },
+      "global_menu": {
+        "menu_options": {
+          "global": "Редактировать глобальные параметры",
+          "lists_menu": "Управление списками пакетов",
+          "profiles_menu": "Управление профилями"
+        }
+      },
+      "lists_menu": {
+        "menu_options": {
+          "list_add": "Добавить список пакетов",
+          "list_edit_pick": "Редактировать список пакетов",
+          "lists_delete_pick": "Удалить списки пакетов"
+        }
+      },
+      "list_add": {
+        "title": "Добавить список пакетов",
+        "description": "Добавить список пакетов",
+        "data": {
+          "list_id": "ID списка",
+          "include": "Включить пакеты",
+          "exclude": "Исключить пакеты",
+          "add_another": "Добавить ещё один список"
+        }
+      },
+      "list_edit_pick": {
+        "title": "Выбор списка для редактирования",
+        "description": "Выбор списка для редактирования",
+        "data": {
+          "list_id": "ID списка"
+        }
+      },
+      "list_edit": {
+        "title": "Редактировать список пакетов",
+        "description": "Редактировать список пакетов",
+        "data": {
+          "list_id": "ID списка",
+          "include": "Включить пакеты",
+          "exclude": "Исключить пакеты"
+        }
+      },
+      "lists_delete_pick": {
+        "title": "Выбор списка для удаления",
+        "description": "Выбор списка для удаления",
+        "data": {
+          "list_id": "ID списка"
+        }
+      },
+      "profiles_menu": {
+        "menu_options": {
+          "profile_add": "Добавить профиль",
+          "profile_edit_pick": "Редактировать профиль",
+          "profiles_delete_pick": "Удалить профили"
+        }
+      },
+      "profile_add": {
+        "title": "Добавить профиль",
+        "description": "Добавить профиль",
+        "data": {
+          "profile_id": "ID профиля",
+          "lists": "Включить списки",
+          "add_another": "Добавить ещё один профиль"
+        }
+      },
+      "profile_edit_pick": {
+        "title": "Выбор профиля для редактирования",
+        "description": "Выбор профиля для редактирования",
+        "data": {
+          "profile_id": "ID профиля"
+        }
+      },
+      "profile_edit": {
+        "title": "Редактировать профиль",
+        "description": "Редактировать профиль",
+        "data": {
+          "profile_id": "ID профиля",
+          "include": "Включить списки",
+          "exclude": "Исключить списки"
+        }
+      },
+      "profiles_delete_pick": {
+        "title": "Выбор профиля для удаления",
+        "description": "Выбор профиля для удаления",
+        "data": {
+          "profile_id": "ID профиля"
         }
       },
       "global": {
-        "title": "Глобальные параметры",
-        "description": "Master-узел, SSH-ключи и т. п.",
+        "title": "Редактировать глобальные параметры",
+        "description": "Мастер-узел, SSH-ключи и т.д.",
         "data": {
-          "builder_location": "Расположение builder’а (username@host:/builderdir)",
-          "ssh_key_path": "Путь к SSH-ключу (внутри каталога config)",
+          "builder_location": "Расположение билдера (user@host:/builderdir)",
+          "ssh_key_path": "Путь к SSH-ключу (в каталоге config)",
           "toh_url": "URL TOH",
           "config_types_file": "Файл типов конфигураций (в каталоге интеграции)",
           "toh_timeout_hours": "Интервал координатора TOH (часы)",
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
-          "use_asu": "Использовать ASU",
+          "use_asu": "Использовать ветку ASU",
           "asu_base_url": "Базовый URL ASU",
           "download_base_url": "Базовый URL для загрузок"
         }
       },
-      "add_device": {
+      "device_add": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Укажите параметры устройства OpenWRT.",
+        "description": "Введите параметры устройства OpenWRT.",
         "data": {
-          "ip": "IP устройства",
+          "ip": "IP-адрес устройства",
           "config_type": "Тип конфигурации",
-          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
-          "force_update": "Установить немедленно (sysupgrade -v)",
-          "add_another": "Добавить ещё одно после сохранения"
+          "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный билдер)",
+          "force_update": "Установить сразу (sysupgrade -v)",
+          "add_another": "Добавить ещё после сохранения"
         }
       },
-      "remove_device": {
+      "device_remove": {
         "title": "Удалить устройство OpenWRT",
         "description": "Выберите устройство для удаления.",
         "data": {
-          "ip": "IP устройства"
+          "ip": "IP-адрес устройства"
         }
       }
     }

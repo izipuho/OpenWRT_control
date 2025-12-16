@@ -55,14 +55,101 @@
   "options": {
     "step": {
       "user": {},
-      "init": {
+      "init": {},
+      "device_menu": {
         "menu_options": {
-          "add_device": "Add device",
-          "remove_device": "Remove device"
+          "device_add": "Add device",
+          "device_remove": "Remove device"
+        }
+      },
+      "global_menu": {
+        "menu_options": {
+          "global": "Edit global options",
+          "lists_menu": "Manage package lists",
+          "profiles_menu": "Manage profiles"
+        }
+      },
+      "lists_menu": {
+        "menu_options": {
+          "list_add": "Add package list",
+          "list_edit_pick": "Edit package list",
+          "lists_delete_pick": "Delete package lists"
+        }
+      },
+      "list_add": {
+        "title": "Add package list",
+        "description": "Add package list",
+        "data": {
+          "list_id": "List ID",
+          "include": "Include packages",
+          "exclude": "Exclude packages",
+          "add_another": "Add one more list"
+        }
+      },
+      "list_edit_pick": {
+        "title": "Pick list to edit",
+        "description": "Pick list to edit",
+        "data": {
+          "list_id": "List ID"
+        }
+      },
+      "list_edit": {
+        "title": "Edit package list",
+        "description": "Edit package list",
+        "data": {
+          "list_id": "List ID",
+          "include": "Include packages",
+          "exclude": "Exclude packages"
+        }
+      },
+      "lists_delete_pick": {
+        "title": "Pick list to delete",
+        "description": "Pick list to delete",
+        "data": {
+          "list_id": "List ID"
+        }
+      },
+      "profiles_menu": {
+        "menu_options": {
+          "profile_add": "Add profile",
+          "profile_edit_pick": "Edit profile",
+          "profiles_delete_pick": "Delete profiles"
+        }
+      },
+      "profile_add": {
+        "title": "Add profile",
+        "description": "Add profile",
+        "data": {
+          "profile_id": "Profile ID",
+          "lists": "Include lists",
+          "add_another": "Add one more profile"
+        }
+      },
+      "profile_edit_pick": {
+        "title": "Pick profile to edit",
+        "description": "Pick profile to edit",
+        "data": {
+          "profile_id": "Profile ID"
+        }
+      },
+      "profile_edit": {
+        "title": "Edit profile",
+        "description": "Edit profile",
+        "data": {
+          "profile_id": "Profile ID",
+          "include": "Include lists",
+          "exclude": "Exclude lists"
+        }
+      },
+      "profiles_delete_pick": {
+        "title": "Pick profile to delete",
+        "description": "Pick profile to delete",
+        "data": {
+          "profile_id": "Profile ID"
         }
       },
       "global": {
-        "title": "Set global options",
+        "title": "Edit global options",
         "description": "Master node, SSH keys and so on.",
         "data": {
           "builder_location": "Builder location (username@host:/builderdir)",
@@ -76,7 +163,7 @@
           "download_base_url": "Base URL for downloads"
         }
       },
-      "add_device": {
+      "device_add": {
         "title": "Add OpenWRT Device",
         "description": "Enter the details of your OpenWRT device.",
         "data": {
@@ -87,7 +174,7 @@
           "add_another": "Add another after saving"
         }
       },
-      "remove_device": {
+      "device_remove": {
         "title": "Remove OpenWRT Device",
         "description": "Select device to remove.",
         "data": {

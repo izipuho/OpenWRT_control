@@ -13,6 +13,7 @@ from .helpers.helpers import (
     build_global_options_schema,
     upsert_device,
 )
+from .options_flow import OpenWRTOptionsFlowHandler
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,6 +96,5 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Wire options flow for this entry."""
-        from .options_flow import OpenWRTOptionsFlowHandler
 
         return OpenWRTOptionsFlowHandler()
