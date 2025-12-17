@@ -1,0 +1,12 @@
+isc-dhcp-client-ipv4
+isc-dhcp-server-ipv4
+bind-check
+bind-client
+bind-dig
+bind-dnssec
+bind-host
+bind-nslookup
+bind-rndc
+bind-server
+bind-server-filter-aaaa
+bind-tools

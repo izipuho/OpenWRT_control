@@ -7,7 +7,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.core import callback
 
-from .helpers.const import DOMAIN, INTEGRATION_DEFAULTS
+from .presets.const import DOMAIN, INTEGRATION_DEFAULTS
 from .helpers.helpers import (
     build_device_schema,
     build_global_options_schema,

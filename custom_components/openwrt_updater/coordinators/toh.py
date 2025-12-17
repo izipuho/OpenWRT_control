@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..helpers.const import DOMAIN
+from ..presets.const import DOMAIN
 from ..helpers.toh_parser import TOH
 from ..helpers.types import TohItem
 

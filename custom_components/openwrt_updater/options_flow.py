@@ -7,7 +7,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 
-from .helpers.const import DOMAIN
+from .presets.const import DOMAIN
 from .helpers.helpers import (
     build_device_schema,
     build_global_options_schema,

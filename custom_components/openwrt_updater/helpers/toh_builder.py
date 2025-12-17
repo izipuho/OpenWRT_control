@@ -11,7 +11,7 @@ from aiohttp import ClientTimeout
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from ..presets.const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

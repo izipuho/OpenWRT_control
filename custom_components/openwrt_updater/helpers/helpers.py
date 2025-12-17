@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
+from ..presets.const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

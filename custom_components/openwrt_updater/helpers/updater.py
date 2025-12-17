@@ -8,7 +8,7 @@ from asyncssh import scp
 from homeassistant.core import HomeAssistant
 
 from .asu_client import ASUClient
-from .const import DOMAIN
+from ..presets.const import DOMAIN
 from .ssh_client import OpenWRTSSH
 
 _LOGGER = logging.getLogger(__name__)

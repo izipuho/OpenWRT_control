@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
+from ..presets.const import DOMAIN, SIGNAL_BOARDS_CHANGED
 from ..helpers.helpers import async_check_alive
 from ..helpers.ssh_client import OpenWRTSSH
 

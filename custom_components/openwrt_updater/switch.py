@@ -8,7 +8,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .helpers.const import get_device_info
+from .presets.const import get_device_info
 from .helpers.helpers import load_device_option, save_device_option
 
 _LOGGER = logging.getLogger(__name__)

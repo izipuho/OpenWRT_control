@@ -1,0 +1,20 @@
+homeassistant:
+
+http:
+
+api:
+
+frontend:
+
+config:
+
+automation:
+
+script:
+
+scene:
+
+logger:
+  default: warning
+  logs:
+    custom_components.openwrt_updater: debug

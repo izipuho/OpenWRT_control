@@ -1,0 +1,7 @@
+-dropbear
+
+openssh-server
+openssh-sftp-server
+
+openssh-client
+openssh-sftp-client

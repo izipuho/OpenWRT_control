@@ -9,7 +9,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from ..helpers.const import DOMAIN, SIGNAL_BOARDS_CHANGED
+from ..presets.const import DOMAIN, SIGNAL_BOARDS_CHANGED
 from ..helpers.toh_builder import LocalTOH
 
 if TYPE_CHECKING:

@@ -1,0 +1,5 @@
+uhttpd-mod-ubus
+luci-mod-admin-full
+luci-theme-bootstrap
+luci-app-opkg
+luci-proto-ipv6

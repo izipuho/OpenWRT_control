@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 
 from .coordinators import LocalTohCacheCoordinator, OpenWRTDeviceCoordinator
-from .helpers.const import DOMAIN, INTEGRATION_DEFAULTS
+from .presets.const import DOMAIN, INTEGRATION_DEFAULTS
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 
-from .helpers.const import DOMAIN, get_device_info
+from .presets.const import DOMAIN, get_device_info
 from .helpers.helpers import load_config_types, load_device_option, save_device_option
 
 _LOGGER = logging.getLogger(__name__)

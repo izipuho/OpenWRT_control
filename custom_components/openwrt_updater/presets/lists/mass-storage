@@ -1,0 +1,8 @@
+kmod-usb-storage
+block-mount
+e2fsprogs
+smartmontools
+lsblk
+file
+usbutils
+gdisk

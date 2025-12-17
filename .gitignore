@@ -1,2 +1,4 @@
 .DS_Store
-config
+config/*
+!config/configuration.yaml
+__pycache__

@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .helpers.const import DOMAIN, get_device_info
+from .presets.const import DOMAIN, get_device_info
 from .helpers.updater import OpenWRTUpdater
 
 _LOGGER = logging.getLogger(__name__)
