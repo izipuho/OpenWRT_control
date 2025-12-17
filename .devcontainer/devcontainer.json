@@ -1,0 +1,11 @@
+{
+  "name": "OpenWRT_control (HA dev)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "forwardPorts": [8123],
+  "mounts": [
+    "source=${localWorkspaceFolder}/config,target=/config,type=bind",
+    "source=${localWorkspaceFolder}/custom_components,target=/config/custom_components,type=bind"
+  ],
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install homeassistant==2025.12.3",
+  "remoteUser": "vscode"
+}
