@@ -149,8 +149,5 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "has_asu_client": has_asu_client,
             "packages": pkgs,
         }
-        _LOGGER.debug(
-            "Coordinator data: %s",
-            result,
-        )
+        #_LOGGER.debug("Coordinator data: %s", result)
         return result

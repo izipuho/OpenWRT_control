@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from .coordinators import LocalTohCacheCoordinator, OpenWRTDeviceCoordinator
 from .presets.const import DOMAIN, INTEGRATION_DEFAULTS
+from .helpers.list_parser import read_preset_lists
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,12 +72,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry.unique_id == "__global__":
         component_config = _build_global_config(hass, entry)
         hass.data[DOMAIN]["config"] = component_config
+        if "lists" not in entry.options:
+            lists = await read_preset_lists(hass)
+            hass.config_entries.async_update_entry(
+                entry,
+                options={**entry.options, "lists": lists},
+            )
 
         toh_coordinator = LocalTohCacheCoordinator(
             hass, timedelta(hours=component_config["toh_timeout_hours"])
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
         await toh_coordinator.async_config_entry_first_refresh()
+
 
         hass.data[DOMAIN]["global_ready"].set()
     else:

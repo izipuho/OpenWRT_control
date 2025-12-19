@@ -1,4 +1,6 @@
 .DS_Store
 config/*
 !config/configuration.yaml
+.devcontainer/*
+!devcontainer/devcontainer.json
 __pycache__

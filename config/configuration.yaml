@@ -1,18 +1,4 @@
-homeassistant:
-
-http:
-
-api:
-
-frontend:
-
-config:
-
-automation:
-
-script:
-
-scene:
+default_config:
 
 logger:
   default: warning

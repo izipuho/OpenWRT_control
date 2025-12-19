@@ -46,7 +46,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_extra_state_attributes = {"force": False}
 
-        _LOGGER.debug("%r", self)
+        #_LOGGER.debug("%r", self)
 
     @property
     def installed_version(self):

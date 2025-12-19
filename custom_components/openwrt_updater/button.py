@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinators.device import OpenWRTDeviceCoordinator
 from .presets.const import DOMAIN, get_device_info
 from .helpers.ssh_client import OpenWRTSSH
+from .helpers.list_parser import read_preset_lists
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,18 +50,13 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
 
         # specific entity properties
 
-        _LOGGER.debug("%r", self)
+        #_LOGGER.debug("%r", self)
 
     async def async_press(self) -> None:
         """Handle button press."""
         if self._key == "debug":
-            await self.coordinator.async_request_refresh()
-            await self.hass.data[DOMAIN]["toh_index"].async_request_refresh()
-            entry_data = self.hass.data[DOMAIN][self._config_entry.entry_id]
-            dev = entry_data[self._ip]
-            _LOGGER.error("Config: %s", self.hass.data[DOMAIN]["config"])
-            _LOGGER.warning("Device data: %s", dev)
-            _LOGGER.error("Coordinator data: %s", dev["coordinator"].data)
+            res = self.hass.data[DOMAIN]["config"]["lists"]
+            _LOGGER.debug("Lists: %s", res)
         elif self._key == "reboot":
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
             async with OpenWRTSSH(self._ip, _key_path) as client:
@@ -84,15 +80,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
-                #OpenWRTButton(
-                #    coordinator=coordinator,
-                #    config_entry=config_entry,
-                #    ip=ip,
-                #    name="Debug",
-                #    key="debug",
-                #    entity_category=EntityCategory.DIAGNOSTIC,
-                #    entity_icon="mdi:bug-play",
-                #),
+                OpenWRTButton(
+                    coordinator=coordinator,
+                    config_entry=config_entry,
+                    ip=ip,
+                    name="Debug",
+                    key="debug",
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                    entity_icon="mdi:bug-play",
+                ),
                 OpenWRTButton(
                     coordinator=coordinator,
                     config_entry=config_entry,
