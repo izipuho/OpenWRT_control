@@ -1,0 +1,162 @@
+name: Guard dev -> main PR
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  guard:
+    if: ${{ github.event.pull_request.head.ref == 'dev' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if forbidden directories exist in PR tree
+        env:
+          FORBIDDEN_DIRS_REGEX: '^(\\.devcontainer/|\\.vscode/|config/)'
+        run: |
+          set -euo pipefail
+          if git ls-tree -r --name-only HEAD | grep -E "${FORBIDDEN_DIRS_REGEX}" -n >/dev/null; then
+            echo "ERROR: Forbidden directories found in PR tree (must not be in main):"
+            git ls-tree -r --name-only HEAD | grep -E "${FORBIDDEN_DIRS_REGEX}" -n || true
+            exit 1
+          fi
+          echo "OK: Forbidden directories are not present in PR tree."
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install packaging
+
+      - name: Verify manifest.json version is not downgraded vs main
+        env:
+          MANIFEST_PATH: custom_components/openwrt_updater/manifest.json
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from packaging.version import Version
+
+          manifest_path = "${MANIFEST_PATH}"
+          base_sha = "${BASE_SHA}"
+          head_sha = "${HEAD_SHA}"
+
+          def git_show(ref: str, path: str) -> str:
+              try:
+                  return subprocess.check_output(["git", "show", f"{ref}:{path}"], text=True)
+              except subprocess.CalledProcessError:
+                  print(f"ERROR: Cannot read {path} at ref {ref}")
+                  sys.exit(2)
+
+          base_raw = git_show(base_sha, manifest_path)
+          head_raw = git_show(head_sha, manifest_path)
+
+          base_ver = json.loads(base_raw).get("version")
+          head_ver = json.loads(head_raw).get("version")
+
+          if not base_ver or not head_ver:
+              print("ERROR: manifest.json has no 'version' field in base or head.")
+              sys.exit(2)
+
+          if Version(head_ver) < Version(base_ver):
+              print(f"ERROR: Version downgrade detected. base='{base_ver}', head='{head_ver}'.")
+              sys.exit(1)
+
+          print(f"OK: No downgrade. base='{base_ver}', head='{head_ver}'.")
+          PY
+
+      - name: Verify manifest.json version bumped vs main (unless labeled skip-version-bump)
+        if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-version-bump') }}
+        env:
+          MANIFEST_PATH: custom_components/openwrt_updater/manifest.json
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from packaging.version import Version
+
+          manifest_path = "${MANIFEST_PATH}"
+          base_sha = "${BASE_SHA}"
+          head_sha = "${HEAD_SHA}"
+
+          def git_show(ref: str, path: str) -> str:
+              try:
+                  return subprocess.check_output(["git", "show", f"{ref}:{path}"], text=True)
+              except subprocess.CalledProcessError:
+                  print(f"ERROR: Cannot read {path} at ref {ref}")
+                  sys.exit(2)
+
+          base_raw = git_show(base_sha, manifest_path)
+          head_raw = git_show(head_sha, manifest_path)
+
+          base_ver = json.loads(base_raw).get("version")
+          head_ver = json.loads(head_raw).get("version")
+
+          if not base_ver or not head_ver:
+              print("ERROR: manifest.json has no 'version' field in base or head.")
+              sys.exit(2)
+
+          if Version(head_ver) <= Version(base_ver):
+              print(f"ERROR: Version must increase (label 'skip-version-bump' not set). base='{base_ver}', head='{head_ver}'.")
+              sys.exit(1)
+
+          print(f"OK: Version bumped: base='{base_ver}' -> head='{head_ver}'.")
+          PY
+
+      - name: Fail if debug button declaration is present in PR tree
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import pathlib
+          import sys
+
+          # Exact signature fragments of the forbidden debug button declaration.
+          signature = [
+              "OpenWRTButton(",
+              'name="Debug",',
+              'key="debug",',
+              "entity_category=EntityCategory.DIAGNOSTIC,",
+              'entity_icon="mdi:bug-play",',
+          ]
+
+          root = pathlib.Path("custom_components")
+          if not root.exists():
+              print("ERROR: custom_components directory not found.")
+              sys.exit(2)
+
+          offenders: list[str] = []
+
+          for path in root.rglob("*.py"):
+              try:
+                  text = path.read_text(encoding="utf-8", errors="ignore")
+              except OSError:
+                  continue
+
+              if all(fragment in text for fragment in signature):
+                  offenders.append(str(path))
+
+          if offenders:
+              print("ERROR: Forbidden Debug button declaration detected in the following files:")
+              for f in offenders:
+                  print(f" - {f}")
+              sys.exit(1)
+
+          print("OK: No forbidden Debug button declaration detected.")
+          PY
+
