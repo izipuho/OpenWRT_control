@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from datetime import timedelta
 
     from homeassistant.core import HomeAssistant
+    from homeassistant.config_entries import ConfigEntry
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,13 +29,14 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     - On startup loads raw JSON from HA Store (so entities work offline).
     """
 
-    def __init__(self, hass: HomeAssistant, update_interval: timedelta) -> None:
+    def __init__(self, hass: HomeAssistant, update_interval: timedelta, config_entry: ConfigEntry) -> None:
         """Initialize the coordinator with a given refresh interval."""
         super().__init__(
             hass=hass,
             logger=_LOGGER,
             name=f"{DOMAIN}_sysupgrade_info",
             update_interval=update_interval,
+            config_entry=config_entry
         )
         self._toh = LocalTOH(hass)
 
@@ -53,14 +55,6 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if getattr(self, "_unsub_signal", None):
             self._unsub_signal()
             self._unsub_signal = None
-
-    async def async_config_entry_first_refresh(self) -> None:
-        """Preload cached TOH before the very first refresh so lookups work offline.
-
-        This loads raw TOH from the Store into the TOH instance, then performs
-        the regular first refresh lifecycle to try a network update.
-        """
-        await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh TOH from network; fallback to cached raw data.
