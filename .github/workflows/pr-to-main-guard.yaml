@@ -78,7 +78,7 @@ jobs:
           PY
 
       - name: Verify manifest.json version bumped vs main (unless labeled skip-version-bump)
-        if: ${{ !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-version-bump') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-version-bump') }}
         env:
           MANIFEST_PATH: custom_components/openwrt_updater/manifest.json
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
