@@ -1,0 +1,6 @@
+uci -q batch << EOF
+set network.lan.proto=dhcp
+delete network.lan.ipaddr
+delete network.lan.netmask
+commit network
+EOF
