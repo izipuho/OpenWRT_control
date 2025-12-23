@@ -58,7 +58,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_device_menu(self, user_input=None):
         """Device enity menu."""
         if not self._devices:
-            return await self.async_step_add_device()
+            return await self.async_step_device_add()
         return self.async_show_menu(
             step_id="device_menu",
             menu_options=["device_add", "device_remove"],
@@ -89,9 +89,9 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            list_name = user_input.get("list_id", "").strip()
+            list_name = user_input.get("list_name", "").strip()
             if list_name in self._lists:
-                errors["list_id"] = "list_id_exists"
+                errors["list_name"] = "list_name_exists"
             else:
                 pack_list = OpenWRTPackageList(self.hass, list_name)
                 pack_list.add_packages(user_input.get(
@@ -104,7 +104,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
 
         schema = vol.Schema(
             {
-                vol.Required("list_id"): str,
+                vol.Required("list_name"): str,
                 vol.Optional("include", default=""): str,
                 vol.Optional("exclude", default=""): str,
                 vol.Optional("add_another", default=False): bool,
@@ -123,13 +123,13 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_abort(reason="no_lists")
 
         if user_input is not None:
-            self._list_name = user_input["list_id"]
+            self._list_name = user_input["list_name"]
             return await self.async_step_list_edit()
 
         return self.async_show_form(
             step_id="list_edit_pick",
             data_schema=vol.Schema(
-                {vol.Required("list_id"): vol.In(sorted(pack_lists.keys()))}
+                {vol.Required("list_name"): vol.In(sorted(pack_lists.keys()))}
             ),
         )
 
@@ -180,8 +180,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             selected = user_input.get("lists", [])
             to_delete = list(selected)
 
-            for list_id in to_delete:
-                pack_lists.pop(list_id, None)
+            for list_name in to_delete:
+                pack_lists.pop(list_name, None)
 
             options["lists"] = pack_lists
             return self.async_create_entry(title="", data=options)
@@ -189,19 +189,19 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Required("lists"): cv.multi_select(
-                    {list_id: list_id for list_id in sorted(pack_lists.keys())}
+                    {list_name: list_name for list_name in sorted(pack_lists.keys())}
                 )
             }
         )
         return self.async_show_form(step_id="lists_delete_pick", data_schema=schema)
 
-    async def async_step_add_device(self, user_input=None):
+    async def async_step_device_add(self, user_input=None):
         """Add device step."""
         if user_input is not None:
             upsert_device(self._devices, user_input)
 
             if user_input.get("add_another"):
-                return await self.async_step_add_device()
+                return await self.async_step_device_add()
 
             return self.async_create_entry(
                 title="",
@@ -212,9 +212,9 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         schema = await self.hass.async_add_executor_job(
             build_device_schema, self.hass, defaults
         )
-        return self.async_show_form(step_id="add_device", data_schema=schema)
+        return self.async_show_form(step_id="device_add", data_schema=schema)
 
-    async def async_step_remove_device(self, user_input=None):
+    async def async_step_device_remove(self, user_input=None):
         """Step to choose device for removal."""
         if not self._devices:
             return self.async_abort(reason="no_devices")
@@ -232,7 +232,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 identifiers={(DOMAIN, remove_ip)}
             )
             if device_entry is not None:
-                device_registry.async_remove_device(device_entry.id)
+                device_registry.async_device_remove(device_entry.id)
 
             return self.async_create_entry(
                 title="",
@@ -240,7 +240,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             )
 
         return self.async_show_form(
-            step_id="remove_device",
+            step_id="device_remove",
             data_schema=vol.Schema(
                 {vol.Required("ip"): vol.In(list(self._devices.keys()))}
             ),
@@ -284,7 +284,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             {
                 vol.Required("profile_name"): str,
                 vol.Required("lists"): cv.multi_select(
-                    {list_id: list_id for list_id in sorted(pack_lists.keys())}
+                    {list_name: list_name for list_name in sorted(pack_lists.keys())}
                 ),
                 vol.Optional("extra_include", default=""): str,
                 vol.Optional("extra_exclude", default=""): str,
@@ -345,7 +345,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                     "lists",
                     description={"suggested_value": list(current.lists)},
                 ): cv.multi_select(
-                    {list_id: list_id for list_id in sorted(lists.keys())}
+                    {list_name: list_name for list_name in sorted(lists.keys())}
                 ),
                 vol.Optional("extra_include", description={"suggested_value": current.extra_include_str}, ): str,
                 vol.Optional("extra_exclude", description={"suggested_value": current.extra_exclude_str}, ): str,
