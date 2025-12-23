@@ -2,57 +2,66 @@
   "title": "OpenWRT Updater",
   "config": {
     "abort": {
-      "toh_unavailable": "Le catalogue des appareils (TOH) n'est pas disponible pour le moment. Réessayez plus tard.",
-      "yaml_invalid": "Fichier YAML invalide. Veuillez corriger config_types.yaml.",
+      "toh_unavailable": "Le catalogue des appareils (TOH) n’est pas disponible pour le moment. Réessayez plus tard.",
+      "yaml_invalid": "Fichier YAML invalide. Corrigez config_types.yaml.",
       "already_configured": "Cette intégration est déjà configurée."
     },
     "error": {
-      "invalid_master_node": "Le nœud maître doit être au format utilisateur@hôte.",
+      "invalid_master_node": "Le nœud maître doit être au format user@host.",
       "invalid_ip": "Entrez une adresse IPv4 valide.",
-      "invalid_path": "Le chemin n'existe pas ou n'est pas lisible.",
+      "invalid_path": "Le chemin n’existe pas ou n’est pas lisible.",
       "ssh_key_not_found": "Fichier de clé SSH introuvable.",
-      "connection_failed": "Impossible de se connecter à l'appareil.",
-      "missing_required": "Veuillez remplir tous les champs requis."
+      "connection_failed": "Impossible de se connecter à l’appareil.",
+      "missing_required": "Veuillez remplir tous les champs obligatoires."
     },
     "step": {
       "user": {},
       "global": {
-        "title": "Définir les options globales",
-        "description": "Nœud maître, clés SSH, etc.",
+        "title": "Options globales",
+        "description": "Nœud maître, clés SSH et autres paramètres.",
         "data": {
-          "builder_location": "Emplacement du builder (utilisateur@hôte:/builderdir)",
+          "builder_location": "Emplacement du builder (username@host:/builderdir)",
           "ssh_key_path": "Chemin de la clé SSH (dans le répertoire config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans le répertoire de l'intégration)",
+          "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
           "device_timeout_minutes": "Intervalle du coordinateur des appareils (minutes)",
           "use_asu": "Utiliser la branche ASU",
           "asu_base_url": "URL de base ASU",
-          "download_base_url": "URL de base pour les téléchargements"
+          "download_base_url": "URL de base des téléchargements"
         }
       },
       "add_place": {
-        "title": "Ajouter un lieu",
-        "description": "Entrez les détails du lieu.",
+        "title": "Ajouter un emplacement",
+        "description": "Entrez les informations de l’emplacement.",
         "data": {
-          "place_name": "Nom du lieu",
+          "place_name": "Nom de l’emplacement",
           "place_ipmask": "Masque IP (3 premiers octets)"
         }
       },
       "add_device": {
         "title": "Ajouter un appareil OpenWRT",
-        "description": "Entrez les détails de votre appareil OpenWRT.",
+        "description": "Entrez les informations de l’appareil OpenWRT.",
         "data": {
-          "ip": "IP de l'appareil",
+          "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
-          "simple_update": "Mise à jour simple (curl depuis OpenWRT.org vs builder personnalisé)",
+          "simple_update": "Mise à jour simple (curl depuis OpenWRT.org)",
           "force_update": "Installer immédiatement (sysupgrade -v)",
-          "add_another": "Ajouter un autre après l'enregistrement"
+          "add_another": "Ajouter un autre"
         }
       }
     }
   },
   "options": {
+    "abort": {
+      "no_devices": "Aucun appareil trouvé.",
+      "no_lists": "Aucune liste trouvée.",
+      "no_profiles": "Aucun profil trouvé."
+    },
+    "error": {
+      "list_id_exists": "Une liste avec cet identifiant existe déjà.",
+      "profile_exists": "Un profil avec ce nom existe déjà."
+    },
     "step": {
       "user": {},
       "init": {},
@@ -64,7 +73,7 @@
       },
       "global_menu": {
         "menu_options": {
-          "global": "Modifier les options globales",
+          "global": "Options globales",
           "lists_menu": "Gérer les listes de paquets",
           "profiles_menu": "Gérer les profils"
         }
@@ -80,33 +89,33 @@
         "title": "Ajouter une liste de paquets",
         "description": "Ajouter une liste de paquets",
         "data": {
-          "list_id": "ID de la liste",
-          "include": "Inclure les paquets",
-          "exclude": "Exclure les paquets",
+          "list_name": "Nom de la liste",
+          "include": "Inclure des paquets",
+          "exclude": "Exclure des paquets",
           "add_another": "Ajouter une autre liste"
         }
       },
       "list_edit_pick": {
         "title": "Choisir une liste à modifier",
-        "description": "Choisir une liste à modifier",
+        "description": "Choisissez la liste à modifier",
         "data": {
-          "list_id": "ID de la liste"
+          "list_name": "Nom de la liste"
         }
       },
       "list_edit": {
         "title": "Modifier la liste de paquets",
         "description": "Modifier la liste de paquets",
         "data": {
-          "list_id": "ID de la liste",
-          "include": "Inclure les paquets",
-          "exclude": "Exclure les paquets"
+          "list_name": "Nom de la liste",
+          "include": "Inclure des paquets",
+          "exclude": "Exclure des paquets"
         }
       },
       "lists_delete_pick": {
-        "title": "Choisir une liste à supprimer",
-        "description": "Choisir une liste à supprimer",
+        "title": "Choisir les listes à supprimer",
+        "description": "Choisissez les listes à supprimer",
         "data": {
-          "list_id": "ID de la liste"
+          "list_name": "Nom de la liste"
         }
       },
       "profiles_menu": {
@@ -120,65 +129,68 @@
         "title": "Ajouter un profil",
         "description": "Ajouter un profil",
         "data": {
-          "profile_id": "ID du profil",
-          "lists": "Inclure des listes",
+          "profile_name": "Nom du profil",
+          "lists": "Listes",
+          "extra_include": "Paquets supplémentaires à inclure",
+          "extra_exclude": "Paquets supplémentaires à exclure",
           "add_another": "Ajouter un autre profil"
         }
       },
       "profile_edit_pick": {
         "title": "Choisir un profil à modifier",
-        "description": "Choisir un profil à modifier",
+        "description": "Choisissez le profil à modifier",
         "data": {
-          "profile_id": "ID du profil"
+          "profile_name": "Nom du profil"
         }
       },
       "profile_edit": {
         "title": "Modifier le profil",
         "description": "Modifier le profil",
         "data": {
-          "profile_id": "ID du profil",
-          "include": "Inclure des listes",
-          "exclude": "Exclure des listes"
+          "profile_name": "Nom du profil",
+          "lists": "Listes",
+          "extra_include": "Paquets supplémentaires à inclure",
+          "extra_exclude": "Paquets supplémentaires à exclure"
         }
       },
       "profiles_delete_pick": {
-        "title": "Choisir un profil à supprimer",
-        "description": "Choisir un profil à supprimer",
+        "title": "Choisir les profils à supprimer",
+        "description": "Choisissez les profils à supprimer",
         "data": {
-          "profile_id": "ID du profil"
+          "profiles": "Profils"
         }
       },
       "global": {
-        "title": "Modifier les options globales",
-        "description": "Nœud maître, clés SSH, etc.",
+        "title": "Options globales",
+        "description": "Nœud maître, clés SSH et autres paramètres.",
         "data": {
-          "builder_location": "Emplacement du builder (utilisateur@hôte:/builderdir)",
+          "builder_location": "Emplacement du builder (username@host:/builderdir)",
           "ssh_key_path": "Chemin de la clé SSH (dans le répertoire config)",
           "toh_url": "URL TOH",
-          "config_types_file": "Fichier des types de configuration (dans le répertoire de l'intégration)",
+          "config_types_file": "Fichier des types de configuration (dans le répertoire de l’intégration)",
           "toh_timeout_hours": "Intervalle du coordinateur TOH (heures)",
           "device_timeout_minutes": "Intervalle du coordinateur des appareils (minutes)",
           "use_asu": "Utiliser la branche ASU",
           "asu_base_url": "URL de base ASU",
-          "download_base_url": "URL de base pour les téléchargements"
+          "download_base_url": "URL de base des téléchargements"
         }
       },
       "device_add": {
         "title": "Ajouter un appareil OpenWRT",
-        "description": "Entrez les détails de votre appareil OpenWRT.",
+        "description": "Entrez les informations de l’appareil OpenWRT.",
         "data": {
-          "ip": "IP de l'appareil",
+          "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
-          "simple_update": "Mise à jour simple (curl depuis OpenWRT.org vs builder personnalisé)",
-          "force_update": "Installer immédiatement (sysupgrade -v)",
-          "add_another": "Ajouter un autre après l'enregistrement"
+          "simple_update": "Mise à jour simple",
+          "force_update": "Installer immédiatement",
+          "add_another": "Ajouter un autre"
         }
       },
       "device_remove": {
         "title": "Supprimer un appareil OpenWRT",
-        "description": "Sélectionnez l'appareil à supprimer.",
+        "description": "Sélectionnez l’appareil à supprimer.",
         "data": {
-          "ip": "IP de l'appareil"
+          "ip": "IP de l’appareil"
         }
       }
     }

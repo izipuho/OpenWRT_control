@@ -53,6 +53,15 @@
     }
   },
   "options": {
+    "abort": {
+      "no_devices": "No devices found.",
+      "no_lists": "No lists found.",
+      "no_profiles": "No profiles found."
+    },
+    "error": {
+      "list_id_exists": "A list with this ID already exists.",
+      "profile_exists": "A profile with this name already exists."
+    },
     "step": {
       "user": {},
       "init": {},
@@ -80,7 +89,7 @@
         "title": "Add package list",
         "description": "Add package list",
         "data": {
-          "list_id": "List ID",
+          "list_name": "List name",
           "include": "Include packages",
           "exclude": "Exclude packages",
           "add_another": "Add one more list"
@@ -90,14 +99,14 @@
         "title": "Pick list to edit",
         "description": "Pick list to edit",
         "data": {
-          "list_id": "List ID"
+          "list_name": "List name"
         }
       },
       "list_edit": {
         "title": "Edit package list",
         "description": "Edit package list",
         "data": {
-          "list_id": "List ID",
+          "list_name": "List name",
           "include": "Include packages",
           "exclude": "Exclude packages"
         }
@@ -106,7 +115,7 @@
         "title": "Pick list to delete",
         "description": "Pick list to delete",
         "data": {
-          "list_id": "List ID"
+          "list_name": "List name"
         }
       },
       "profiles_menu": {
@@ -120,8 +129,10 @@
         "title": "Add profile",
         "description": "Add profile",
         "data": {
-          "profile_id": "Profile ID",
-          "lists": "Include lists",
+          "profile_name": "Profile name",
+          "lists": "Lists to add",
+          "extra_include": "Extra packages to include",
+          "extra_exclude": "Extra packages to exclude",
           "add_another": "Add one more profile"
         }
       },
@@ -129,23 +140,24 @@
         "title": "Pick profile to edit",
         "description": "Pick profile to edit",
         "data": {
-          "profile_id": "Profile ID"
+          "profile_name": "Profile name"
         }
       },
       "profile_edit": {
         "title": "Edit profile",
         "description": "Edit profile",
         "data": {
-          "profile_id": "Profile ID",
-          "include": "Include lists",
-          "exclude": "Exclude lists"
+          "profile_name": "Profile name",
+          "lists": "Lists to add",
+          "extra_include": "Extra packages to include",
+          "extra_exclude": "Extra packages to exclude"
         }
       },
       "profiles_delete_pick": {
         "title": "Pick profile to delete",
         "description": "Pick profile to delete",
         "data": {
-          "profile_id": "Profile ID"
+          "profiles": "Profiles"
         }
       },
       "global": {

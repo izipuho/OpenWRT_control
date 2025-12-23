@@ -73,18 +73,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         component_config = _build_global_config(hass, entry)
         hass.data[DOMAIN]["config"] = component_config
         if "lists" not in entry.options:
+            _LOGGER.debug("Reset lists to default")
             lists = await read_preset_lists(hass)
             hass.config_entries.async_update_entry(
                 entry,
                 options={**entry.options, "lists": lists},
             )
+        if "profiles" not in entry.options:
+            _LOGGER.debug("Reset profiles to default")
+            profiles = {}
+            hass.config_entries.async_update_entry(
+                entry, options={**entry.options, "profiles": profiles})
 
         toh_coordinator = LocalTohCacheCoordinator(
-            hass, timedelta(hours=component_config["toh_timeout_hours"])
+            hass, timedelta(hours=component_config["toh_timeout_hours"]), entry
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
         await toh_coordinator.async_config_entry_first_refresh()
-
 
         hass.data[DOMAIN]["global_ready"].set()
     else:
@@ -140,7 +145,7 @@ async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.data[DOMAIN]["config"] = component_config
         # recreate TOH coordinator
         toh_coordinator = LocalTohCacheCoordinator(
-            hass, timedelta(hours=component_config["toh_timeout_hours"])
+            hass, timedelta(hours=component_config["toh_timeout_hours"]), entry
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
         await toh_coordinator.async_config_entry_first_refresh()
