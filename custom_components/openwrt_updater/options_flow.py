@@ -69,7 +69,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             _LOGGER.debug("Saving data to global entry: %s", user_input)
             options = dict(self.config_entry.options)
-            options.update(user_input)
+            options["config"].update(user_input)
             return self.async_create_entry(title="", data=options)
         saved_options = self.get_fresh_data()
         schema = await self.hass.async_add_executor_job(
@@ -94,8 +94,10 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 errors["list_name"] = "list_name_exists"
             else:
                 pack_list = OpenWRTPackageList(self.hass, list_name)
-                pack_list.add_packages(user_input.get(
-                    "include", ""), user_input("exclude", ""))
+                pack_list.mod_packages(
+                    user_input.get("include", ""),
+                    user_input.get("exclude", "")
+                )
                 options = dict(self.config_entry.options)
                 options["lists"] = pack_list.packages
                 if user_input["add_another"]:
@@ -189,7 +191,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Required("lists"): cv.multi_select(
-                    {list_name: list_name for list_name in sorted(pack_lists.keys())}
+                    {list_name: list_name for list_name in sorted(
+                        pack_lists.keys())}
                 )
             }
         )
@@ -270,12 +273,14 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             if profile_name in profiles:
                 errors["profile_name"] = "profile_exists"
             else:
-                # profiles[profile_name] = {"lists": list(selected_lists)}
                 profile = OpenWRTProfile(self.hass, profile_name)
-                profile.mod_profile(user_input.get("lists", set()), user_input.get(
-                    "extra_include", ""), user_input.get("extra_exclude", ""))
-                options["profiles"][profile_name] = {
-                    "lists": profile.lists, "extra_include": profile.extra_include, "extra_exclude": profile.extra_exclude}
+                profile.mod_profile(
+                    user_input.get("lists", []),
+                    user_input.get("extra_include", ""),
+                    user_input.get("extra_exclude", "")
+                )
+                profiles[profile_name] = dict(profile.profile)
+                options["profiles"] = profiles
                 if user_input["add_another"]:
                     return await self.async_step_profile_add()
                 return self.async_create_entry(title="", data=options)
@@ -284,7 +289,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             {
                 vol.Required("profile_name"): str,
                 vol.Required("lists"): cv.multi_select(
-                    {list_name: list_name for list_name in sorted(pack_lists.keys())}
+                    {list_name: list_name for list_name in sorted(
+                        pack_lists.keys())}
                 ),
                 vol.Optional("extra_include", default=""): str,
                 vol.Optional("extra_exclude", default=""): str,
@@ -345,7 +351,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                     "lists",
                     description={"suggested_value": list(current.lists)},
                 ): cv.multi_select(
-                    {list_name: list_name for list_name in sorted(lists.keys())}
+                    {list_name: list_name for list_name in sorted(
+                        lists.keys())}
                 ),
                 vol.Optional("extra_include", description={"suggested_value": current.extra_include_str}, ): str,
                 vol.Optional("extra_exclude", description={"suggested_value": current.extra_exclude_str}, ): str,
