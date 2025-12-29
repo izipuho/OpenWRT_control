@@ -75,13 +75,17 @@ class OpenWRTProfile():
         self.lists: set[str] = set()
         self.extra_include: set[str] = set()
         self.extra_exclude: set[str] = set()
+        self.files: set[str] = set()
         self.get_profile()
 
     @property
     def profile(self) -> dict:
         """Gather profile."""
-        return {"lists": list(self.lists), "extra_include": list(self.extra_include),
-                "extra_exclude": list(self.extra_exclude)}
+        return {
+            "lists": list(self.lists),
+            "extra_include": list(self.extra_include),
+            "extra_exclude": list(self.extra_exclude),
+            "files": list(self.files)}
 
     @property
     def extra_include_str(self) -> str:
@@ -104,14 +108,14 @@ class OpenWRTProfile():
         if profile:
             _LOGGER.debug("Profile %s is: %s", self.profile_name, profile)
             self.lists = profile.get("lists", set())
-            self.extra_include = profile.get("extra_include", set)
-            self.extra_exclude = profile.get("extra_exclude", set)
+            self.extra_include = profile.get("extra_include", set())
+            self.extra_exclude = profile.get("extra_exclude", set())
+            self.files = profile.get("files", set())
 
-    def mod_profile(self, lists: list[str], extra_include: str = "", extra_exclude: str = "") -> None:
+    def mod_profile(self, lists: list[str], extra_include: str = "", extra_exclude: str = "", files: list[str] = []) -> None:
         """Add lists and extras to profile."""
         _include_set = set()
         _exclude_set = set()
-        lists = set(lists)
         _LOGGER.debug("\nOLD:\n\tLists: %s\n\tIncl: %s\n\tExcl: %s",
                       self.lists, self.extra_include, self.extra_exclude)
         for pkg in extra_include.strip().split(" "):
@@ -120,6 +124,7 @@ class OpenWRTProfile():
             _exclude_set.add(pkg)
         _LOGGER.debug("\nNEW:\n\tLists: %s\n\tIncl: %s\n\tExcl: %s",
                       lists, _include_set, _exclude_set)
-        self.lists = lists
+        self.lists = set(lists)
         self.extra_include = set(_include_set)
         self.extra_exclude = set(_exclude_set)
+        self.files = set(files)

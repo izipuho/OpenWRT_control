@@ -1,13 +1,15 @@
 """Options flow for OpenWRT Updater: add devices via UI."""
 
 import logging
+from importlib import resources
 
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 
-from .presets.const import DOMAIN
+from .presets.const import DOMAIN, PRESETS_DIR
 from .helpers.helpers import (
     build_device_schema,
     build_global_options_schema,
@@ -18,12 +20,24 @@ from .helpers.profiles import OpenWRTPackageList, OpenWRTProfile
 _LOGGER = logging.getLogger(__name__)
 
 
+def _get_files(hass: HomeAssistant) -> list[str]:
+    """Get list of files available to install"""
+    files: list[str] = []
+    files_dir = resources.files(PRESETS_DIR) / "files"
+
+    for file in files_dir.iterdir():
+        if file.is_file():
+            files.append(file.name)
+
+    return files
+
+
 class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
     def __init__(self) -> None:
         """Initialize Options Flow handler."""
-        # Current entry state
+        self.files = _get_files(self.hass)
         self._data = {}
         self._devices = {}
         self._list_name: str | None = None
@@ -277,7 +291,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 profile.mod_profile(
                     user_input.get("lists", []),
                     user_input.get("extra_include", ""),
-                    user_input.get("extra_exclude", "")
+                    user_input.get("extra_exclude", ""),
+                    user_input("files", [])
                 )
                 profiles[profile_name] = dict(profile.profile)
                 options["profiles"] = profiles
@@ -294,6 +309,9 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
                 vol.Optional("extra_include", default=""): str,
                 vol.Optional("extra_exclude", default=""): str,
+                vol.Optional("files"): cv.multi_select(
+                    {file: file for file in self.files}
+                ),
                 vol.Optional("add_another", default=False): bool,
             }
         )
@@ -339,7 +357,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             current.mod_profile(
                 set(user_input.get("lists", set())),
                 user_input.get("extra_include", ""),
-                user_input.get("extra_exclude", "")
+                user_input.get("extra_exclude", ""),
+                user_input.get("files", [])
             )
             profiles[self._profile_name] = dict(current.profile)
             options["profiles"] = profiles
@@ -356,6 +375,12 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
                 vol.Optional("extra_include", description={"suggested_value": current.extra_include_str}, ): str,
                 vol.Optional("extra_exclude", description={"suggested_value": current.extra_exclude_str}, ): str,
+                vol.Optional(
+                    "files",
+                    description={"suggested_value": list(current.files)}
+                ): cv.multi_select(
+                    {file: file for file in self.files}
+                )
             }
         )
         return self.async_show_form(step_id="profile_edit", data_schema=schema)

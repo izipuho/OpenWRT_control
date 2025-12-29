@@ -133,6 +133,7 @@
           "lists": "Lists to add",
           "extra_include": "Extra packages to include",
           "extra_exclude": "Extra packages to exclude",
+          "files": "Files to add",
           "add_another": "Add one more profile"
         }
       },
@@ -150,7 +151,8 @@
           "profile_name": "Profile name",
           "lists": "Lists to add",
           "extra_include": "Extra packages to include",
-          "extra_exclude": "Extra packages to exclude"
+          "extra_exclude": "Extra packages to exclude",
+          "files": "Files to add"
         }
       },
       "profiles_delete_pick": {
