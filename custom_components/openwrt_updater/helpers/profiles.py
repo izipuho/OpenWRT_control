@@ -56,9 +56,11 @@ class OpenWRTPackageList():
         _LOGGER.debug("OLD:\nIncluded: %s\nExcluded: %s",
                       self.include, self.exclude)
         for pkg in include.strip().split(" "):
-            _include_set.add(pkg)
+            if pkg:
+                _include_set.add(pkg)
         for pkg in exclude.strip().split(" "):
-            _exclude_set.add(pkg)
+            if pkg:
+                _exclude_set.add(pkg)
         _LOGGER.debug("Including: %s;\n Excluding: %s",
                       _include_set, _exclude_set)
         self.include = set(_include_set)
@@ -86,6 +88,22 @@ class OpenWRTProfile():
             "extra_include": list(self.extra_include),
             "extra_exclude": list(self.extra_exclude),
             "files": list(self.files)}
+
+    @property
+    def profile_expanded(self) -> dict:
+        """Expand profile from lists to packages."""
+        _include = set()
+        _exclude = set()
+        _include.update(self.extra_include)
+        _exclude.update(self.extra_exclude)
+        for pack_list in self.lists:
+            pkg_list = OpenWRTPackageList(self.hass, pack_list)
+            _include.update(pkg_list.include)
+            _exclude.update(pkg_list.exclude)
+        return {
+            "include": _include,
+            "exclude": _exclude
+        }
 
     @property
     def extra_include_str(self) -> str:
@@ -119,9 +137,11 @@ class OpenWRTProfile():
         _LOGGER.debug("\nOLD:\n\tLists: %s\n\tIncl: %s\n\tExcl: %s",
                       self.lists, self.extra_include, self.extra_exclude)
         for pkg in extra_include.strip().split(" "):
-            _include_set.add(pkg)
+            if pkg:
+                _include_set.add(pkg)
         for pkg in extra_exclude.strip().split(" "):
-            _exclude_set.add(pkg)
+            if pkg:
+                _exclude_set.add(pkg)
         _LOGGER.debug("\nNEW:\n\tLists: %s\n\tIncl: %s\n\tExcl: %s",
                       lists, _include_set, _exclude_set)
         self.lists = set(lists)

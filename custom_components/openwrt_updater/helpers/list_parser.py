@@ -25,7 +25,7 @@ def _read_preset_lists_sync(hass: HomeAssistant) -> dict[str, dict[str, str]]:
             for line in list_raw.splitlines():
                 package = line.strip()
 
-                if not package or package.startswith("#"):
+                if package == "" or not package or package.startswith("#"):
                     continue
                 if len(package) == 1:
                     continue

@@ -55,12 +55,10 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Handle button press."""
         if self._key == "debug":
-            global_entry_id = self.hass.data[DOMAIN]["global_entry_id"]
-            deb_entry = self.hass.config_entries.async_get_entry(
-                global_entry_id)
-            _LOGGER.debug("Data from entry: %s", deb_entry.options)
-            _LOGGER.debug("Profiles@hass: %s",
-                          self.hass.data[DOMAIN]["profiles"])
+            from .helpers.profiles import OpenWRTProfile
+            profile = OpenWRTProfile(self.hass, "router")
+            _LOGGER.debug(profile.extra_include)
+            _LOGGER.debug("Expanded profile: %s", profile.profile_expanded)
         elif self._key == "reboot":
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
             async with OpenWRTSSH(self._ip, _key_path) as client:

@@ -292,7 +292,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                     user_input.get("lists", []),
                     user_input.get("extra_include", ""),
                     user_input.get("extra_exclude", ""),
-                    user_input("files", [])
+                    user_input.get("files", [])
                 )
                 profiles[profile_name] = dict(profile.profile)
                 options["profiles"] = profiles
