@@ -64,8 +64,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self._fast_alive_track is not None and not self._fast_alive_track.done():
             return
 
-        ip = self._ip  # или как у тебя поле называется
-        if not ip:
+        if not self.ip:
             return
 
         async def _runner() -> None:
@@ -74,7 +73,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 while (time.monotonic() - start) < max_duration:
                     is_alive = await async_check_alive(
-                        ip,
+                        self.ip,
                         22,
                         timeout=timeout,
                     )
@@ -149,5 +148,5 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "has_asu_client": has_asu_client,
             "packages": pkgs,
         }
-        #_LOGGER.debug("Coordinator data: %s", result)
+        # _LOGGER.debug("Coordinator data: %s", result)
         return result
