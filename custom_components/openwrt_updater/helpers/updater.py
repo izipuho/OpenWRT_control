@@ -170,6 +170,7 @@ class OpenWRTUpdater:
                 ip=self.master_host,
                 username=self.master_username,
                 key_path=self.key_path,
+                agent_forwarding=True,
             ) as master:
                 router = await master.connect_tunneled(
                     host=self.ip, key_path=self.key_path

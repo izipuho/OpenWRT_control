@@ -27,6 +27,7 @@ class OpenWRTSSH:
         username: str = "root",
         connect_timeout: float = 5.0,
         command_timeout: float | None = 5.0,
+        agent_forwarding: bool = False,
     ) -> None:
         """Initialize wrapper."""
         self.ip = ip
@@ -34,6 +35,7 @@ class OpenWRTSSH:
         self.username = username
         self.connect_timeout = connect_timeout
         self.command_timeout = command_timeout
+        self.agent_forwarding = agent_forwarding
         self.conn: asyncssh.SSHClientConnection | None = None
         self.available = False
 
@@ -78,7 +80,7 @@ class OpenWRTSSH:
                 client_keys=client_keys,
                 known_hosts=None,
                 connect_timeout=self.connect_timeout,
-                agent_forwarding=True,
+                agent_forwarding=self.agent_forwarding,
             )
         except (TimeoutError, asyncssh.Error, OSError) as exc:
             _LOGGER.warning("SSH connect to %s failed: %s", self.ip, exc)
