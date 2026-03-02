@@ -21,17 +21,17 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
     def __init__(self) -> None:
-        """Initialize Options Flow handler."""
+        """Initialize the options flow handler."""
         # Current entry state
         self._data = {}
         self._devices = {}
 
     def get_fresh_data(self):
-        """Get fresh data all the time."""
+        """Return current global config data."""
         return dict(self.hass.data[DOMAIN]["config"])
 
     async def async_step_init(self, user_input=None):
-        """Entry point."""
+        """Handle the options flow entry step."""
         _LOGGER.debug("Options flow: init")
         self._data = dict(self.config_entry.data)
         self._devices = dict(self.config_entry.options.get("devices", {}))

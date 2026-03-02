@@ -1,4 +1,4 @@
-"""Text entities declaration."""
+"""OpenWRT text entities."""
 
 import logging
 
@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTText(CoordinatorEntity, TextEntity):
-    """Text entities declaration."""
+    """Represent an OpenWRT text entity."""
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
         entity_category: EntityCategory | None = None,
         entity_icon: str | None = None,
     ) -> None:
-        """Initialize text entity."""
+        """Initialize the text entity."""
         super().__init__(coordinator)
         # helpers
         self.value = ""
@@ -49,7 +49,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     @property
     def native_value(self):
-        """Return entity native value."""
+        """Return the current native value."""
         if self._key:
             self.value = (
                 self.coordinator.data.get(self._key) if self.coordinator.data else None
@@ -60,7 +60,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
     @property
     def available(self):
-        """Return availability status."""
+        """Return whether the entity is currently available."""
         return self.coordinator.last_update_success if self._key else True
 
     def __repr__(self):
@@ -71,7 +71,7 @@ class OpenWRTText(CoordinatorEntity, TextEntity):
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up text entities for a config entry."""
     place_name = config_entry.data["place_name"]
     devices = list(config_entry.options.get("devices", {}).keys())
 

@@ -1,4 +1,4 @@
-"""Shared helpers. Persist states. Load config types."""
+"""Shared helper utilities for config and diagnostics."""
 
 import asyncio
 import contextlib
@@ -63,7 +63,7 @@ def load_config_types(config_path: str) -> dict:
 def build_global_options_schema(
     hass: HomeAssistant | None, defaults=None
 ) -> vol.Schema:
-    """Unified global options schema."""
+    """Build the global options schema."""
     return vol.Schema(
         {
             # vol.Optional("use_asu", default=defaults["use_asu"]): cv.boolean,
@@ -96,7 +96,7 @@ def build_global_options_schema(
 def build_device_schema(
     hass: HomeAssistant | None, defaults: dict | None
 ) -> vol.Schema:
-    """Unified device add schema."""
+    """Build the device options schema."""
     # config_types_path = (
     #    hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
     # )
@@ -119,7 +119,7 @@ def build_device_schema(
 
 
 def upsert_device(devices: dict, user_input: dict) -> dict:
-    """Upsert device by ip and return values."""
+    """Insert or update a device by IP and return the map."""
     ip = user_input["ip"]
     devices[ip] = {
         "ip": ip,
@@ -153,6 +153,7 @@ async def dump_toh_json(
         text = json.dumps(data, ensure_ascii=False, indent=2)
 
         def _write() -> None:
+            """Write JSON dump to disk inside an executor thread."""
             path.write_text(text, encoding="utf-8")
 
         await hass.async_add_executor_job(_write)
@@ -162,7 +163,7 @@ async def dump_toh_json(
 
 
 async def async_check_alive(host: str, port: int = 22, timeout: float = 1.0) -> bool:
-    """Alive fast-check."""
+    """Run a fast TCP liveness check."""
     try:
         r, w = await asyncio.wait_for(
             asyncio.open_connection(host=host, port=port), timeout=timeout

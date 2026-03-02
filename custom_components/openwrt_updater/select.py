@@ -1,4 +1,4 @@
-"""Select entities declaration."""
+"""OpenWRT select entities."""
 # TODO prettify select (name instead code)
 
 import logging
@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTSelect(SelectEntity):
-    """Select entities declaration."""
+    """Represent an OpenWRT select entity."""
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class OpenWRTSelect(SelectEntity):
         entity_category: EntityCategory | None = None,
         config_types: list[str],
     ) -> None:
-        """Initialize select entity."""
+        """Initialize the select entity."""
         # helpers
         self._entry = entry
         self._config_types = config_types
@@ -57,7 +57,7 @@ class OpenWRTSelect(SelectEntity):
 
     @property
     def current_option(self):
-        """Return current option."""
+        """Return the current selected option."""
         return load_device_option(
             self._entry,
             self._ip,
@@ -66,7 +66,7 @@ class OpenWRTSelect(SelectEntity):
         )
 
     async def async_select_option(self, option: str) -> None:
-        """Select option."""
+        """Select a new option and persist it."""
         self._attr_current_option = option
         self._current_value = option
         _LOGGER.debug("Select option: %s", option)
@@ -80,7 +80,7 @@ class OpenWRTSelect(SelectEntity):
         self.async_write_ha_state()
 
     def __repr__(self):
-        """Repesent the object."""
+        """Return a debug string representation."""
         repr_str = f"\nName: {self.name}"
         repr_str += f"\n\tClass: {self.device_class}"
         repr_str += f"\n\tValue: {self._current_value}"
@@ -89,7 +89,7 @@ class OpenWRTSelect(SelectEntity):
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up select entities for a config entry."""
     devices = config_entry.options.get("devices", {})
 
     config_types_path = (

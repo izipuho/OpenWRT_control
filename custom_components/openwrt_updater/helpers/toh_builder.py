@@ -17,12 +17,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class LocalTOH:
-    """Building local TOH based on SysUpgrade overview and profiles JSONs.
+    """Build a local TOH index from overview and profile JSON files.
 
-    Responsibilities:.
-    - Download raw SysUpgrade overview (network)..
-    - Build an in-memory index for existing devices lookups by openwrt_devid..
-
+    Responsibilities:
+    - Download raw SysUpgrade overview data.
+    - Build an in-memory index for configured devices.
     """
 
     def __init__(self, hass: HomeAssistant) -> None:
@@ -37,7 +36,7 @@ class LocalTOH:
         }
 
     async def build_index(self, raw: dict[str, Any]) -> None:
-        """Parse SysUpgrade Overview JSON. Build local index based on configured devices.
+        """Parse SysUpgrade overview JSON and build the local device index.
 
         Args:
             raw: Raw SysUpgrade overview JSON structure.
@@ -87,14 +86,14 @@ class LocalTOH:
         #    _LOGGER.error("SysUpgrade overview parse failed: %s", e)
 
     async def _download_profile(self, version, target) -> list[list[str]]:
-        """Download profile file for target and board.
+        """Download a profile file for a specific version and target.
 
         Args:
-            version: version to check (e.g., "24.10.2")
-            target: target to check (eg., "ramips/mt7621")
+            version: Version to check (for example, "24.10.2").
+            target: Target to check (for example, "ramips/mt7621").
 
         Returns:
-            dict with boards in this version for this target with sysupgrade URL
+            A map of board names to sysupgrade URLs for the target.
 
         """
         base_url = f"{self._base_url}releases/{version}/targets/{target}/"
@@ -129,7 +128,7 @@ class LocalTOH:
         return result
 
     async def download_overview(self) -> dict[str, Any]:
-        """Download SysUpgrade overview JSON from the network with robust parsing and a local fallback.
+        """Download SysUpgrade overview JSON with robust parsing.
 
         - Uses HA's shared aiohttp session.
         - Ignores incorrect Content-Type headers when parsing JSON.
@@ -138,7 +137,7 @@ class LocalTOH:
             dict[str, Any]: Raw TOH structure.
 
         Raises:
-            RuntimeError: If both network and local fallback fail or payload is invalid.
+            RuntimeError: If the payload cannot be parsed as valid JSON.
 
         """
         url = self.hass.data[DOMAIN]["config"]["overview_url"]

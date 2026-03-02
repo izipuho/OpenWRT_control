@@ -23,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Polls device state over SSH and enriches it with TOH cache.
+    """Poll device state over SSH and enrich it with cached TOH data.
 
     This coordinator must not perform any network calls to TOH. It reads TOH
     information via the shared TohCacheCoordinator instance stored in hass.data.
@@ -50,7 +50,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fast_alive_track: asyncio.Task | None = None
 
     def _on_toh_update(self) -> None:
-        """TOH changed -> update my entities WITHOUT SSH."""
+        """Refresh entities after TOH changes without extra SSH calls."""
         self.hass.async_create_task(self.async_request_refresh())
 
     async def async_wait_for_alive(

@@ -1,4 +1,4 @@
-"""Update function."""
+"""Firmware upgrade workflows for OpenWRT devices."""
 
 import logging
 import re
@@ -15,10 +15,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTUpdater:
-    """Updater class."""
+    """Run firmware upgrade actions for a specific device."""
 
     def __init__(self, hass: HomeAssistant, config_entry_id, ip: str) -> None:
-        """Initialize OpenWRT Updater."""
+        """Initialize updater state for one device."""
         self.ip = ip
         self.config = hass.data[DOMAIN].get("config", {})
         data = hass.data[DOMAIN][config_entry_id].get(self.ip, {})
@@ -58,6 +58,7 @@ class OpenWRTUpdater:
         )
 
     def _sanitize(self, s: str):
+        """Normalize a string for use in a safe firmware filename."""
         return re.sub(
             r"-{2,}",
             "-",
@@ -69,7 +70,7 @@ class OpenWRTUpdater:
         ).strip("-")
 
     async def cache_asu_firmware(self, firmware_url: str):
-        """Cache builded FW on master node."""
+        """Cache the built firmware image on the master node."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
         ) as master:
@@ -77,7 +78,7 @@ class OpenWRTUpdater:
             await master.exec_command(command=command, timeout=900)
 
     async def sysupgrade(self, firmware_file: str):
-        """Launch sysupgrade with given file."""
+        """Run sysupgrade with the given firmware file."""
         _LOGGER.debug("Trying to update %s with local file %s", self.ip, firmware_file)
         update_command = self._sysupgrade_command(firmware_file)
         async with OpenWRTSSH(self.ip, self.key_path) as client:
@@ -87,7 +88,7 @@ class OpenWRTUpdater:
             return await client.exec_command(update_command, timeout=1800)
 
     async def simple_upgrade(self):
-        """Trigger simple update. Download snapshot from TOH."""
+        """Run a direct snapshot-based upgrade from TOH data."""
         try:
             _LOGGER.debug("Trying to simple update %s", self.ip)
             _LOGGER.debug("Downloading %s", self.snapshot_url)
@@ -139,7 +140,7 @@ class OpenWRTUpdater:
             success = True  # be optimistic
 
             if not cached:
-                # Cache builded FW on master node
+                # Cache built FW on master node
                 asu_client = ASUClient(base_url=ASU_BASE_URL)
                 target = self.data["target"]
                 board_name = self.data["board_name"]
@@ -233,7 +234,7 @@ class OpenWRTUpdater:
             }
 
     async def _check_cache(self) -> tuple[str, bool]:
-        """Check cached build."""
+        """Check whether the expected firmware image is already cached."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
         ) as master:
@@ -243,7 +244,7 @@ class OpenWRTUpdater:
         return fw_file, cached
 
     async def trigger_upgrade(self):
-        """Trigger upgrade. Wrapper."""
+        """Trigger the selected upgrade path."""
         if self.is_simple:
             return await self.simple_upgrade()
         return await self.asu_upgrade()

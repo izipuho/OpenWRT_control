@@ -39,7 +39,7 @@ def _build_global_config(hass: HomeAssistant, entry: ConfigEntry) -> dict:
 
 
 async def async_setup(hass: HomeAssistant, config):
-    """Set wait for global point.
+    """Initialize shared integration state.
 
     Stores the following structure in hass.data[DOMAIN]:
       - "config": global configuration for all Config Entries; sets up in entry setup
@@ -53,7 +53,7 @@ async def async_setup(hass: HomeAssistant, config):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up the integration: prepare shared TOH cache and per-device coordinators.
+    """Set up a config entry and its shared/device coordinators.
 
     Stores hass.data[DOMAIN][entry.entry_id]:
       - "data":
@@ -125,7 +125,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload on any change; if global – обновить всех."""
+    """Reload changed entries and refresh shared global state if needed."""
     if entry.unique_id == "__global__":
         # reread global config
         component_config = _build_global_config(hass, entry)
