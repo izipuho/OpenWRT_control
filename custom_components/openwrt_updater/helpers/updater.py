@@ -116,7 +116,7 @@ class OpenWRTUpdater:
             else:
                 exit_status = getattr(output, "exit_status", None)
                 return_code = getattr(output, "return_code", None)
-                success = True
+                success = exit_status in (0, None) and return_code in (0, None)
             return {
                 "success": success,
                 "method": "simple",
