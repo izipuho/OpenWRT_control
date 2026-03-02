@@ -3,6 +3,7 @@
 import asyncio
 from datetime import timedelta
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
@@ -27,16 +28,65 @@ def _build_global_config(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     """Build global config from defaults and entry options."""
     component_config: dict = {
         **INTEGRATION_DEFAULTS,
-        **(entry.options or {}),
+        **entry.options.get("config", {}),
     }
 
-    ssh_key_path = hass.config.path(component_config.get("ssh_key_path"))
+    ssh_key_path = hass.config.path(component_config["ssh_key_path"])
     component_config["ssh_key_path"] = ssh_key_path
     component_config["overview_url"] = (
         f"{component_config['asu_base_url']}json/v1/overview.json"
     )
 
     return component_config
+
+
+def _apply_global_runtime(hass: HomeAssistant, entry: ConfigEntry, component_config: dict[str, Any]) -> dict[str, Any]:
+    """Apply global entry options to runtime storage (hass.data).
+
+    This function is intentionally "read-only" for ConfigEntry storage.
+    """
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    domain_data["global_entry_id"] = entry.entry_id
+    domain_data["config"] = dict(component_config)
+    domain_data["lists"] = dict(entry.options.get("lists", {}))
+    domain_data["profiles"] = dict(entry.options.get("profiles", {}))
+
+
+async def _async_ensure_global_options(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    component_config: dict[str, Any],
+) -> bool:
+    """Ensure required keys exist in entry.options and update computed 'config'.
+
+    Returns True if entry.options was updated.
+    """
+    changed = False
+    options: dict[str, Any] = dict(entry.options)
+
+    # Keep 'config' as computed view (defaults + user config).
+    if options.get("config") != component_config:
+        options["config"] = dict(component_config)
+        changed = True
+
+    # Ensure preset lists exist once.
+    lists = options.get("lists")
+    if not isinstance(lists, dict) or not lists:
+        _LOGGER.debug("Reset lists to default")
+        options["lists"] = dict(await read_preset_lists(hass))
+        changed = True
+
+    # Ensure profiles exist once (placeholder for future defaults).
+    profiles = options.get("profiles")
+    if not isinstance(profiles, dict):
+        _LOGGER.debug("Reset profiles to default")
+        options["profiles"] = {}
+        changed = True
+
+    if changed:
+        hass.config_entries.async_update_entry(entry, options=options)
+
+    return changed
 
 
 async def async_setup(hass: HomeAssistant, config):
@@ -71,22 +121,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if entry.unique_id == "__global__":
         component_config = _build_global_config(hass, entry)
-        hass.data[DOMAIN]["config"] = component_config
-        if "lists" not in entry.options:
-            _LOGGER.debug("Reset lists to default")
-            lists = await read_preset_lists(hass)
-            hass.config_entries.async_update_entry(
-                entry,
-                options={**entry.options, "lists": lists},
-            )
-        if "profiles" not in entry.options:
-            _LOGGER.debug("Reset profiles to default")
-            profiles = {}
-            hass.config_entries.async_update_entry(
-                entry, options={**entry.options, "profiles": profiles})
+
+        # 1. Ensure storage has required keys and computed config
+        await _async_ensure_global_options(hass, entry, component_config)
+
+        # 2. Apply runtime view to hass.data
+        _apply_global_runtime(hass, entry, component_config)
 
         toh_coordinator = LocalTohCacheCoordinator(
-            hass, timedelta(hours=component_config["toh_timeout_hours"]), entry
+            hass,
+            timedelta(hours=component_config["toh_timeout_hours"]),
+            entry
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
         await toh_coordinator.async_config_entry_first_refresh()
@@ -110,10 +155,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await coordinator.async_config_entry_first_refresh()
             hass.data[DOMAIN][entry.entry_id][ip]["coordinator"] = coordinator
 
-            _LOGGER.debug(
-                "Initial HAss data: %s", hass.data[DOMAIN][entry.entry_id][ip]
-            )
-
         # Initialize all platforms
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -124,6 +165,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload entry."""
     if entry.unique_id == "__global__":
         hass.data[DOMAIN]["config"] = {}
+        hass.data[DOMAIN]["lists"] = {}
+        hass.data[DOMAIN]["profiles"] = {}
+        hass.data[DOMAIN]["boards"] = {}
         hass.data[DOMAIN].pop("toh_index", None)
         global_ready = hass.data[DOMAIN].get("global_ready")
         if global_ready:
@@ -142,13 +186,15 @@ async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.unique_id == "__global__":
         # reread global config
         component_config = _build_global_config(hass, entry)
-        hass.data[DOMAIN]["config"] = component_config
+        _apply_global_runtime(hass, entry, component_config)
+
         # recreate TOH coordinator
         toh_coordinator = LocalTohCacheCoordinator(
             hass, timedelta(hours=component_config["toh_timeout_hours"]), entry
         )
         hass.data[DOMAIN]["toh_index"] = toh_coordinator
         await toh_coordinator.async_config_entry_first_refresh()
+
         hass.data[DOMAIN]["global_ready"].set()
         # reread all device-entries
         tasks = [

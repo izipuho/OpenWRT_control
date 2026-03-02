@@ -2,6 +2,7 @@
 
 DOMAIN = "openwrt_updater"
 SIGNAL_BOARDS_CHANGED = f"{DOMAIN}_boards_changed"
+PRESETS_DIR = "custom_components.openwrt_updater.presets"
 
 INTEGRATION_DEFAULTS = {
     "builder_location": "zip@10.8.25.20:/home/zip/OpenWrt-builder/",

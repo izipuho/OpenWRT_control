@@ -2,15 +2,15 @@ import logging
 from importlib import resources
 from homeassistant.core import HomeAssistant
 from .profiles import OpenWRTPackageList
+from ..presets.const import PRESETS_DIR
 
-_LISTS_DIR = "custom_components.openwrt_updater.presets"
 _LOGGER = logging.getLogger(__name__)
 
 
 def _read_preset_lists_sync(hass: HomeAssistant) -> dict[str, dict[str, str]]:
     """Read preset lists."""
     lists: dict[str, dict[str, dir]] = {}
-    lists_dir = resources.files(_LISTS_DIR) / "lists"
+    lists_dir = resources.files(PRESETS_DIR) / "lists"
 
     for lst in lists_dir.iterdir():
         include: set[str] = set()
@@ -25,7 +25,7 @@ def _read_preset_lists_sync(hass: HomeAssistant) -> dict[str, dict[str, str]]:
             for line in list_raw.splitlines():
                 package = line.strip()
 
-                if not package or package.startswith("#"):
+                if package == "" or not package or package.startswith("#"):
                     continue
                 if len(package) == 1:
                     continue

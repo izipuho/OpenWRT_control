@@ -44,10 +44,11 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         if user_input is not None:
+            options = {"config": dict(user_input), "lists": {}, "profiles": {}}
             return self.async_create_entry(
                 title="OpenWRT Control — Global config",
                 data={},
-                options=user_input,
+                options=options,
             )
         schema = await self.hass.async_add_executor_job(
             build_global_options_schema, self.hass, INTEGRATION_DEFAULTS
