@@ -130,6 +130,7 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
     return devices
 
 
+
 async def dump_toh_json(
     hass: HomeAssistant,
     data,
