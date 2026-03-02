@@ -1,4 +1,4 @@
-"""Update function."""
+"""Firmware upgrade workflows for OpenWRT devices."""
 
 import logging
 import re
@@ -15,10 +15,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTUpdater:
-    """Updater class."""
+    """Run firmware upgrade actions for a specific device."""
 
     def __init__(self, hass: HomeAssistant, config_entry_id, ip: str) -> None:
-        """Initialize OpenWRT Updater."""
+        """Initialize updater state for one device."""
         self.ip = ip
         self.config = hass.data[DOMAIN].get("config", {})
         data = hass.data[DOMAIN][config_entry_id].get(self.ip, {})
@@ -58,6 +58,7 @@ class OpenWRTUpdater:
         )
 
     def _sanitize(self, s: str):
+        """Normalize a string for use in a safe firmware filename."""
         return re.sub(
             r"-{2,}",
             "-",
@@ -68,8 +69,41 @@ class OpenWRTUpdater:
             ),
         ).strip("-")
 
+    @staticmethod
+    def _status_from_output(output) -> tuple[bool, int | None, int | None]:
+        """Convert command output to success/exit status/return code triple."""
+        if output is None:
+            return False, None, None
+
+        exit_status = getattr(output, "exit_status", None)
+        return_code = getattr(output, "return_code", None)
+        success = exit_status in (0, None) and return_code in (0, None)
+        return success, exit_status, return_code
+
+    @staticmethod
+    def _build_result(
+        method: str,
+        success: bool,
+        *,
+        message=None,
+        exit_status: int | None = None,
+        return_code: int | None = None,
+        cached=None,
+        raw=None,
+    ) -> dict:
+        """Build a normalized upgrade result payload."""
+        return {
+            "success": success,
+            "method": method,
+            "message": message,
+            "exit_status": exit_status,
+            "return_code": return_code,
+            "cached": cached,
+            "raw": raw,
+        }
+
     async def cache_asu_firmware(self, firmware_url: str):
-        """Cache builded FW on master node."""
+        """Cache the built firmware image on the master node."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
         ) as master:
@@ -77,7 +111,7 @@ class OpenWRTUpdater:
             await master.exec_command(command=command, timeout=900)
 
     async def sysupgrade(self, firmware_file: str):
-        """Launch sysupgrade with given file."""
+        """Run sysupgrade with the given firmware file."""
         _LOGGER.debug("Trying to update %s with local file %s", self.ip, firmware_file)
         update_command = self._sysupgrade_command(firmware_file)
         async with OpenWRTSSH(self.ip, self.key_path) as client:
@@ -87,7 +121,7 @@ class OpenWRTUpdater:
             return await client.exec_command(update_command, timeout=1800)
 
     async def simple_upgrade(self):
-        """Trigger simple update. Download snapshot from TOH."""
+        """Run a direct snapshot-based upgrade from TOH data."""
         try:
             _LOGGER.debug("Trying to simple update %s", self.ip)
             _LOGGER.debug("Downloading %s", self.snapshot_url)
@@ -99,33 +133,16 @@ class OpenWRTUpdater:
             _LOGGER.debug("Update result: %s", output)
         except Exception as err:
             _LOGGER.error("Failed to run simple update for %s: %s", self.ip, err)
-            return {
-                "success": False,
-                "method": "simple",
-                "message": err,
-                "exit_status": None,
-                "return_code": None,
-                "cached": None,
-                "raw": None,
-            }
+            return self._build_result("simple", False, message=err)
         else:
-            if output is None:
-                exit_status = None
-                return_code = None
-                success = False
-            else:
-                exit_status = getattr(output, "exit_status", None)
-                return_code = getattr(output, "return_code", None)
-                success = True
-            return {
-                "success": success,
-                "method": "simple",
-                "message": None,
-                "exit_status": exit_status,
-                "return_code": return_code,
-                "cached": None,
-                "raw": output,
-            }
+            success, exit_status, return_code = self._status_from_output(output)
+            return self._build_result(
+                "simple",
+                success,
+                exit_status=exit_status,
+                return_code=return_code,
+                raw=output,
+            )
 
     async def asu_upgrade(self):
         """Trigger ASU upgrade."""
@@ -139,7 +156,7 @@ class OpenWRTUpdater:
             success = True  # be optimistic
 
             if not cached:
-                # Cache builded FW on master node
+                # Cache built FW on master node
                 asu_client = ASUClient(base_url=ASU_BASE_URL)
                 target = self.data["target"]
                 board_name = self.data["board_name"]
@@ -157,11 +174,20 @@ class OpenWRTUpdater:
                 fw_url = f"{ASU_BASE_URL}store/{bin_dir}/{file_name}"
                 _LOGGER.debug("Build URL: %s", fw_url)
                 await self.cache_asu_firmware(firmware_url=fw_url)
+                fw_file, cached = await self._check_cache()
+                if not cached or not fw_file:
+                    raise RuntimeError(
+                        "ASU firmware was built but is not available in cache"
+                    )
+
+            if not fw_file:
+                raise RuntimeError("Cached ASU firmware path is empty")
 
             async with OpenWRTSSH(
                 ip=self.master_host,
                 username=self.master_username,
                 key_path=self.key_path,
+                agent_forwarding=True,
             ) as master:
                 router = await master.connect_tunneled(
                     host=self.ip, key_path=self.key_path
@@ -186,45 +212,31 @@ class OpenWRTUpdater:
                 sysupgrade_raw = await self.sysupgrade(
                     f"openwrt-{self.available_os_version}-asu.bin"
                 )
-                if sysupgrade_raw is None:
-                    _LOGGER.error("Sysupgrade failed or timed out on %s", self.ip)
-                    success = False
-                else:
-                    exit_status = getattr(sysupgrade_raw, "exit_status", None)
-                    return_code = getattr(sysupgrade_raw, "return_code", None)
-                    success = exit_status in (0, None) and return_code in (
-                        0,
-                        None,
-                    )
-                    if not success:
+                success, exit_status, return_code = self._status_from_output(
+                    sysupgrade_raw
+                )
+                if not success:
+                    if sysupgrade_raw is None:
+                        _LOGGER.error("Sysupgrade failed or timed out on %s", self.ip)
+                    else:
                         _LOGGER.error(
                             "Failed to sysupgrade %s: %s", self.ip, sysupgrade_raw
                         )
 
         except Exception as err:
             _LOGGER.error("Failed to run ASU upgrade for %s: %s", self.ip, err)
-            return {
-                "success": False,
-                "method": "asu",
-                "message": err,
-                "exit_status": None,
-                "return_code": None,
-                "cached": None,
-                "raw": None,
-            }
+            return self._build_result("asu", False, message=err)
         else:
-            return {
-                "success": success,
-                "method": "asu",
-                "message": None,
-                "exit_status": exit_status,
-                "return_code": return_code,
-                "cached": None,
-                "raw": sysupgrade_raw,
-            }
+            return self._build_result(
+                "asu",
+                success,
+                exit_status=exit_status,
+                return_code=return_code,
+                raw=sysupgrade_raw,
+            )
 
     async def _check_cache(self) -> tuple[str, bool]:
-        """Check cached build."""
+        """Check whether the expected firmware image is already cached."""
         async with OpenWRTSSH(
             ip=self.master_host, username=self.master_username, key_path=self.key_path
         ) as master:
@@ -234,7 +246,7 @@ class OpenWRTUpdater:
         return fw_file, cached
 
     async def trigger_upgrade(self):
-        """Trigger upgrade. Wrapper."""
+        """Trigger the selected upgrade path."""
         if self.is_simple:
             return await self.simple_upgrade()
         return await self.asu_upgrade()

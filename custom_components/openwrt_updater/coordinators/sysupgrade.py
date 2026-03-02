@@ -48,7 +48,7 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass.async_create_task(self.async_request_refresh())
 
     async def async_will_remove_from_hass(self) -> None:
-        """Unsubsribe from signals."""
+        """Unsubscribe from dispatcher signals."""
         await super().async_will_remove_from_hass()
         if getattr(self, "_unsub_signal", None):
             self._unsub_signal()
@@ -65,7 +65,7 @@ class LocalTohCacheCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh TOH from network; fallback to cached raw data.
 
-        Returns builded index. Entities should not parse
+        Returns a built index. Entities should not parse
         this directly — use `get_for_devid()` for a normalized view.
         """
         try:

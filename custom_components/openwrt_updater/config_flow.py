@@ -1,4 +1,4 @@
-"""Configuration flow description."""
+"""Config flow for OpenWRT Updater."""
 
 import logging
 
@@ -18,25 +18,25 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Configuration flow class."""
+    """Handle the integration config flow."""
 
     def __init__(self) -> None:
-        """Initialize config flow class."""
+        """Initialize the config flow."""
         self.data = {}
         self.options = {}
 
     def check_global_exists(self) -> bool:
-        """Check for global entry."""
+        """Return whether the global entry already exists."""
         return any(e.unique_id == "__global__" for e in self._async_current_entries())
 
     async def async_step_user(self, user_input=None):
-        """Route for correct action: set globals or add place."""
+        """Route to either the global step or add-place step."""
         if not self.check_global_exists():
             return await self.async_step_global()
         return await self.async_step_add_place()
 
     async def async_step_global(self, user_input=None):
-        """Create global entry."""
+        """Create the global config entry."""
         # Trying to reserve __global__ unique ID
         await self.async_set_unique_id("__global__", raise_on_progress=False)
         # Abort if already exists
@@ -54,7 +54,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="global", data_schema=schema)
 
     async def async_step_add_place(self, user_input=None):
-        """Request place info."""
+        """Collect place-level information."""
         if user_input is not None:
             self.data = {
                 "place_name": user_input["place_name"],
@@ -73,7 +73,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_add_device(self, user_input=None):
-        """Request device info."""
+        """Collect device-level information."""
         if user_input is not None:
             upsert_device(self.options, user_input)
             if user_input.get("add_another"):
@@ -94,7 +94,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        """Wire options flow for this entry."""
+        """Return the options flow handler for this entry."""
         from .options_flow import OpenWRTOptionsFlowHandler
 
         return OpenWRTOptionsFlowHandler()

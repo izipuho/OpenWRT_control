@@ -54,8 +54,8 @@ If ASU support is enabled and available on the device:
 If enabled:
 - The integration queries the official OpenWRT “sysupgrade overview”
 - Retrieves a matching firmware entry for the device
-- Downloads the referenced image
-- Transfers the image to the device
+- Connects to the device over SSH and runs `curl` on the device itself
+- Downloads the referenced image directly to `/tmp` on the device
 - Performs `sysupgrade`
 
 ## Dashboards

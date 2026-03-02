@@ -1,4 +1,4 @@
-"""Binary sensor declaration."""
+"""OpenWRT binary sensor entities."""
 
 import logging
 
@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    """OpenWRT binary sensors class."""
+    """Represent an OpenWRT binary sensor entity."""
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
         device_class: BinarySensorDeviceClass = None,
         entity_category: EntityCategory = None,
     ) -> None:
-        """Initialize binary sensor class."""
+        """Initialize the binary sensor entity."""
         super().__init__(coordinator)
 
         # device properties
@@ -49,18 +49,18 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return device status."""
+        """Return the current sensor state."""
         if self.coordinator.data is None:
             return False
         return self.coordinator.data.get(self._key)
 
     @property
     def available(self):
-        """Return last successfull update."""
+        """Return whether the latest coordinator update succeeded."""
         return self.coordinator.last_update_success
 
     def __repr__(self):
-        """Repesent the object."""
+        """Return a debug string representation."""
         repr_str = f"\nName: {self.name}"
         repr_str += f"\n\tClass: {self.device_class}"
         repr_str += f"\n\tCat: {self.entity_category}"
@@ -68,7 +68,7 @@ class OpenWRTBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up binary sensor entities for a config entry."""
     place_name = config_entry.data["place_name"]
     devices = list(config_entry.options.get("devices", {}).keys())
 

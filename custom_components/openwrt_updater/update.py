@@ -1,4 +1,4 @@
-"""Updater entity declaration."""
+"""OpenWRT update entities."""
 
 import logging
 
@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
-    """Updater entity declaration."""
+    """Represent an OpenWRT firmware update entity."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
         ip,  # ,
         # update_callback
     ) -> None:
-        """Initialize updater entity."""
+        """Initialize the update entity."""
         super().__init__(coordinator)
         # helpers
         place_name = config_entry.data["place_name"]
@@ -50,14 +50,14 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     @property
     def installed_version(self):
-        """Return installed version."""
+        """Return the currently installed version."""
         if self.coordinator.data is None:
             return "unavailable"
         return self.coordinator.data.get("current_os_version")
 
     @property
     def latest_version(self):
-        """Return available version."""
+        """Return the latest available version."""
         if self.coordinator.data is None:
             return "unavailable"
         return self.coordinator.data.get("available_os_version")
@@ -69,11 +69,11 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     @property
     def entity_picture(self):
-        """Do not try to override picture."""
+        """Return no custom entity picture."""
         return None
 
     def _can_install(self) -> bool:
-        """Check intall possibility."""
+        """Return whether installation is currently possible."""
         installed = self.installed_version
         latest = self.latest_version
         if not installed or not latest:
@@ -82,14 +82,14 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
     @property
     def supported_features(self) -> UpdateEntityFeature:
-        """Calc supported features."""
+        """Return supported update features."""
         features = UpdateEntityFeature(0)
         if self._can_install():
             features |= UpdateEntityFeature.INSTALL
         return features
 
     async def async_install(self, version: str | None, backup: bool, **kwargs):
-        """Call update function."""
+        """Run the firmware upgrade workflow."""
         # await self._update_callback(self.config_entry.entry_id, self._ip)
         updater = OpenWRTUpdater(self.hass, self.config_entry.entry_id, self._ip)
         result = await updater.trigger_upgrade()
@@ -107,7 +107,7 @@ class OpenWRTUpdateEntity(CoordinatorEntity, UpdateEntity):
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up update entities for a config entry."""
     devices = config_entry.options.get("devices", {})
     entities = []
 

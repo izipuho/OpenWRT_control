@@ -45,13 +45,14 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from packaging.version import Version
 
-          manifest_path = "${MANIFEST_PATH}"
-          base_sha = "${BASE_SHA}"
-          head_sha = "${HEAD_SHA}"
+          manifest_path = os.environ["MANIFEST_PATH"]
+          base_sha = os.environ["BASE_SHA"]
+          head_sha = os.environ["HEAD_SHA"]
 
           def git_show(ref: str, path: str) -> str:
               try:
@@ -86,13 +87,14 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from packaging.version import Version
 
-          manifest_path = "${MANIFEST_PATH}"
-          base_sha = "${BASE_SHA}"
-          head_sha = "${HEAD_SHA}"
+          manifest_path = os.environ["MANIFEST_PATH"]
+          base_sha = os.environ["BASE_SHA"]
+          head_sha = os.environ["HEAD_SHA"]
 
           def git_show(ref: str, path: str) -> str:
               try:
@@ -122,18 +124,9 @@ jobs:
         run: |
           python - <<'PY'
           from __future__ import annotations
-
+          import ast
           import pathlib
           import sys
-
-          # Exact signature fragments of the forbidden debug button declaration.
-          signature = [
-              "OpenWRTButton(",
-              'name="Debug",',
-              'key="debug",',
-              "entity_category=EntityCategory.DIAGNOSTIC,",
-              'entity_icon="mdi:bug-play",',
-          ]
 
           root = pathlib.Path("custom_components")
           if not root.exists():
@@ -148,8 +141,41 @@ jobs:
               except OSError:
                   continue
 
-              if all(fragment in text for fragment in signature):
-                  offenders.append(str(path))
+              try:
+                  tree = ast.parse(text, filename=str(path))
+              except SyntaxError:
+                  continue
+
+              for node in ast.walk(tree):
+                  if not isinstance(node, ast.Call):
+                      continue
+                  if not isinstance(node.func, ast.Name) or node.func.id != "OpenWRTButton":
+                      continue
+
+                  kwargs = {kw.arg: kw.value for kw in node.keywords if kw.arg}
+
+                  def kw_str(name: str) -> str | None:
+                      value = kwargs.get(name)
+                      if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                          return value.value
+                      return None
+
+                  def is_diagnostic(value: ast.AST | None) -> bool:
+                      return (
+                          isinstance(value, ast.Attribute)
+                          and value.attr == "DIAGNOSTIC"
+                          and isinstance(value.value, ast.Name)
+                          and value.value.id == "EntityCategory"
+                      )
+
+                  if (
+                      kw_str("name") == "Debug"
+                      and kw_str("key") == "debug"
+                      and kw_str("entity_icon") == "mdi:bug-play"
+                      and is_diagnostic(kwargs.get("entity_category"))
+                  ):
+                      offenders.append(str(path))
+                      break
 
           if offenders:
               print("ERROR: Forbidden Debug button declaration detected in the following files:")
@@ -159,4 +185,3 @@ jobs:
 
           print("OK: No forbidden Debug button declaration detected.")
           PY
-

@@ -1,4 +1,4 @@
-"""Simple update declaration."""
+"""OpenWRT switch entities."""
 
 import logging
 
@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTSwitch(SwitchEntity, RestoreEntity):
-    """OpenWRT simple update class."""
+    """Represent an OpenWRT switch entity."""
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         default_state: bool = False,
         entity_category: EntityCategory = None,
     ) -> None:
-        """Initialize simple update class."""
+        """Initialize the switch entity."""
         # helpers
         self._entry = entry
         self._key = key
@@ -54,7 +54,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         _LOGGER.debug("%r", self)
 
     async def async_added_to_hass(self):
-        """Persist changes. Dunno how."""
+        """Restore the saved value when the entity is added."""
         await super().async_added_to_hass()
         self._attr_is_on = load_device_option(
             self._entry,
@@ -65,11 +65,11 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return is-on value."""
+        """Return whether the switch is on."""
         return self._attr_is_on
 
     async def async_turn_on(self, **kwargs):
-        """Turn on."""
+        """Turn the switch on."""
         self._attr_is_on = True
         save_device_option(
             self.hass,
@@ -81,7 +81,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
-        """Turn off."""
+        """Turn the switch off."""
         self._attr_is_on = False
         save_device_option(
             self.hass,
@@ -93,7 +93,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
         self.async_write_ha_state()
 
     def __repr__(self):
-        """Repesent the object."""
+        """Return a debug string representation."""
         repr_str = f"\nName: {self.name}"
         repr_str += f"\n\tClass: {self.device_class}"
         repr_str += f"\n\tState: {self._attr_is_on}"
@@ -102,7 +102,7 @@ class OpenWRTSwitch(SwitchEntity, RestoreEntity):
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up switch entities for a config entry."""
     devices = list(config_entry.options.get("devices", {}).keys())
 
     entities = []

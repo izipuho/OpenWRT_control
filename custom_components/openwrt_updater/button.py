@@ -1,4 +1,4 @@
-"""Simple update declaration."""
+"""OpenWRT button entities."""
 
 import logging
 
@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OpenWRTButton(CoordinatorEntity, ButtonEntity):
-    """OpenWRT simple update class."""
+    """Represent an OpenWRT button entity."""
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         entity_category: EntityCategory,
         entity_icon: str | None = None,
     ) -> None:
-        """Initialize simple update class."""
+        """Initialize the button entity."""
         super().__init__(coordinator)
 
         # helpers
@@ -69,14 +69,14 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
             await self.coordinator.async_wait_for_alive()
 
     def __repr__(self):
-        """Repesent the object."""
+        """Return a debug string representation."""
         repr_str = f"\nName: {self.name}"
         repr_str += f"\n\tCat: {self.entity_category}"
         return repr_str
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
-    """Asyncronious entry setup."""
+    """Set up button entities for a config entry."""
     devices = config_entry.options.get("devices", {})
 
     entities = []
