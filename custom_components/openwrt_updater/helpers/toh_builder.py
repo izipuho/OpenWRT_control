@@ -43,6 +43,7 @@ class LocalTOH:
             raw: Raw SysUpgrade overview JSON structure.
 
         """
+        self.index = {}
         # try:
         orig_boards = self.hass.data[DOMAIN]["boards"]
         my_targets = {target: set(boards) for target, boards in orig_boards.items()}
