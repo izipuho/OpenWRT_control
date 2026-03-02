@@ -157,6 +157,14 @@ class OpenWRTUpdater:
                 fw_url = f"{ASU_BASE_URL}store/{bin_dir}/{file_name}"
                 _LOGGER.debug("Build URL: %s", fw_url)
                 await self.cache_asu_firmware(firmware_url=fw_url)
+                fw_file, cached = await self._check_cache()
+                if not cached or not fw_file:
+                    raise RuntimeError(
+                        "ASU firmware was built but is not available in cache"
+                    )
+
+            if not fw_file:
+                raise RuntimeError("Cached ASU firmware path is empty")
 
             async with OpenWRTSSH(
                 ip=self.master_host,
