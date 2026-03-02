@@ -45,13 +45,14 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from packaging.version import Version
 
-          manifest_path = "${MANIFEST_PATH}"
-          base_sha = "${BASE_SHA}"
-          head_sha = "${HEAD_SHA}"
+          manifest_path = os.environ["MANIFEST_PATH"]
+          base_sha = os.environ["BASE_SHA"]
+          head_sha = os.environ["HEAD_SHA"]
 
           def git_show(ref: str, path: str) -> str:
               try:
@@ -86,13 +87,14 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
           from packaging.version import Version
 
-          manifest_path = "${MANIFEST_PATH}"
-          base_sha = "${BASE_SHA}"
-          head_sha = "${HEAD_SHA}"
+          manifest_path = os.environ["MANIFEST_PATH"]
+          base_sha = os.environ["BASE_SHA"]
+          head_sha = os.environ["HEAD_SHA"]
 
           def git_show(ref: str, path: str) -> str:
               try:
@@ -159,4 +161,3 @@ jobs:
 
           print("OK: No forbidden Debug button declaration detected.")
           PY
-
