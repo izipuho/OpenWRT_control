@@ -38,6 +38,34 @@ def _build_global_config(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     return component_config
 
 
+async def _async_replace_toh_coordinator(
+    hass: HomeAssistant, component_config: dict
+) -> LocalTohCacheCoordinator:
+    """Create and atomically replace TOH coordinator in hass.data."""
+    old_coordinator = hass.data[DOMAIN].get("toh_index")
+    if old_coordinator is not None:
+        try:
+            await old_coordinator.async_will_remove_from_hass()
+        except Exception:
+            _LOGGER.debug("Failed to unload previous TOH coordinator", exc_info=True)
+
+    toh_coordinator = LocalTohCacheCoordinator(
+        hass, timedelta(hours=component_config["toh_timeout_hours"])
+    )
+    hass.data[DOMAIN]["toh_index"] = toh_coordinator
+    await toh_coordinator.async_config_entry_first_refresh()
+    return toh_coordinator
+
+
+async def _async_init_global_state(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Build global config and refresh shared TOH coordinator."""
+    component_config = _build_global_config(hass, entry)
+    hass.data[DOMAIN]["config"] = component_config
+    await _async_replace_toh_coordinator(hass, component_config)
+    hass.data[DOMAIN]["global_ready"].set()
+    _LOGGER.debug("Global state initialized/reloaded")
+
+
 async def async_setup(hass: HomeAssistant, config):
     """Initialize shared integration state.
 
@@ -69,16 +97,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
 
     if entry.unique_id == "__global__":
-        component_config = _build_global_config(hass, entry)
-        hass.data[DOMAIN]["config"] = component_config
-
-        toh_coordinator = LocalTohCacheCoordinator(
-            hass, timedelta(hours=component_config["toh_timeout_hours"])
-        )
-        hass.data[DOMAIN]["toh_index"] = toh_coordinator
-        await toh_coordinator.async_config_entry_first_refresh()
-
-        hass.data[DOMAIN]["global_ready"].set()
+        await _async_init_global_state(hass, entry)
     else:
         if not hass.data[DOMAIN]["global_ready"].is_set():
             raise ConfigEntryNotReady("Waiting for __global__ entry")
@@ -127,16 +146,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _on_entry_update(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload changed entries and refresh shared global state if needed."""
     if entry.unique_id == "__global__":
-        # reread global config
-        component_config = _build_global_config(hass, entry)
-        hass.data[DOMAIN]["config"] = component_config
-        # recreate TOH coordinator
-        toh_coordinator = LocalTohCacheCoordinator(
-            hass, timedelta(hours=component_config["toh_timeout_hours"])
-        )
-        hass.data[DOMAIN]["toh_index"] = toh_coordinator
-        await toh_coordinator.async_config_entry_first_refresh()
-        hass.data[DOMAIN]["global_ready"].set()
+        await _async_init_global_state(hass, entry)
         # reread all device-entries
         tasks = [
             hass.config_entries.async_reload(e.entry_id)
