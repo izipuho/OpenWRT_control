@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
-_DEVICE_SCAN_INTERVAL = timedelta(minutes=10)
 
 
 class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -36,7 +35,9 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass=hass,
             logger=_LOGGER,
             name=f"{DOMAIN}-device-{ip}",
-            update_interval=_DEVICE_SCAN_INTERVAL,
+            update_interval=timedelta(
+                minutes=hass.data[DOMAIN]["config"]["device_timeout_minutes"]
+            ),
         )
         self.hass = hass
         self.entry = config_entry
