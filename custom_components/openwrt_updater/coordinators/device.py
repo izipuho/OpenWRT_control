@@ -117,6 +117,8 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 board_name,
                 pkgs,
                 has_asu_client,
+                wifi_roaming_enabled,
+                wifi_ifaces,
             ) = await client.async_get_device_info()
         except Exception as err:
             raise UpdateFailed(
@@ -148,6 +150,8 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "board_name": board_name,
             "has_asu_client": has_asu_client,
             "packages": pkgs,
+            "wifi_roaming_enabled": wifi_roaming_enabled,
+            "wifi_ifaces": wifi_ifaces,
         }
         _LOGGER.debug(
             "Coordinator data: %s",

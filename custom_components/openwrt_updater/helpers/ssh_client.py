@@ -200,6 +200,74 @@ class OpenWRTSSH:
         fw_file = _first_line(res.stdout)
         return fw_file, bool(fw_file)
 
+    async def read_wireless_sections(self) -> list[dict]:
+        """Read wireless config from UCI and parse sections."""
+        res = await self.exec_command("uci export wireless")
+        if res is None or not res.stdout:
+            return []
+
+        sections: list[dict] = []
+        current: dict | None = None
+
+        for raw_line in res.stdout.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            tokens = shlex.split(line)
+            if not tokens:
+                continue
+
+            if tokens[0] == "config" and len(tokens) >= 3:
+                current = {"type": tokens[1], "name": tokens[2], "options": {}}
+                sections.append(current)
+                continue
+
+            if tokens[0] == "option" and len(tokens) >= 3 and current is not None:
+                current["options"][tokens[1]] = tokens[2]
+
+        return sections
+
+    async def _read_wifi_snapshot(self) -> tuple[bool | None, list[dict]]:
+        """Read Wi-Fi roaming state and AP iface details."""
+        sections = await self.read_wireless_sections()
+        ap_sections = [
+            section
+            for section in sections
+            if section.get("type") == "wifi-iface"
+            and section.get("options", {}).get("mode") == "ap"
+        ]
+
+        if not ap_sections:
+            return None, []
+
+        states = [
+            section.get("options", {}).get("ieee80211r") == "1"
+            for section in ap_sections
+        ]
+        if all(states):
+            roaming = True
+        elif not any(states):
+            roaming = False
+        else:
+            roaming = None
+
+        wifi_ifaces = []
+        for section in ap_sections:
+            options = section.get("options", {})
+            wifi_ifaces.append(
+                {
+                    "section": section.get("name"),
+                    "device": options.get("device"),
+                    "ifname": options.get("ifname"),
+                    "ssid": options.get("ssid"),
+                    "ieee80211r": options.get("ieee80211r"),
+                    "nasid": options.get("nasid"),
+                }
+            )
+
+        return roaming, wifi_ifaces
+
     async def _read_board(self) -> tuple:
         """Read board info using `ubus call system board`.
 
@@ -222,12 +290,13 @@ class OpenWRTSSH:
         except json.JSONDecodeError as err:
             raise RuntimeError("Failed to parse board info JSON") from err
 
+        release = board.get("release", {})
         return (
-            board["hostname"],
-            board["release"]["version"],
-            board["release"]["distribution"],
-            board["release"]["target"],
-            board["board_name"],
+            board.get("hostname"),
+            release.get("version"),
+            release.get("distribution"),
+            release.get("target"),
+            board.get("board_name"),
         )
 
     async def close(self) -> None:
@@ -255,6 +324,8 @@ class OpenWRTSSH:
         str | None,  # board_name
         list[str],  # installed packages
         bool,  # has_asu_client
+        bool | None,  # wifi_roaming_enabled
+        list[dict],  # wifi_ifaces
     ]:
         """Get device info: OS, status, firmware info and installed packages."""
 
@@ -269,6 +340,8 @@ class OpenWRTSSH:
             None,  # board_name
             [],  # installed packages
             False,  # has_asu_client
+            None,  # wifi_roaming_enabled
+            [],  # wifi_ifaces
         )
 
         try:
@@ -287,6 +360,7 @@ class OpenWRTSSH:
 
                 pkgs = await self._list_installed_packages()
                 has_asu_client = "owut" in pkgs or "auc" in pkgs
+                wifi_roaming_enabled, wifi_ifaces = await self._read_wifi_snapshot()
 
         except (TimeoutError, asyncssh.Error, OSError, RuntimeError) as exc:
             # Expected runtime problems: SSH/transport issues, invalid board JSON, etc.
@@ -313,6 +387,8 @@ class OpenWRTSSH:
             board_name,
             pkgs,
             has_asu_client,
+            wifi_roaming_enabled,
+            wifi_ifaces,
         )
 
 

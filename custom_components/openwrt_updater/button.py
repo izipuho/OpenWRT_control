@@ -84,15 +84,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         coordinator = hass.data[DOMAIN][config_entry.entry_id][ip]["coordinator"]
         entities.extend(
             [
-                #OpenWRTButton(
-                #    coordinator=coordinator,
-                #    config_entry=config_entry,
-                #    ip=ip,
-                #    name="Debug",
-                #    key="debug",
-                #    entity_category=EntityCategory.DIAGNOSTIC,
-                #    entity_icon="mdi:bug-play",
-                #),
+                OpenWRTButton(
+                    coordinator=coordinator,
+                    config_entry=config_entry,
+                    ip=ip,
+                    name="Debug",
+                    key="debug",
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                    entity_icon="mdi:bug-play",
+                ),
                 OpenWRTButton(
                     coordinator=coordinator,
                     config_entry=config_entry,
