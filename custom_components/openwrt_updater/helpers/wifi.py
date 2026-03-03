@@ -61,10 +61,15 @@ async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict)
 
     status = coordinator.data.get("status")
     wifi_ifaces = coordinator.data.get("wifi_ifaces") or []
+    wifi_radios = coordinator.data.get("wifi_radios") or []
     hostname = coordinator.data.get("hostname")
 
     if not status or not wifi_ifaces:
         return False
+
+    radios_by_name = {
+        str(radio.get("section")): radio for radio in wifi_radios if radio.get("section")
+    }
 
     roaming_enabled = bool(policy.get("roaming_enabled"))
     mobility_domain = policy.get("mobility_domain")
@@ -100,13 +105,22 @@ async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict)
             )
 
             if room:
-                role = (
-                    "iot"
-                    if str(iface.get("ssid", "")).lower().endswith("-iot")
-                    else "main"
-                )
-                phy = "ax" if "5" in str(iface.get("device", "")) else "n"
-                ifname = f"{room}-{role}-{phy}"
+                role = str(iface.get("role") or "").strip().lower()
+                if role not in {"main", "iot"}:
+                    role = (
+                        "iot"
+                        if str(iface.get("ssid", "")).lower().endswith("-iot")
+                        else "main"
+                    )
+
+                band = str(iface.get("band") or "").strip().lower()
+                if not band:
+                    radio = radios_by_name.get(str(iface.get("device")))
+                    band = str((radio or {}).get("band") or "").strip().lower()
+                if not band:
+                    band = "2g"
+
+                ifname = f"{room}-{role}-{band}"
                 batch_lines.append(
                     f"set wireless.{section_name}.ifname='{_quote_uci(ifname)}'"
                 )

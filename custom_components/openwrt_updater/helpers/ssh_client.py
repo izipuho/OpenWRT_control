@@ -250,22 +250,76 @@ class OpenWRTSSH:
         other: list[str] = []
 
         for name, section in sections_by_name.items():
-            ifname = str(section.get("options", {}).get("ifname", ""))
-            if "-main-" in ifname:
+            options = section.get("options", {})
+            ifname_s = str(options.get("ifname") or "").lower()
+            ssid_s = str(options.get("ssid") or "").lower()
+            role = None
+            if "-main-" in ifname_s or ifname_s.endswith("-main"):
+                role = "main"
+            elif "-iot-" in ifname_s or ifname_s.endswith("-iot"):
+                role = "iot"
+            elif ssid_s.endswith("-iot"):
+                role = "iot"
+
+            if role == "main":
                 main.append(name)
-            elif "-iot" in ifname:
+            elif role == "iot":
                 iot.append(name)
             else:
                 other.append(name)
 
         return main, iot, other, sections_by_name
 
-    async def _read_wifi_snapshot(self) -> tuple[bool | None, list[dict]]:
+    async def _read_wifi_radios(self) -> dict[str, dict]:
+        """Read wifi-device sections and infer their band."""
+        command = (
+            "for s in $(uci -q show wireless | grep '=wifi-device$' | cut -d. -f2 | cut -d= -f1);\n"
+            "do\n"
+            "  uci -q show wireless.$s\n"
+            "done"
+        )
+        res = await self.exec_command(command)
+        if res is None or not res.stdout:
+            return {}
+
+        line_re = re.compile(r"^wireless\.([^.=]+)(?:\.([^.=]+))?='(.*)'$")
+        radios: dict[str, dict] = {}
+
+        for raw_line in res.stdout.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            match = line_re.match(line)
+            if not match:
+                continue
+
+            section_name, option_name, value = match.groups()
+            section = radios.setdefault(
+                section_name,
+                {"section": section_name, "options": {}},
+            )
+
+            if option_name is None:
+                continue
+
+            section["options"][option_name] = value
+
+        for section in radios.values():
+            options = section.get("options", {})
+            band = str(options.get("band") or "").strip().lower()
+
+            section["band"] = band or None
+
+        return radios
+
+    async def _read_wifi_snapshot(self) -> tuple[bool | None, list[dict], list[dict]]:
         """Read Wi-Fi roaming state and AP iface details."""
         main_names, iot_names, _other_names, sections = await self.read_wireless_sections()
+        radios_by_name = await self._read_wifi_radios()
 
         if not main_names and not iot_names:
-            return None, []
+            return None, [], list(radios_by_name.values())
 
         if not main_names:
             roaming = None
@@ -285,18 +339,31 @@ class OpenWRTSSH:
         for name in [*main_names, *iot_names]:
             section = sections.get(name, {})
             options = section.get("options", {})
+            device = options.get("device")
+            radio = radios_by_name.get(str(device), {})
+            ifname_s = str(options.get("ifname") or "").lower()
+            ssid_s = str(options.get("ssid") or "").lower()
+            role = None
+            if "-main-" in ifname_s or ifname_s.endswith("-main"):
+                role = "main"
+            elif "-iot-" in ifname_s or ifname_s.endswith("-iot"):
+                role = "iot"
+            elif ssid_s.endswith("-iot"):
+                role = "iot"
             wifi_ifaces.append(
                 {
                     "section": section.get("name"),
-                    "device": options.get("device"),
+                    "device": device,
                     "ifname": options.get("ifname"),
                     "ssid": options.get("ssid"),
+                    "role": role,
+                    "band": radio.get("band"),
                     "ieee80211r": options.get("ieee80211r"),
                     "nasid": options.get("nasid"),
                 }
             )
 
-        return roaming, wifi_ifaces
+        return roaming, wifi_ifaces, list(radios_by_name.values())
 
     async def _read_board(self) -> tuple:
         """Read board info using `ubus call system board`.
@@ -357,6 +424,7 @@ class OpenWRTSSH:
         bool,  # has_asu_client
         bool | None,  # wifi_roaming_enabled
         list[dict],  # wifi_ifaces
+        list[dict],  # wifi_radios
     ]:
         """Get device info: OS, status, firmware info and installed packages."""
 
@@ -373,6 +441,7 @@ class OpenWRTSSH:
             False,  # has_asu_client
             None,  # wifi_roaming_enabled
             [],  # wifi_ifaces
+            [],  # wifi_radios
         )
 
         try:
@@ -391,7 +460,7 @@ class OpenWRTSSH:
 
                 pkgs = await self._list_installed_packages()
                 has_asu_client = "owut" in pkgs or "auc" in pkgs
-                wifi_roaming_enabled, wifi_ifaces = await self._read_wifi_snapshot()
+                wifi_roaming_enabled, wifi_ifaces, wifi_radios = await self._read_wifi_snapshot()
 
         except (TimeoutError, asyncssh.Error, OSError, RuntimeError) as exc:
             # Expected runtime problems: SSH/transport issues, invalid board JSON, etc.
@@ -421,6 +490,7 @@ class OpenWRTSSH:
             has_asu_client,
             wifi_roaming_enabled,
             wifi_ifaces,
+            wifi_radios,
         )
 
 
