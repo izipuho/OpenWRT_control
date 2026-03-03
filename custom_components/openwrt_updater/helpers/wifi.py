@@ -54,33 +54,6 @@ def _ap_wifi_ifaces(sections: list[dict]) -> list[dict]:
     ]
 
 
-def _room_from_hostname(hostname: str | None) -> str | None:
-    """Extract room from hostname with format {place}-{room}."""
-    if not hostname or "-" not in hostname:
-        return None
-    room = hostname.split("-", 1)[1].strip()
-    return room or None
-
-
-def _role_from_ssid(ssid: str | None) -> str:
-    """Map SSID to role name for interface mask."""
-    if ssid and ssid.lower().endswith("-iot"):
-        return "iot"
-    return "main"
-
-
-def _phy_from_device(device: str | None) -> str:
-    """Map radio device name to phy suffix."""
-    if device and "5" in device:
-        return "ax"
-    return "n"
-
-
-def _build_ifname(room: str, role: str, phy: str) -> str:
-    """Build interface name in agreed format."""
-    return f"{room}-{role}-{phy}"
-
-
 def _quote_uci(value: str) -> str:
     """Escape value for single-quoted UCI batch string."""
     return value.replace("'", "'\\''")
@@ -99,7 +72,10 @@ async def apply_wifi_policy(ip: str, key_path: str, policy: dict, hostname: str 
         mobility_domain = policy.get("mobility_domain")
         ft_over_ds = bool(policy.get("ft_over_ds"))
         ft_psk_generate_local = bool(policy.get("ft_psk_generate_local"))
-        room = _room_from_hostname(hostname)
+
+        room = None
+        if hostname and "-" in hostname:
+            room = hostname.split("-", 1)[1].strip() or None
 
         batch_lines: list[str] = []
         for section in ap_sections:
@@ -126,9 +102,9 @@ async def apply_wifi_policy(ip: str, key_path: str, policy: dict, hostname: str 
                 )
 
                 if room:
-                    role = _role_from_ssid(options.get("ssid"))
-                    phy = _phy_from_device(options.get("device"))
-                    ifname = _build_ifname(room, role, phy)
+                    role = "iot" if str(options.get("ssid", "")).lower().endswith("-iot") else "main"
+                    phy = "ax" if "5" in str(options.get("device", "")) else "n"
+                    ifname = f"{room}-{role}-{phy}"
                     batch_lines.append(
                         f"set wireless.{name}.ifname='{_quote_uci(ifname)}'"
                     )
