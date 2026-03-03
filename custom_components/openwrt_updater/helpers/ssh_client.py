@@ -207,8 +207,10 @@ class OpenWRTSSH:
         fw_file = _first_line(res.stdout)
         return fw_file, bool(fw_file)
 
-    async def read_wireless_sections(self) -> list[dict]:
-        """Read only wifi-iface sections from UCI show output."""
+    async def read_wireless_sections(
+        self,
+    ) -> tuple[list[str], list[str], list[str], dict[str, dict]]:
+        """Read and classify AP wifi-iface sections from UCI show output."""
         command = (
             "for s in $(uci -q show wireless | grep '=wifi-iface$' | cut -d. -f2 | cut -d= -f1);\n"
             "do\n"
@@ -218,7 +220,7 @@ class OpenWRTSSH:
         )
         res = await self.exec_command(command)
         if res is None or not res.stdout:
-            return []
+            return [], [], [], {}
 
         line_re = re.compile(r"^wireless\.([^.=]+)(?:\.([^.=]+))?='(.*)'$")
         sections_by_name: dict[str, dict] = {}
@@ -243,29 +245,45 @@ class OpenWRTSSH:
 
             section["options"][option_name] = value
 
-        return list(sections_by_name.values())
+        main: list[str] = []
+        iot: list[str] = []
+        other: list[str] = []
+
+        for name, section in sections_by_name.items():
+            ifname = str(section.get("options", {}).get("ifname", ""))
+            if "-main-" in ifname:
+                main.append(name)
+            elif "-iot" in ifname:
+                iot.append(name)
+            else:
+                other.append(name)
+
+        return main, iot, other, sections_by_name
 
     async def _read_wifi_snapshot(self) -> tuple[bool | None, list[dict]]:
         """Read Wi-Fi roaming state and AP iface details."""
-        sections = await self.read_wireless_sections()
-        ap_sections = sections
+        main_names, iot_names, _other_names, sections = await self.read_wireless_sections()
 
-        if not ap_sections:
+        if not main_names and not iot_names:
             return None, []
 
-        states = [
-            section.get("options", {}).get("ieee80211r") == "1"
-            for section in ap_sections
-        ]
-        if all(states):
-            roaming = True
-        elif not any(states):
-            roaming = False
-        else:
+        if not main_names:
             roaming = None
+        else:
+            states = [
+                sections.get(name, {}).get("options", {}).get("ieee80211r") == "1"
+                for name in main_names
+            ]
+            if all(states):
+                roaming = True
+            elif not any(states):
+                roaming = False
+            else:
+                roaming = None
 
         wifi_ifaces = []
-        for section in ap_sections:
+        for name in [*main_names, *iot_names]:
+            section = sections.get(name, {})
             options = section.get("options", {})
             wifi_ifaces.append(
                 {

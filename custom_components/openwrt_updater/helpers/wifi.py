@@ -44,15 +44,6 @@ def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dic
     return policy
 
 
-def _ap_wifi_ifaces(sections: list[dict]) -> list[dict]:
-    """Return AP wifi-iface sections only."""
-    return [
-        section
-        for section in sections
-        if section.get("type") == "wifi-iface"
-        and section.get("options", {}).get("mode") == "ap"
-    ]
-
 
 def _quote_uci(value: str) -> str:
     """Escape value for single-quoted UCI batch string."""
@@ -62,8 +53,13 @@ def _quote_uci(value: str) -> str:
 async def apply_wifi_policy(ip: str, key_path: str, policy: dict, hostname: str | None) -> bool:
     """Apply roaming policy with uci batch + commit + wifi reload."""
     async with OpenWRTSSH(ip=ip, key_path=key_path, command_timeout=40.0) as client:
-        sections = await client.read_wireless_sections()
-        ap_sections = _ap_wifi_ifaces(sections)
+        main_names, iot_names, _other_names, sections_by_name = (
+            await client.read_wireless_sections()
+        )
+        ap_sections = [
+            *(sections_by_name.get(name, {}) for name in main_names),
+            *(sections_by_name.get(name, {}) for name in iot_names),
+        ]
 
         if not ap_sections:
             return True
