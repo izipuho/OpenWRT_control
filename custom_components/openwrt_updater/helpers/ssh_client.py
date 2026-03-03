@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import re
 from pathlib import Path
 import shlex
 
@@ -93,7 +94,8 @@ class OpenWRTSSH:
                 "Unexpected error while connecting to SSH %s: %s", self.ip, err
             )
         else:
-            _LOGGER.debug("Successfully connected to %s@%s", self.username, self.ip)
+            _LOGGER.debug("Successfully connected to %s@%s",
+                          self.username, self.ip)
             self.available = True
         return self.available
 
@@ -112,14 +114,16 @@ class OpenWRTSSH:
         assert self.conn is not None
 
         if not self.available:
-            _LOGGER.debug("SSH client not available, skipping command: %s", command)
+            _LOGGER.debug(
+                "SSH client not available, skipping command: %s", command)
             return None
 
         try:
             _LOGGER.debug("Executing SSH command on %s | %s", self.ip, command)
             effective_timeout = self.command_timeout if timeout is None else timeout
             result = await asyncio.wait_for(
-                self.conn.run(f"sh -c {shlex.quote(command)}"), effective_timeout
+                self.conn.run(
+                    f"sh -c {shlex.quote(command)}"), effective_timeout
             )
         except TimeoutError as err:
             _LOGGER.warning(
@@ -127,7 +131,8 @@ class OpenWRTSSH:
             )
             return None
         except Exception:
-            _LOGGER.exception("Unexpected error running SSH command '%s'", command)
+            _LOGGER.exception(
+                "Unexpected error running SSH command '%s'", command)
             return None
         else:
             if result.exit_status != 0:
@@ -167,8 +172,10 @@ class OpenWRTSSH:
             )
             return []
 
-        packages = [line.strip() for line in res.stdout.splitlines() if line.strip()]
-        _LOGGER.debug("Installed packages on %s: %d found", self.ip, len(packages))
+        packages = [line.strip()
+                    for line in res.stdout.splitlines() if line.strip()]
+        _LOGGER.debug("Installed packages on %s: %d found",
+                      self.ip, len(packages))
         return packages
 
     async def _find_downloaded_firmware(self) -> tuple[str | None, bool]:
@@ -201,42 +208,47 @@ class OpenWRTSSH:
         return fw_file, bool(fw_file)
 
     async def read_wireless_sections(self) -> list[dict]:
-        """Read wireless config from UCI and parse sections."""
-        res = await self.exec_command("uci export wireless")
+        """Read only wifi-iface sections from UCI show output."""
+        command = (
+            "for s in $(uci -q show wireless | grep '=wifi-iface$' | cut -d. -f2 | cut -d= -f1);\n"
+            "do\n"
+            "  [ \"$(uci -q get wireless.$s.mode)\" = \"ap\" ] || continue\n"
+            "  uci -q show wireless.$s\n"
+            "done"
+        )
+        res = await self.exec_command(command)
         if res is None or not res.stdout:
             return []
 
-        sections: list[dict] = []
-        current: dict | None = None
+        line_re = re.compile(r"^wireless\.([^.=]+)(?:\.([^.=]+))?='(.*)'$")
+        sections_by_name: dict[str, dict] = {}
 
         for raw_line in res.stdout.splitlines():
             line = raw_line.strip()
             if not line:
                 continue
 
-            tokens = shlex.split(line)
-            if not tokens:
+            match = line_re.match(line)
+            if not match:
                 continue
 
-            if tokens[0] == "config" and len(tokens) >= 3:
-                current = {"type": tokens[1], "name": tokens[2], "options": {}}
-                sections.append(current)
+            section_name, option_name, value = match.groups()
+            section = sections_by_name.setdefault(
+                section_name,
+                {"name": section_name, "options": {}},
+            )
+
+            if option_name is None:
                 continue
 
-            if tokens[0] == "option" and len(tokens) >= 3 and current is not None:
-                current["options"][tokens[1]] = tokens[2]
+            section["options"][option_name] = value
 
-        return sections
+        return list(sections_by_name.values())
 
     async def _read_wifi_snapshot(self) -> tuple[bool | None, list[dict]]:
         """Read Wi-Fi roaming state and AP iface details."""
         sections = await self.read_wireless_sections()
-        ap_sections = [
-            section
-            for section in sections
-            if section.get("type") == "wifi-iface"
-            and section.get("options", {}).get("mode") == "ap"
-        ]
+        ap_sections = sections
 
         if not ap_sections:
             return None, []
@@ -306,7 +318,8 @@ class OpenWRTSSH:
                 self.conn.close()
                 await self.conn.wait_closed()
             except Exception:
-                _LOGGER.exception("Error closing SSH connection to %s", self.ip)
+                _LOGGER.exception(
+                    "Error closing SSH connection to %s", self.ip)
             finally:
                 self.conn = None
                 self.available = False
@@ -364,7 +377,8 @@ class OpenWRTSSH:
 
         except (TimeoutError, asyncssh.Error, OSError, RuntimeError) as exc:
             # Expected runtime problems: SSH/transport issues, invalid board JSON, etc.
-            _LOGGER.debug("Device info over SSH fetch failed for %s: %s", self.ip, exc)
+            _LOGGER.debug(
+                "Device info over SSH fetch failed for %s: %s", self.ip, exc)
             return offline_result
 
         except Exception as exc:
