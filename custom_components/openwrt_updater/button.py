@@ -56,11 +56,17 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
         if self._key == "debug":
             await self.coordinator.async_request_refresh()
             await self.hass.data[DOMAIN]["toh_index"].async_request_refresh()
+
             entry_data = self.hass.data[DOMAIN][self._config_entry.entry_id]
             dev = entry_data[self._ip]
-            _LOGGER.error("Config: %s", self.hass.data[DOMAIN]["config"])
-            _LOGGER.warning("Device data: %s", dev)
-            _LOGGER.error("Coordinator data: %s", dev["coordinator"].data)
+
+            _LOGGER.warning("Saved device params (%s): %s", self._ip, dev)
+            _LOGGER.warning(
+                "Coordinator data (%s): %s",
+                self._ip,
+                dev["coordinator"].data,
+            )
+
         elif self._key == "reboot":
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
             async with OpenWRTSSH(self._ip, _key_path) as client:
