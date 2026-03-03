@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import hashlib
+from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .ssh_client import OpenWRTSSH
+
+if TYPE_CHECKING:
+    from ..coordinators.device import OpenWRTDeviceCoordinator
 
 
 def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dict:
@@ -50,71 +54,79 @@ def _quote_uci(value: str) -> str:
     return value.replace("'", "'\\''")
 
 
-async def apply_wifi_policy(ip: str, key_path: str, policy: dict, hostname: str | None) -> bool:
-    """Apply roaming policy with uci batch + commit + wifi reload."""
-    async with OpenWRTSSH(ip=ip, key_path=key_path, command_timeout=40.0) as client:
-        main_names, iot_names, _other_names, sections_by_name = (
-            await client.read_wireless_sections()
+async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict) -> bool:
+    """Apply roaming policy using coordinator snapshot and SSH write commands."""
+    if not coordinator.last_update_success or not coordinator.data:
+        return False
+
+    status = coordinator.data.get("status")
+    wifi_ifaces = coordinator.data.get("wifi_ifaces") or []
+    hostname = coordinator.data.get("hostname")
+
+    if not status or not wifi_ifaces:
+        return False
+
+    roaming_enabled = bool(policy.get("roaming_enabled"))
+    mobility_domain = policy.get("mobility_domain")
+    ft_over_ds = bool(policy.get("ft_over_ds"))
+    ft_psk_generate_local = bool(policy.get("ft_psk_generate_local"))
+
+    room = None
+    if hostname and "-" in str(hostname):
+        room = str(hostname).split("-", 1)[1].strip() or None
+
+    batch_lines: list[str] = []
+    for iface in wifi_ifaces:
+        section = iface.get("section")
+        if not section:
+            continue
+
+        section_name = str(section)
+        batch_lines.append(
+            f"set wireless.{section_name}.ieee80211r={'1' if roaming_enabled else '0'}"
         )
-        ap_sections = [
-            *(sections_by_name.get(name, {}) for name in main_names),
-            *(sections_by_name.get(name, {}) for name in iot_names),
-        ]
 
-        if not ap_sections:
-            return True
-
-        roaming_enabled = bool(policy.get("roaming_enabled"))
-        mobility_domain = policy.get("mobility_domain")
-        ft_over_ds = bool(policy.get("ft_over_ds"))
-        ft_psk_generate_local = bool(policy.get("ft_psk_generate_local"))
-
-        room = None
-        if hostname and "-" in hostname:
-            room = hostname.split("-", 1)[1].strip() or None
-
-        batch_lines: list[str] = []
-        for section in ap_sections:
-            name = section.get("name")
-            if not name:
-                continue
-
-            options = section.get("options", {})
+        if roaming_enabled:
+            if mobility_domain is None:
+                return False
             batch_lines.append(
-                f"set wireless.{name}.ieee80211r={'1' if roaming_enabled else '0'}"
+                f"set wireless.{section_name}.mobility_domain='{_quote_uci(str(mobility_domain))}'"
+            )
+            batch_lines.append(
+                f"set wireless.{section_name}.ft_over_ds={'1' if ft_over_ds else '0'}"
+            )
+            batch_lines.append(
+                f"set wireless.{section_name}.ft_psk_generate_local={'1' if ft_psk_generate_local else '0'}"
             )
 
-            if roaming_enabled:
-                if mobility_domain is None:
-                    return False
+            if room:
+                role = (
+                    "iot"
+                    if str(iface.get("ssid", "")).lower().endswith("-iot")
+                    else "main"
+                )
+                phy = "ax" if "5" in str(iface.get("device", "")) else "n"
+                ifname = f"{room}-{role}-{phy}"
                 batch_lines.append(
-                    f"set wireless.{name}.mobility_domain='{_quote_uci(str(mobility_domain))}'"
+                    f"set wireless.{section_name}.ifname='{_quote_uci(ifname)}'"
                 )
                 batch_lines.append(
-                    f"set wireless.{name}.ft_over_ds={'1' if ft_over_ds else '0'}"
+                    f"set wireless.{section_name}.nasid='{_quote_uci(ifname)}'"
                 )
-                batch_lines.append(
-                    f"set wireless.{name}.ft_psk_generate_local={'1' if ft_psk_generate_local else '0'}"
-                )
+        else:
+            batch_lines.append(f"delete wireless.{section_name}.mobility_domain")
+            batch_lines.append(f"delete wireless.{section_name}.ft_over_ds")
+            batch_lines.append(f"delete wireless.{section_name}.ft_psk_generate_local")
 
-                if room:
-                    role = "iot" if str(options.get("ssid", "")).lower().endswith("-iot") else "main"
-                    phy = "ax" if "5" in str(options.get("device", "")) else "n"
-                    ifname = f"{room}-{role}-{phy}"
-                    batch_lines.append(
-                        f"set wireless.{name}.ifname='{_quote_uci(ifname)}'"
-                    )
-                    batch_lines.append(
-                        f"set wireless.{name}.nasid='{_quote_uci(ifname)}'"
-                    )
-            else:
-                batch_lines.append(f"delete wireless.{name}.mobility_domain")
-                batch_lines.append(f"delete wireless.{name}.ft_over_ds")
-                batch_lines.append(f"delete wireless.{name}.ft_psk_generate_local")
+    if not batch_lines:
+        return False
 
-        if not batch_lines:
-            return True
-
+    key_path = coordinator.hass.data[DOMAIN]["config"]["ssh_key_path"]
+    async with OpenWRTSSH(
+        ip=coordinator.ip,
+        key_path=key_path,
+        command_timeout=40.0,
+    ) as client:
         batch_payload = "\n".join(batch_lines)
         command = f"""uci batch <<'END_UCI'
 {batch_payload}
