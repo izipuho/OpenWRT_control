@@ -27,30 +27,21 @@ def build_place_wifi_policy(place_name: str, policy_values: dict | None) -> dict
     return policy
 
 
-def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dict:
-    """Build effective policy in order: global -> place -> device."""
-    global_config = hass.data[DOMAIN].get("config", {})
+def resolve_wifi_policy(_hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dict:
+    """Build effective policy in order: place -> device."""
     place_name = str(entry.data.get("place_name", ""))
     place_policy_saved = entry.options.get("wifi_policy")
     place_policy = build_place_wifi_policy(place_name, place_policy_saved)
 
-    policy = {
-        "roaming_enabled": global_config.get("wifi_roaming_enabled"),
-        "ft_over_ds": global_config.get("wifi_roaming_ft_over_ds"),
-        "ft_psk_generate_local": global_config.get("wifi_roaming_ft_psk_generate_local"),
-        "source": "global",
-    }
-
-    if place_policy_saved:
-        policy.update(place_policy)
-        policy["source"] = "place"
+    policy = dict(place_policy)
+    policy["source"] = "place"
 
     device_policy = entry.options.get("devices", {}).get(ip, {}).get("wifi_policy")
     if device_policy:
         policy.update(device_policy)
         policy["source"] = "device"
 
-    # Keep mobility domain tied to place policy, not device/global overrides.
+    # Keep mobility domain tied to place policy, not device overrides.
     policy["mobility_domain"] = place_policy.get("mobility_domain")
 
     return policy
