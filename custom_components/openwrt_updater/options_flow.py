@@ -11,6 +11,7 @@ from .helpers.const import DOMAIN
 from .helpers.helpers import (
     build_device_schema,
     build_global_options_schema,
+    build_wifi_policy_schema,
     upsert_device,
 )
 
@@ -42,7 +43,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         ## TODO remove device
         return self.async_show_menu(
             step_id="init",
-            menu_options=["add_device", "remove_device"],
+            menu_options=["add_device", "remove_device", "wifi_policy"],
         )
 
     async def async_step_global(self, user_input=None):
@@ -64,9 +65,11 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
             if user_input.get("add_another"):
                 return await self.async_step_add_device()
 
+            new_options = dict(self.config_entry.options)
+            new_options["devices"] = self._devices
             return self.async_create_entry(
                 title="",
-                data={"devices": self._devices},
+                data=new_options,
             )
 
         defaults: dict = {"ip": f"{self._data.get('place_ipmask', '')}."}
@@ -106,3 +109,14 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
                 {vol.Required("ip"): vol.In(list(self._devices.keys()))}
             ),
         )
+
+    async def async_step_wifi_policy(self, user_input=None):
+        """Configure place-level Wi-Fi policy overrides."""
+        if user_input is not None:
+            new_options = dict(self.config_entry.options)
+            new_options["wifi_policy"] = user_input
+            return self.async_create_entry(title="", data=new_options)
+
+        saved = dict(self.config_entry.options.get("wifi_policy", {}))
+        schema = await self.hass.async_add_executor_job(build_wifi_policy_schema, saved)
+        return self.async_show_form(step_id="wifi_policy", data_schema=schema)

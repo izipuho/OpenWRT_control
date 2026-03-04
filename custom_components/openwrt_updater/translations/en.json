@@ -28,7 +28,11 @@
           "device_timeout_minutes": "Device coordinator interval (minutes)",
           "use_asu": "Use ASU branch",
           "asu_base_url": "ASU base URL",
-          "download_base_url": "Base URL for downloads"
+          "download_base_url": "Base URL for downloads",
+          "wifi_roaming_enabled": "Enable Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generate local FT PSK"
         }
       },
       "add_place": {
@@ -47,6 +51,11 @@
           "config_type": "Config type",
           "simple_update": "Simple update (curl from OpenWRT.org vs custom builder)",
           "force_update": "Install immediately (sysupgrade -v)",
+          "wifi_policy_override": "Override Wi-Fi policy for this device",
+          "wifi_roaming_enabled": "Enable Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generate local FT PSK",
           "add_another": "Add another after saving"
         }
       }
@@ -58,7 +67,8 @@
       "init": {
         "menu_options": {
           "add_device": "Add device",
-          "remove_device": "Remove device"
+          "remove_device": "Remove device",
+          "wifi_policy": "Wi-Fi policy"
         }
       },
       "global": {
@@ -73,7 +83,11 @@
           "device_timeout_minutes": "Device coordinator interval (minutes)",
           "use_asu": "Use ASU branch",
           "asu_base_url": "ASU base URL",
-          "download_base_url": "Base URL for downloads"
+          "download_base_url": "Base URL for downloads",
+          "wifi_roaming_enabled": "Enable Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generate local FT PSK"
         }
       },
       "add_device": {
@@ -84,7 +98,22 @@
           "config_type": "Config type",
           "simple_update": "Simple update (curl from OpenWRT.org vs custom builder)",
           "force_update": "Install immediately (sysupgrade -v)",
+          "wifi_policy_override": "Override Wi-Fi policy for this device",
+          "wifi_roaming_enabled": "Enable Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generate local FT PSK",
           "add_another": "Add another after saving"
+        }
+      },
+      "wifi_policy": {
+        "title": "Place Wi-Fi policy",
+        "description": "Override global Wi-Fi roaming settings for this place.",
+        "data": {
+          "roaming_enabled": "Enable Wi-Fi roaming",
+          "mobility_domain": "Mobility domain",
+          "ft_over_ds": "FT over DS",
+          "ft_psk_generate_local": "Generate local FT PSK"
         }
       },
       "remove_device": {

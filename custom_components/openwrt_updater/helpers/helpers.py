@@ -89,6 +89,47 @@ def build_global_options_schema(
                 "device_timeout_minutes",
                 default=defaults["device_timeout_minutes"],
             ): int,
+            vol.Optional(
+                "wifi_roaming_enabled",
+                default=defaults.get("wifi_roaming_enabled", False),
+            ): cv.boolean,
+            vol.Optional(
+                "wifi_roaming_mobility_domain",
+                default=defaults.get("wifi_roaming_mobility_domain", ""),
+            ): cv.string,
+            vol.Optional(
+                "wifi_roaming_ft_over_ds",
+                default=defaults.get("wifi_roaming_ft_over_ds", False),
+            ): cv.boolean,
+            vol.Optional(
+                "wifi_roaming_ft_psk_generate_local",
+                default=defaults.get("wifi_roaming_ft_psk_generate_local", False),
+            ): cv.boolean,
+        }
+    )
+
+
+def build_wifi_policy_schema(defaults: dict | None = None) -> vol.Schema:
+    """Build place/device wifi policy schema."""
+    d = defaults or {}
+    return vol.Schema(
+        {
+            vol.Required(
+                "roaming_enabled",
+                default=d.get("roaming_enabled", False),
+            ): cv.boolean,
+            vol.Optional(
+                "mobility_domain",
+                default=d.get("mobility_domain", ""),
+            ): cv.string,
+            vol.Required(
+                "ft_over_ds",
+                default=d.get("ft_over_ds", False),
+            ): cv.boolean,
+            vol.Required(
+                "ft_psk_generate_local",
+                default=d.get("ft_psk_generate_local", False),
+            ): cv.boolean,
         }
     )
 
@@ -113,6 +154,26 @@ def build_device_schema(
             # ): vol.In(choices),
             vol.Required("simple_update", default=d.get("simple_update", True)): bool,
             vol.Required("force_update", default=d.get("force_update", False)): bool,
+            vol.Required(
+                "wifi_policy_override",
+                default=d.get("wifi_policy_override", False),
+            ): bool,
+            vol.Optional(
+                "wifi_roaming_enabled",
+                default=d.get("wifi_roaming_enabled", False),
+            ): bool,
+            vol.Optional(
+                "wifi_roaming_mobility_domain",
+                default=d.get("wifi_roaming_mobility_domain", ""),
+            ): cv.string,
+            vol.Optional(
+                "wifi_roaming_ft_over_ds",
+                default=d.get("wifi_roaming_ft_over_ds", False),
+            ): bool,
+            vol.Optional(
+                "wifi_roaming_ft_psk_generate_local",
+                default=d.get("wifi_roaming_ft_psk_generate_local", False),
+            ): bool,
             vol.Optional("add_another", default=d.get("add_another", False)): bool,
         }
     )
@@ -127,6 +188,18 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
         "simple_update": user_input["simple_update"],
         "force_update": user_input["force_update"],
     }
+    if user_input.get("wifi_policy_override"):
+        devices[ip]["wifi_policy"] = {
+            "roaming_enabled": user_input.get("wifi_roaming_enabled", False),
+            "mobility_domain": user_input.get("wifi_roaming_mobility_domain", ""),
+            "ft_over_ds": user_input.get("wifi_roaming_ft_over_ds", False),
+            "ft_psk_generate_local": user_input.get(
+                "wifi_roaming_ft_psk_generate_local",
+                False,
+            ),
+        }
+    else:
+        devices[ip].pop("wifi_policy", None)
     return devices
 
 

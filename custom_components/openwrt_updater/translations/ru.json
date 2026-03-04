@@ -28,7 +28,11 @@
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
           "use_asu": "Использовать ASU",
           "asu_base_url": "Базовый URL ASU",
-          "download_base_url": "Базовый URL для загрузок"
+          "download_base_url": "Базовый URL для загрузок",
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
       },
       "add_place": {
@@ -47,6 +51,11 @@
           "config_type": "Тип конфигурации",
           "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
           "force_update": "Установить немедленно (sysupgrade -v)",
+          "wifi_policy_override": "Переопределить Wi-Fi policy для устройства",
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK",
           "add_another": "Добавить ещё одно после сохранения"
         }
       }
@@ -58,7 +67,8 @@
       "init": {
         "menu_options": {
           "add_device": "Добавить устройство",
-          "remove_device": "Удалить устройство"
+          "remove_device": "Удалить устройство",
+          "wifi_policy": "Wi-Fi policy"
         }
       },
       "global": {
@@ -73,7 +83,11 @@
           "device_timeout_minutes": "Интервал координатора устройств (минуты)",
           "use_asu": "Использовать ASU",
           "asu_base_url": "Базовый URL ASU",
-          "download_base_url": "Базовый URL для загрузок"
+          "download_base_url": "Базовый URL для загрузок",
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
       },
       "add_device": {
@@ -84,7 +98,22 @@
           "config_type": "Тип конфигурации",
           "simple_update": "Простое обновление (curl с OpenWRT.org vs кастомный builder)",
           "force_update": "Установить немедленно (sysupgrade -v)",
+          "wifi_policy_override": "Переопределить Wi-Fi policy для устройства",
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_mobility_domain": "Mobility domain",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK",
           "add_another": "Добавить ещё одно после сохранения"
+        }
+      },
+      "wifi_policy": {
+        "title": "Wi-Fi policy площадки",
+        "description": "Переопределение глобальных настроек Wi-Fi roaming для этой площадки.",
+        "data": {
+          "roaming_enabled": "Включить Wi-Fi roaming",
+          "mobility_domain": "Mobility domain",
+          "ft_over_ds": "FT over DS",
+          "ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
       },
       "remove_device": {
