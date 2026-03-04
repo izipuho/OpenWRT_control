@@ -89,22 +89,6 @@ def build_global_options_schema(
                 "device_timeout_minutes",
                 default=defaults["device_timeout_minutes"],
             ): int,
-            vol.Optional(
-                "wifi_roaming_enabled",
-                default=defaults.get("wifi_roaming_enabled", False),
-            ): cv.boolean,
-            vol.Optional(
-                "wifi_roaming_mobility_domain",
-                default=defaults.get("wifi_roaming_mobility_domain", ""),
-            ): cv.string,
-            vol.Optional(
-                "wifi_roaming_ft_over_ds",
-                default=defaults.get("wifi_roaming_ft_over_ds", False),
-            ): cv.boolean,
-            vol.Optional(
-                "wifi_roaming_ft_psk_generate_local",
-                default=defaults.get("wifi_roaming_ft_psk_generate_local", False),
-            ): cv.boolean,
         }
     )
 

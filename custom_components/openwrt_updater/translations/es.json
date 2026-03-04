@@ -28,11 +28,7 @@
           "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
           "use_asu": "Usar ASU",
           "asu_base_url": "URL base de ASU",
-          "download_base_url": "URL base para descargas",
-          "wifi_roaming_enabled": "Activar roaming Wi-Fi",
-          "wifi_roaming_mobility_domain": "Mobility domain",
-          "wifi_roaming_ft_over_ds": "FT over DS",
-          "wifi_roaming_ft_psk_generate_local": "Generar FT PSK local"
+          "download_base_url": "URL base para descargas"
         }
       },
       "add_place": {
@@ -83,11 +79,7 @@
           "device_timeout_minutes": "Intervalo del coordinador de dispositivos (minutos)",
           "use_asu": "Usar ASU",
           "asu_base_url": "URL base de ASU",
-          "download_base_url": "URL base para descargas",
-          "wifi_roaming_enabled": "Activar roaming Wi-Fi",
-          "wifi_roaming_mobility_domain": "Mobility domain",
-          "wifi_roaming_ft_over_ds": "FT over DS",
-          "wifi_roaming_ft_psk_generate_local": "Generar FT PSK local"
+          "download_base_url": "URL base para descargas"
         }
       },
       "add_device": {
