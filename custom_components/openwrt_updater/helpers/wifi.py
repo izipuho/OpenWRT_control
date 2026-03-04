@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,6 +14,8 @@ from .ssh_client import OpenWRTSSH
 
 if TYPE_CHECKING:
     from ..coordinators.device import OpenWRTDeviceCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _derive_mobility_domain(place_name: str) -> str:
@@ -53,8 +56,12 @@ def _quote_uci(value: str) -> str:
     return value.replace("'", "'\\''")
 
 
-async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict) -> bool:
-    """Apply roaming policy using coordinator snapshot and SSH write commands."""
+async def apply_wifi_policy(
+    coordinator: OpenWRTDeviceCoordinator,
+    policy: dict,
+    debug_mode: bool = False,
+) -> bool:
+    """Apply policy or log planned UCI changes without applying in debug mode."""
     if not coordinator.last_update_success or not coordinator.data:
         return False
 
@@ -134,19 +141,29 @@ async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict)
     if not batch_lines:
         return False
 
+    batch_payload = "\n".join(batch_lines)
+    command = f"""uci batch <<'END_UCI'
+{batch_payload}
+END_UCI
+uci commit wireless
+wifi reload
+"""
+
+    if debug_mode:
+        _LOGGER.warning(
+            "Wi-Fi policy debug_mode enabled for %s: no changes applied",
+            coordinator.ip,
+        )
+        _LOGGER.warning("UCI batch payload for %s:\n%s", coordinator.ip, batch_payload)
+        _LOGGER.warning("UCI command preview for %s:\n%s", coordinator.ip, command)
+        return True
+
     key_path = coordinator.hass.data[DOMAIN]["config"]["ssh_key_path"]
     async with OpenWRTSSH(
         ip=coordinator.ip,
         key_path=key_path,
         command_timeout=40.0,
     ) as client:
-        batch_payload = "\n".join(batch_lines)
-        command = f"""uci batch <<'END_UCI'
-{batch_payload}
-END_UCI
-uci commit wireless
-wifi reload
-"""
         result = await client.exec_command(command=command, timeout=40.0)
 
     return bool(result is not None and result.exit_status == 0)

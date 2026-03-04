@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinators.device import OpenWRTDeviceCoordinator
 from .helpers.const import DOMAIN, get_device_info
 from .helpers.ssh_client import OpenWRTSSH
+from .helpers.wifi import apply_wifi_policy, resolve_wifi_policy
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +79,8 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
                 self._ip,
                 dev["coordinator"].data["wifi_radios"],
             )
+            _LOGGER.warning("WiFi policy to apply: %s", apply_wifi_policy(
+                self.coordinator, resolve_wifi_policy(self.hass, self._config_entry, self._ip), True))
 
         elif self._key == "reboot":
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
