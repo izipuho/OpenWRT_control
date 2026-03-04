@@ -24,3 +24,13 @@ def get_device_info(place_name: str, ip: str) -> dict:
         "manufacturer": "OpenWRT",
         "model": "Router",
     }
+
+
+def get_place_device_info(place_name: str) -> dict:
+    """Return virtual place-level device info for shared actions."""
+    return {
+        "identifiers": {(DOMAIN, f"place:{place_name}")},
+        "name": place_name,
+        "manufacturer": "OpenWRT",
+        "model": "Place Controller",
+    }

@@ -141,6 +141,8 @@ async def apply_wifi_policy(
         return False
 
     batch_payload = "\n".join(batch_lines)
+    _LOGGER.debug("UCI batch payload for %s:\n%s", coordinator.ip, batch_payload)
+
     command = f"""uci batch <<'END_UCI'
 {batch_payload}
 END_UCI
@@ -149,8 +151,6 @@ wifi reload
 """
 
     if debug_mode:
-        _LOGGER.warning("UCI batch payload for %s:\n%s",
-                        coordinator.ip, batch_payload)
         return True
 
     key_path = coordinator.hass.data[DOMAIN]["config"]["ssh_key_path"]
