@@ -68,6 +68,15 @@
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Lokalen FT-PSK erzeugen"
         }
+      },
+      "wifi_policy": {
+        "title": "Wi-Fi-Policy für den Ort",
+        "description": "Globale Wi-Fi-Roaming-Einstellungen für diesen Ort überschreiben.",
+        "data": {
+          "roaming_enabled": "Wi-Fi-Roaming aktivieren",
+          "ft_over_ds": "FT over DS",
+          "ft_psk_generate_local": "Lokalen FT-PSK erzeugen"
+        }
       }
     }
   },

@@ -68,6 +68,15 @@
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
+      },
+      "wifi_policy": {
+        "title": "Wi-Fi policy площадки",
+        "description": "Переопределение глобальных настроек Wi-Fi roaming для этой площадки.",
+        "data": {
+          "roaming_enabled": "Включить Wi-Fi roaming",
+          "ft_over_ds": "FT over DS",
+          "ft_psk_generate_local": "Генерировать локальный FT PSK"
+        }
       }
     }
   },

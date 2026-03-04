@@ -12,6 +12,7 @@ from .helpers.helpers import (
     build_device_base_schema,
     build_device_wifi_schema,
     build_global_options_schema,
+    build_wifi_policy_schema,
     upsert_device,
 )
 
@@ -24,7 +25,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self.data = {}
-        self.options = {}
+        self.options = {"devices": {}}
         self._pending_device = {}
 
     def check_global_exists(self) -> bool:
@@ -62,7 +63,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
                 "place_name": user_input["place_name"],
                 "place_ipmask": user_input["place_ipmask"],
             }
-            return await self.async_step_add_device()
+            return await self.async_step_wifi_policy()
 
         return self.async_show_form(
             step_id="add_place",
@@ -73,6 +74,15 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
         )
+
+    async def async_step_wifi_policy(self, user_input=None):
+        """Collect place-level Wi-Fi policy information."""
+        if user_input is not None:
+            self.options["wifi_policy"] = user_input
+            return await self.async_step_add_device()
+
+        schema = await self.hass.async_add_executor_job(build_wifi_policy_schema, {})
+        return self.async_show_form(step_id="wifi_policy", data_schema=schema)
 
     async def async_step_add_device(self, user_input=None):
         """Collect device-level information."""
@@ -101,7 +111,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_finalize_device(self, device_input: dict):
         """Store collected device options and continue flow."""
-        upsert_device(self.options, device_input)
+        upsert_device(self.options["devices"], device_input)
         if device_input.get("add_another"):
             self._pending_device = {}
             return await self.async_step_add_device()
@@ -110,7 +120,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"OpenWRT updater {self.data['place_name']}",
             data=self.data,
-            options={"devices": self.options},
+            options=self.options,
         )
 
     @staticmethod
