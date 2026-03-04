@@ -15,14 +15,16 @@ if TYPE_CHECKING:
     from ..coordinators.device import OpenWRTDeviceCoordinator
 
 
+def _derive_mobility_domain(place_name: str) -> str:
+    """Derive deterministic 4-char mobility domain from place name."""
+    return hashlib.sha1(place_name.encode("utf-8")).hexdigest()[:4]
+
+
 def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dict:
     """Build effective policy in order: global -> place -> device."""
     global_config = hass.data[DOMAIN].get("config", {})
     place_name = str(entry.data.get("place_name", ""))
-
-    mobility_domain = global_config.get("wifi_roaming_mobility_domain")
-    if mobility_domain is None:
-        mobility_domain = hashlib.sha1(place_name.encode("utf-8")).hexdigest()[:4]
+    mobility_domain = _derive_mobility_domain(place_name)
 
     policy = {
         "roaming_enabled": global_config.get("wifi_roaming_enabled"),
@@ -42,8 +44,8 @@ def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dic
         policy.update(device_policy)
         policy["source"] = "device"
 
-    if policy.get("mobility_domain") is None:
-        policy["mobility_domain"] = hashlib.sha1(place_name.encode("utf-8")).hexdigest()[:4]
+    # Enforce deterministic mobility domain per place.
+    policy["mobility_domain"] = mobility_domain
 
     return policy
 

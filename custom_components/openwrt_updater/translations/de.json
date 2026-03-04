@@ -41,7 +41,7 @@
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Gib die Details deines OpenWRT-Geräts ein.",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein. Unten ist ein separater Wi-Fi-Policy-Block.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
@@ -49,10 +49,24 @@
           "force_update": "Sofort installieren (sysupgrade -v)",
           "wifi_policy_override": "Wi-Fi-Policy für dieses Gerät überschreiben",
           "wifi_roaming_enabled": "Wi-Fi-Roaming aktivieren",
-          "wifi_roaming_mobility_domain": "Mobility Domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Lokalen FT-PSK erzeugen",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
+        },
+        "data_description": {
+          "wifi_policy_override": "Aktivieren Sie dies, um Einstellungen aus dem Wi-Fi-Block unten anzuwenden.",
+          "wifi_roaming_enabled": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist.",
+          "wifi_roaming_ft_over_ds": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist.",
+          "wifi_roaming_ft_psk_generate_local": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist."
+        }
+      },
+      "add_device_wifi": {
+        "title": "Geräte-Wi-Fi-Policy",
+        "description": "Wi-Fi-Policy-Ueberschreibung fuer dieses Geraet konfigurieren. Mobility Domain wird automatisch aus dem Place-Namen abgeleitet.",
+        "data": {
+          "wifi_roaming_enabled": "Wi-Fi-Roaming aktivieren",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Lokalen FT-PSK erzeugen"
         }
       }
     }
@@ -84,7 +98,7 @@
       },
       "add_device": {
         "title": "OpenWRT-Gerät hinzufügen",
-        "description": "Gib die Details deines OpenWRT-Geräts ein.",
+        "description": "Geben Sie die Details Ihres OpenWRT-Geräts ein. Unten ist ein separater Wi-Fi-Policy-Block.",
         "data": {
           "ip": "Geräte-IP",
           "config_type": "Konfigurationstyp",
@@ -92,10 +106,15 @@
           "force_update": "Sofort installieren (sysupgrade -v)",
           "wifi_policy_override": "Wi-Fi-Policy für dieses Gerät überschreiben",
           "wifi_roaming_enabled": "Wi-Fi-Roaming aktivieren",
-          "wifi_roaming_mobility_domain": "Mobility Domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Lokalen FT-PSK erzeugen",
           "add_another": "Nach dem Speichern weiteres hinzufügen"
+        },
+        "data_description": {
+          "wifi_policy_override": "Aktivieren Sie dies, um Einstellungen aus dem Wi-Fi-Block unten anzuwenden.",
+          "wifi_roaming_enabled": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist.",
+          "wifi_roaming_ft_over_ds": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist.",
+          "wifi_roaming_ft_psk_generate_local": "Einstellungen in diesem Block werden nur verwendet, wenn die Wi-Fi-Policy-Überschreibung aktiviert ist."
         }
       },
       "wifi_policy": {
@@ -103,7 +122,6 @@
         "description": "Globale Wi-Fi-Roaming-Einstellungen für diesen Ort überschreiben.",
         "data": {
           "roaming_enabled": "Wi-Fi-Roaming aktivieren",
-          "mobility_domain": "Mobility Domain",
           "ft_over_ds": "FT over DS",
           "ft_psk_generate_local": "Lokalen FT-PSK erzeugen"
         }
@@ -113,6 +131,15 @@
         "description": "Zu entfernendes Gerät wählen.",
         "data": {
           "ip": "Geräte-IP"
+        }
+      },
+      "add_device_wifi": {
+        "title": "Geräte-Wi-Fi-Policy",
+        "description": "Wi-Fi-Policy-Ueberschreibung fuer dieses Geraet konfigurieren. Mobility Domain wird automatisch aus dem Place-Namen abgeleitet.",
+        "data": {
+          "wifi_roaming_enabled": "Wi-Fi-Roaming aktivieren",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Lokalen FT-PSK erzeugen"
         }
       }
     }

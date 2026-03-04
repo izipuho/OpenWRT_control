@@ -12,5 +12,7 @@ Register your OpenWRT devices via config flow.
 - Change configuration type (device model) dynamically.
 - Select simple update with standart snapshot for your device or with custom image builder
 - Choose between force update or soft one that requires manual sysupgrade launch.
+- Device Wi-Fi policy override is configured in a separate step.
+- `mobility_domain` is derived automatically from Place name (deterministic 4-char hash).
 ### Monitoring
 Monitor device status (online/offline).

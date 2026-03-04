@@ -41,7 +41,7 @@
       },
       "add_device": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Укажите параметры устройства OpenWRT.",
+        "description": "Укажите параметры устройства OpenWRT. Ниже расположен отдельный блок настроек Wi-Fi policy.",
         "data": {
           "ip": "IP устройства",
           "config_type": "Тип конфигурации",
@@ -49,10 +49,24 @@
           "force_update": "Установить немедленно (sysupgrade -v)",
           "wifi_policy_override": "Переопределить Wi-Fi policy для устройства",
           "wifi_roaming_enabled": "Включить Wi-Fi roaming",
-          "wifi_roaming_mobility_domain": "Mobility domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK",
           "add_another": "Добавить ещё одно после сохранения"
+        },
+        "data_description": {
+          "wifi_policy_override": "Включите, чтобы применить настройки из Wi-Fi блока ниже.",
+          "wifi_roaming_enabled": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy.",
+          "wifi_roaming_ft_over_ds": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy.",
+          "wifi_roaming_ft_psk_generate_local": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy."
+        }
+      },
+      "add_device_wifi": {
+        "title": "Wi-Fi policy для устройства",
+        "description": "Настройка Wi-Fi policy override для этого устройства. Mobility domain вычисляется автоматически из названия площадки (Place).",
+        "data": {
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
       }
     }
@@ -84,7 +98,7 @@
       },
       "add_device": {
         "title": "Добавить устройство OpenWRT",
-        "description": "Укажите параметры устройства OpenWRT.",
+        "description": "Укажите параметры устройства OpenWRT. Ниже расположен отдельный блок настроек Wi-Fi policy.",
         "data": {
           "ip": "IP устройства",
           "config_type": "Тип конфигурации",
@@ -92,10 +106,15 @@
           "force_update": "Установить немедленно (sysupgrade -v)",
           "wifi_policy_override": "Переопределить Wi-Fi policy для устройства",
           "wifi_roaming_enabled": "Включить Wi-Fi roaming",
-          "wifi_roaming_mobility_domain": "Mobility domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK",
           "add_another": "Добавить ещё одно после сохранения"
+        },
+        "data_description": {
+          "wifi_policy_override": "Включите, чтобы применить настройки из Wi-Fi блока ниже.",
+          "wifi_roaming_enabled": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy.",
+          "wifi_roaming_ft_over_ds": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy.",
+          "wifi_roaming_ft_psk_generate_local": "Параметры из этого блока используются только при включенном переопределении Wi-Fi policy."
         }
       },
       "wifi_policy": {
@@ -103,7 +122,6 @@
         "description": "Переопределение глобальных настроек Wi-Fi roaming для этой площадки.",
         "data": {
           "roaming_enabled": "Включить Wi-Fi roaming",
-          "mobility_domain": "Mobility domain",
           "ft_over_ds": "FT over DS",
           "ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
@@ -113,6 +131,15 @@
         "description": "Выберите устройство для удаления.",
         "data": {
           "ip": "IP устройства"
+        }
+      },
+      "add_device_wifi": {
+        "title": "Wi-Fi policy для устройства",
+        "description": "Настройка Wi-Fi policy override для этого устройства. Mobility domain вычисляется автоматически из названия площадки (Place).",
+        "data": {
+          "wifi_roaming_enabled": "Включить Wi-Fi roaming",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Генерировать локальный FT PSK"
         }
       }
     }

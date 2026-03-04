@@ -9,7 +9,8 @@ from homeassistant.helpers import device_registry as dr
 
 from .helpers.const import DOMAIN
 from .helpers.helpers import (
-    build_device_schema,
+    build_device_base_schema,
+    build_device_wifi_schema,
     build_global_options_schema,
     build_wifi_policy_schema,
     upsert_device,
@@ -26,6 +27,7 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         # Current entry state
         self._data = {}
         self._devices = {}
+        self._pending_device = {}
 
     def get_fresh_data(self):
         """Return current global config data."""
@@ -60,23 +62,43 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_add_device(self, user_input=None):
         """Add device step."""
         if user_input is not None:
-            upsert_device(self._devices, user_input)
-
-            if user_input.get("add_another"):
-                return await self.async_step_add_device()
-
-            new_options = dict(self.config_entry.options)
-            new_options["devices"] = self._devices
-            return self.async_create_entry(
-                title="",
-                data=new_options,
-            )
+            self._pending_device = dict(user_input)
+            if user_input.get("wifi_policy_override"):
+                return await self.async_step_add_device_wifi()
+            return await self._async_finalize_device(self._pending_device)
 
         defaults: dict = {"ip": f"{self._data.get('place_ipmask', '')}."}
         schema = await self.hass.async_add_executor_job(
-            build_device_schema, self.hass, defaults
+            build_device_base_schema, self.hass, defaults
         )
         return self.async_show_form(step_id="add_device", data_schema=schema)
+
+    async def async_step_add_device_wifi(self, user_input=None):
+        """Add Wi-Fi override settings for device."""
+        if user_input is not None:
+            merged = {**self._pending_device, **user_input}
+            return await self._async_finalize_device(merged)
+
+        schema = await self.hass.async_add_executor_job(
+            build_device_wifi_schema, {}
+        )
+        return self.async_show_form(step_id="add_device_wifi", data_schema=schema)
+
+    async def _async_finalize_device(self, device_input: dict):
+        """Persist device and continue options flow."""
+        upsert_device(self._devices, device_input)
+
+        if device_input.get("add_another"):
+            self._pending_device = {}
+            return await self.async_step_add_device()
+
+        self._pending_device = {}
+        new_options = dict(self.config_entry.options)
+        new_options["devices"] = self._devices
+        return self.async_create_entry(
+            title="",
+            data=new_options,
+        )
 
     async def async_step_remove_device(self, user_input=None):
         """Step to choose device for removal."""

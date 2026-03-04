@@ -102,10 +102,6 @@ def build_wifi_policy_schema(defaults: dict | None = None) -> vol.Schema:
                 "roaming_enabled",
                 default=d.get("roaming_enabled", False),
             ): cv.boolean,
-            vol.Optional(
-                "mobility_domain",
-                default=d.get("mobility_domain", ""),
-            ): cv.string,
             vol.Required(
                 "ft_over_ds",
                 default=d.get("ft_over_ds", False),
@@ -118,10 +114,10 @@ def build_wifi_policy_schema(defaults: dict | None = None) -> vol.Schema:
     )
 
 
-def build_device_schema(
+def build_device_base_schema(
     hass: HomeAssistant | None, defaults: dict | None
 ) -> vol.Schema:
-    """Build the device options schema."""
+    """Build the base device options schema."""
     # config_types_path = (
     #    hass.data.get(DOMAIN, {}).get("config", {}).get("config_types_path", "")
     # )
@@ -142,14 +138,20 @@ def build_device_schema(
                 "wifi_policy_override",
                 default=d.get("wifi_policy_override", False),
             ): bool,
+            vol.Optional("add_another", default=d.get("add_another", False)): bool,
+        }
+    )
+
+
+def build_device_wifi_schema(defaults: dict | None) -> vol.Schema:
+    """Build Wi-Fi policy schema for a single device override."""
+    d = defaults or {}
+    return vol.Schema(
+        {
             vol.Optional(
                 "wifi_roaming_enabled",
                 default=d.get("wifi_roaming_enabled", False),
             ): bool,
-            vol.Optional(
-                "wifi_roaming_mobility_domain",
-                default=d.get("wifi_roaming_mobility_domain", ""),
-            ): cv.string,
             vol.Optional(
                 "wifi_roaming_ft_over_ds",
                 default=d.get("wifi_roaming_ft_over_ds", False),
@@ -158,7 +160,6 @@ def build_device_schema(
                 "wifi_roaming_ft_psk_generate_local",
                 default=d.get("wifi_roaming_ft_psk_generate_local", False),
             ): bool,
-            vol.Optional("add_another", default=d.get("add_another", False)): bool,
         }
     )
 
@@ -175,7 +176,6 @@ def upsert_device(devices: dict, user_input: dict) -> dict:
     if user_input.get("wifi_policy_override"):
         devices[ip]["wifi_policy"] = {
             "roaming_enabled": user_input.get("wifi_roaming_enabled", False),
-            "mobility_domain": user_input.get("wifi_roaming_mobility_domain", ""),
             "ft_over_ds": user_input.get("wifi_roaming_ft_over_ds", False),
             "ft_psk_generate_local": user_input.get(
                 "wifi_roaming_ft_psk_generate_local",

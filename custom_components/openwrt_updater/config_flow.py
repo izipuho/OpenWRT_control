@@ -9,7 +9,8 @@ from homeassistant.core import callback
 
 from .helpers.const import DOMAIN, INTEGRATION_DEFAULTS
 from .helpers.helpers import (
-    build_device_schema,
+    build_device_base_schema,
+    build_device_wifi_schema,
     build_global_options_schema,
     upsert_device,
 )
@@ -24,6 +25,7 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self.data = {}
         self.options = {}
+        self._pending_device = {}
 
     def check_global_exists(self) -> bool:
         """Return whether the global entry already exists."""
@@ -75,21 +77,41 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_add_device(self, user_input=None):
         """Collect device-level information."""
         if user_input is not None:
-            upsert_device(self.options, user_input)
-            if user_input.get("add_another"):
-                return await self.async_step_add_device()
-            _LOGGER.debug("Create device with data: %s", user_input)
-            return self.async_create_entry(
-                title=f"OpenWRT updater {self.data['place_name']}",
-                data=self.data,
-                options={"devices": self.options},
-            )
+            self._pending_device = dict(user_input)
+            if user_input.get("wifi_policy_override"):
+                return await self.async_step_add_device_wifi()
+            return await self._async_finalize_device(self._pending_device)
 
         defaults = {"ip": f"{self.data['place_ipmask']}."}
         schema = await self.hass.async_add_executor_job(
-            build_device_schema, self.hass, defaults
+            build_device_base_schema, self.hass, defaults
         )
         return self.async_show_form(step_id="add_device", data_schema=schema)
+
+    async def async_step_add_device_wifi(self, user_input=None):
+        """Collect Wi-Fi override settings for a device."""
+        if user_input is not None:
+            merged = {**self._pending_device, **user_input}
+            return await self._async_finalize_device(merged)
+
+        schema = await self.hass.async_add_executor_job(
+            build_device_wifi_schema, {}
+        )
+        return self.async_show_form(step_id="add_device_wifi", data_schema=schema)
+
+    async def _async_finalize_device(self, device_input: dict):
+        """Store collected device options and continue flow."""
+        upsert_device(self.options, device_input)
+        if device_input.get("add_another"):
+            self._pending_device = {}
+            return await self.async_step_add_device()
+        _LOGGER.debug("Create device with data: %s", device_input)
+        self._pending_device = {}
+        return self.async_create_entry(
+            title=f"OpenWRT updater {self.data['place_name']}",
+            data=self.data,
+            options={"devices": self.options},
+        )
 
     @staticmethod
     @callback

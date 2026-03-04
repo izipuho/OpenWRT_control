@@ -39,6 +39,11 @@ After global options are configured, create a **Place** (config entry for groupi
 Then add devices by specifying:
 - Device IP
 
+### Wi-Fi Policy Override
+If you enable device Wi-Fi policy override, Wi-Fi parameters are configured in a separate step.
+
+`mobility_domain` is not entered manually. It is derived automatically from the **Place name** using a deterministic hash (4 hex chars) and used as fallback in policy resolution.
+
 ## Firmware Updates
 
 The integration supports two update mechanisms, both controlled by configuration options:

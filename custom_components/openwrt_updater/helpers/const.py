@@ -11,7 +11,6 @@ INTEGRATION_DEFAULTS = {
     "asu_base_url": "https://sysupgrade.openwrt.org/",
     "download_base_url": "https://downloads.openwrt.org/",
     "wifi_roaming_enabled": False,
-    "wifi_roaming_mobility_domain": "",
     "wifi_roaming_ft_over_ds": False,
     "wifi_roaming_ft_psk_generate_local": False,
 }

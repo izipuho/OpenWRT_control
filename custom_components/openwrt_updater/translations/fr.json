@@ -41,7 +41,7 @@
       },
       "add_device": {
         "title": "Ajouter un appareil OpenWRT",
-        "description": "Saisissez les détails de votre appareil OpenWRT.",
+        "description": "Saisissez les details de votre appareil OpenWRT. Un bloc separe de politique Wi-Fi est affiche ci-dessous.",
         "data": {
           "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
@@ -49,10 +49,24 @@
           "force_update": "Installer immédiatement (sysupgrade -v)",
           "wifi_policy_override": "Surcharger la politique Wi-Fi pour cet appareil",
           "wifi_roaming_enabled": "Activer le roaming Wi-Fi",
-          "wifi_roaming_mobility_domain": "Mobility domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Générer un FT PSK local",
           "add_another": "Ajouter un autre après l’enregistrement"
+        },
+        "data_description": {
+          "wifi_policy_override": "Activez ceci pour appliquer les parametres du bloc Wi-Fi ci-dessous.",
+          "wifi_roaming_enabled": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee.",
+          "wifi_roaming_ft_over_ds": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee.",
+          "wifi_roaming_ft_psk_generate_local": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee."
+        }
+      },
+      "add_device_wifi": {
+        "title": "Politique Wi-Fi de l appareil",
+        "description": "Configurer la surcharge de politique Wi-Fi pour cet appareil. Le mobility domain est derive automatiquement du nom du Place.",
+        "data": {
+          "wifi_roaming_enabled": "Activer le roaming Wi-Fi",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generer un FT PSK local"
         }
       }
     }
@@ -84,7 +98,7 @@
       },
       "add_device": {
         "title": "Ajouter un appareil OpenWRT",
-        "description": "Saisissez les détails de votre appareil OpenWRT.",
+        "description": "Saisissez les details de votre appareil OpenWRT. Un bloc separe de politique Wi-Fi est affiche ci-dessous.",
         "data": {
           "ip": "IP de l’appareil",
           "config_type": "Type de configuration",
@@ -92,10 +106,15 @@
           "force_update": "Installer immédiatement (sysupgrade -v)",
           "wifi_policy_override": "Surcharger la politique Wi-Fi pour cet appareil",
           "wifi_roaming_enabled": "Activer le roaming Wi-Fi",
-          "wifi_roaming_mobility_domain": "Mobility domain",
           "wifi_roaming_ft_over_ds": "FT over DS",
           "wifi_roaming_ft_psk_generate_local": "Générer un FT PSK local",
           "add_another": "Ajouter un autre après l’enregistrement"
+        },
+        "data_description": {
+          "wifi_policy_override": "Activez ceci pour appliquer les parametres du bloc Wi-Fi ci-dessous.",
+          "wifi_roaming_enabled": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee.",
+          "wifi_roaming_ft_over_ds": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee.",
+          "wifi_roaming_ft_psk_generate_local": "Les parametres de ce bloc sont utilises uniquement lorsque la surcharge de politique Wi-Fi est activee."
         }
       },
       "wifi_policy": {
@@ -103,7 +122,6 @@
         "description": "Surcharger les paramètres globaux de roaming Wi-Fi pour ce site.",
         "data": {
           "roaming_enabled": "Activer le roaming Wi-Fi",
-          "mobility_domain": "Mobility domain",
           "ft_over_ds": "FT over DS",
           "ft_psk_generate_local": "Générer un FT PSK local"
         }
@@ -113,6 +131,15 @@
         "description": "Sélectionnez l’appareil à supprimer.",
         "data": {
           "ip": "IP de l’appareil"
+        }
+      },
+      "add_device_wifi": {
+        "title": "Politique Wi-Fi de l appareil",
+        "description": "Configurer la surcharge de politique Wi-Fi pour cet appareil. Le mobility domain est derive automatiquement du nom du Place.",
+        "data": {
+          "wifi_roaming_enabled": "Activer le roaming Wi-Fi",
+          "wifi_roaming_ft_over_ds": "FT over DS",
+          "wifi_roaming_ft_psk_generate_local": "Generer un FT PSK local"
         }
       }
     }
