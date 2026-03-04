@@ -70,7 +70,7 @@ async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict)
         return False
 
     radios_by_name = {
-        str(radio.get("section")): radio for radio in wifi_radios if radio.get("section")
+        str(radio.get("name")): radio for radio in wifi_radios if radio.get("name")
     }
 
     roaming_enabled = bool(policy.get("roaming_enabled"))
@@ -84,7 +84,7 @@ async def apply_wifi_policy(coordinator: OpenWRTDeviceCoordinator, policy: dict)
 
     batch_lines: list[str] = []
     for iface in wifi_ifaces:
-        section = iface.get("section")
+        section = iface.get("name")
         if not section:
             continue
 

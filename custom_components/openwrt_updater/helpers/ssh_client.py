@@ -283,7 +283,7 @@ class OpenWRTSSH:
             return {}
 
         line_re = re.compile(r"^wireless\.([^.=]+)(?:\.([^.=]+))?='(.*)'$")
-        radios: dict[str, dict] = {}
+        radios_options: dict[str, dict[str, str]] = {}
 
         for raw_line in res.stdout.splitlines():
             line = raw_line.strip()
@@ -295,21 +295,14 @@ class OpenWRTSSH:
                 continue
 
             section_name, option_name, value = match.groups()
-            section = radios.setdefault(
-                section_name,
-                {"section": section_name, "options": {}},
-            )
-
             if option_name is None:
                 continue
+            radios_options.setdefault(section_name, {})[option_name] = value
 
-            section["options"][option_name] = value
-
-        for section in radios.values():
-            options = section.get("options", {})
+        radios: dict[str, dict] = {}
+        for section_name, options in radios_options.items():
             band = str(options.get("band") or "").strip().lower()
-
-            section["band"] = band or None
+            radios[section_name] = {"name": section_name, "band": band or None}
 
         return radios
 
@@ -352,7 +345,7 @@ class OpenWRTSSH:
                 role = "iot"
             wifi_ifaces.append(
                 {
-                    "section": section.get("name"),
+                    "name": section.get("name"),
                     "device": device,
                     "ifname": options.get("ifname"),
                     "ssid": options.get("ssid"),
