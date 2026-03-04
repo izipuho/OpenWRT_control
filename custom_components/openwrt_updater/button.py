@@ -79,8 +79,8 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
                 self._ip,
                 dev["coordinator"].data["wifi_radios"],
             )
-            _LOGGER.warning("WiFi policy to apply: %s", apply_wifi_policy(
-                self.coordinator, resolve_wifi_policy(self.hass, self._config_entry, self._ip), True))
+            await apply_wifi_policy(
+                self.coordinator, resolve_wifi_policy(self.hass, self._config_entry, self._ip), True)
 
         elif self._key == "reboot":
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]

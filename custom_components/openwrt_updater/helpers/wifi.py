@@ -50,7 +50,6 @@ def resolve_wifi_policy(_hass: HomeAssistant, entry: ConfigEntry, ip: str) -> di
     return policy
 
 
-
 def _quote_uci(value: str) -> str:
     """Escape value for single-quoted UCI batch string."""
     return value.replace("'", "'\\''")
@@ -92,12 +91,17 @@ async def apply_wifi_policy(
         if not section:
             continue
 
+        role = str(iface.get("role") or "").strip().lower()
+        if role not in {"main", "iot"}:
+            role = "iot" if str(iface.get("ssid", "")).lower().endswith("-iot") else "main"
+        is_main = role == "main"
+
         section_name = str(section)
         batch_lines.append(
-            f"set wireless.{section_name}.ieee80211r={'1' if roaming_enabled else '0'}"
+            f"set wireless.{section_name}.ieee80211r={'1' if roaming_enabled and is_main else '0'}"
         )
 
-        if roaming_enabled:
+        if roaming_enabled and is_main:
             if mobility_domain is None:
                 return False
             batch_lines.append(
@@ -109,34 +113,29 @@ async def apply_wifi_policy(
             batch_lines.append(
                 f"set wireless.{section_name}.ft_psk_generate_local={'1' if ft_psk_generate_local else '0'}"
             )
+        else:
+            batch_lines.append(
+                f"delete wireless.{section_name}.mobility_domain")
+            batch_lines.append(f"delete wireless.{section_name}.ft_over_ds")
+            batch_lines.append(
+                f"delete wireless.{section_name}.ft_psk_generate_local")
 
-            if room:
-                role = str(iface.get("role") or "").strip().lower()
-                if role not in {"main", "iot"}:
-                    role = (
-                        "iot"
-                        if str(iface.get("ssid", "")).lower().endswith("-iot")
-                        else "main"
-                    )
+        if roaming_enabled and room:
+            band = str(iface.get("band") or "").strip().lower()
+            if not band:
+                radio = radios_by_name.get(str(iface.get("device")))
+                band = str((radio or {}).get("band") or "").strip().lower()
+            if not band:
+                band = "2g"
 
-                band = str(iface.get("band") or "").strip().lower()
-                if not band:
-                    radio = radios_by_name.get(str(iface.get("device")))
-                    band = str((radio or {}).get("band") or "").strip().lower()
-                if not band:
-                    band = "2g"
-
-                ifname = f"{room}-{role}-{band}"
-                batch_lines.append(
-                    f"set wireless.{section_name}.ifname='{_quote_uci(ifname)}'"
-                )
+            ifname = f"{room}-{role}-{band}"
+            batch_lines.append(
+                f"set wireless.{section_name}.ifname='{_quote_uci(ifname)}'"
+            )
+            if is_main:
                 batch_lines.append(
                     f"set wireless.{section_name}.nasid='{_quote_uci(ifname)}'"
                 )
-        else:
-            batch_lines.append(f"delete wireless.{section_name}.mobility_domain")
-            batch_lines.append(f"delete wireless.{section_name}.ft_over_ds")
-            batch_lines.append(f"delete wireless.{section_name}.ft_psk_generate_local")
 
     if not batch_lines:
         return False
@@ -150,12 +149,8 @@ wifi reload
 """
 
     if debug_mode:
-        _LOGGER.warning(
-            "Wi-Fi policy debug_mode enabled for %s: no changes applied",
-            coordinator.ip,
-        )
-        _LOGGER.warning("UCI batch payload for %s:\n%s", coordinator.ip, batch_payload)
-        _LOGGER.warning("UCI command preview for %s:\n%s", coordinator.ip, command)
+        _LOGGER.warning("UCI batch payload for %s:\n%s",
+                        coordinator.ip, batch_payload)
         return True
 
     key_path = coordinator.hass.data[DOMAIN]["config"]["ssh_key_path"]
