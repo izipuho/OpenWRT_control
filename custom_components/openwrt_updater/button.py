@@ -60,11 +60,23 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
             entry_data = self.hass.data[DOMAIN][self._config_entry.entry_id]
             dev = entry_data[self._ip]
 
-            _LOGGER.warning("Saved device params (%s): %s", self._ip, dev)
+            _LOGGER.error("Place wifi data (%s): %s",
+                          entry_data["data"]["place_name"], self._config_entry.options)
+
             _LOGGER.warning(
-                "Coordinator data (%s): %s",
+                "Device wifi roaming (%s): %s",
                 self._ip,
-                dev["coordinator"].data,
+                dev["coordinator"].data["wifi_roaming_enabled"],
+            )
+            _LOGGER.warning(
+                "Device wifi ifaces (%s): %s",
+                self._ip,
+                dev["coordinator"].data["wifi_ifaces"],
+            )
+            _LOGGER.warning(
+                "Device wifi radios (%s): %s",
+                self._ip,
+                dev["coordinator"].data["wifi_radios"],
             )
 
         elif self._key == "reboot":

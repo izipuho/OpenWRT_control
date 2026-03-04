@@ -15,6 +15,7 @@ from .helpers.helpers import (
     build_wifi_policy_schema,
     upsert_device,
 )
+from .helpers.wifi import build_place_wifi_policy
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -136,7 +137,8 @@ class OpenWRTOptionsFlowHandler(config_entries.OptionsFlow):
         """Configure place-level Wi-Fi policy overrides."""
         if user_input is not None:
             new_options = dict(self.config_entry.options)
-            new_options["wifi_policy"] = user_input
+            place_name = str(self.config_entry.data.get("place_name", ""))
+            new_options["wifi_policy"] = build_place_wifi_policy(place_name, user_input)
             return self.async_create_entry(title="", data=new_options)
 
         saved = dict(self.config_entry.options.get("wifi_policy", {}))

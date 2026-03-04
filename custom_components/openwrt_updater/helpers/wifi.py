@@ -20,22 +20,28 @@ def _derive_mobility_domain(place_name: str) -> str:
     return hashlib.sha1(place_name.encode("utf-8")).hexdigest()[:4]
 
 
+def build_place_wifi_policy(place_name: str, policy_values: dict | None) -> dict:
+    """Return place policy with normalized deterministic mobility domain."""
+    policy = dict(policy_values or {})
+    policy["mobility_domain"] = _derive_mobility_domain(place_name)
+    return policy
+
+
 def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dict:
     """Build effective policy in order: global -> place -> device."""
     global_config = hass.data[DOMAIN].get("config", {})
     place_name = str(entry.data.get("place_name", ""))
-    mobility_domain = _derive_mobility_domain(place_name)
+    place_policy_saved = entry.options.get("wifi_policy")
+    place_policy = build_place_wifi_policy(place_name, place_policy_saved)
 
     policy = {
         "roaming_enabled": global_config.get("wifi_roaming_enabled"),
-        "mobility_domain": mobility_domain,
         "ft_over_ds": global_config.get("wifi_roaming_ft_over_ds"),
         "ft_psk_generate_local": global_config.get("wifi_roaming_ft_psk_generate_local"),
         "source": "global",
     }
 
-    place_policy = entry.options.get("wifi_policy")
-    if place_policy:
+    if place_policy_saved:
         policy.update(place_policy)
         policy["source"] = "place"
 
@@ -44,8 +50,8 @@ def resolve_wifi_policy(hass: HomeAssistant, entry: ConfigEntry, ip: str) -> dic
         policy.update(device_policy)
         policy["source"] = "device"
 
-    # Enforce deterministic mobility domain per place.
-    policy["mobility_domain"] = mobility_domain
+    # Keep mobility domain tied to place policy, not device/global overrides.
+    policy["mobility_domain"] = place_policy.get("mobility_domain")
 
     return policy
 

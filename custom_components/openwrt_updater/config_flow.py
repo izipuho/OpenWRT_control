@@ -15,6 +15,7 @@ from .helpers.helpers import (
     build_wifi_policy_schema,
     upsert_device,
 )
+from .helpers.wifi import build_place_wifi_policy
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +79,8 @@ class OpenWRTConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_wifi_policy(self, user_input=None):
         """Collect place-level Wi-Fi policy information."""
         if user_input is not None:
-            self.options["wifi_policy"] = user_input
+            place_name = str(self.data.get("place_name", ""))
+            self.options["wifi_policy"] = build_place_wifi_policy(place_name, user_input)
             return await self.async_step_add_device()
 
         schema = await self.hass.async_add_executor_job(build_wifi_policy_schema, {})
