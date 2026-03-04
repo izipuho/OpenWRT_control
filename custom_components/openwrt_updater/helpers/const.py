@@ -2,6 +2,7 @@
 
 DOMAIN = "openwrt_updater"
 SIGNAL_BOARDS_CHANGED = f"{DOMAIN}_boards_changed"
+SIGNAL_PLACE_WIFI_POLICY_APPLY_CHANGED = f"{DOMAIN}_place_wifi_policy_apply_changed"
 
 INTEGRATION_DEFAULTS = {
     "builder_location": "zip@10.8.25.20:/home/zip/OpenWrt-builder/",

@@ -6,10 +6,17 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .coordinators.device import OpenWRTDeviceCoordinator
-from .helpers.const import DOMAIN, get_device_info, get_place_device_info
+from .helpers.const import (
+    DOMAIN,
+    SIGNAL_PLACE_WIFI_POLICY_APPLY_CHANGED,
+    get_device_info,
+    get_place_device_info,
+)
 from .helpers.ssh_client import OpenWRTSSH
 from .helpers.wifi import apply_wifi_policy, resolve_wifi_policy
 
@@ -138,11 +145,13 @@ class OpenWRTPlaceButton(ButtonEntity):
             devices = self._config_entry.options.get("devices", {})
             ok_count = 0
             fail_count = 0
+            error_ips: list[str] = []
 
             for ip in devices:
                 coordinator = entry_data.get(ip, {}).get("coordinator")
                 if coordinator is None:
                     fail_count += 1
+                    error_ips.append(ip)
                     continue
 
                 applied = await apply_wifi_policy(
@@ -154,8 +163,28 @@ class OpenWRTPlaceButton(ButtonEntity):
                     ok_count += 1
                 else:
                     fail_count += 1
+                    error_ips.append(ip)
 
                 await coordinator.async_request_refresh()
+
+            result = "success"
+            if fail_count and ok_count:
+                result = "partial"
+            elif fail_count and not ok_count:
+                result = "failed"
+
+            place_actions = entry_data.setdefault("place_actions", {})
+            place_actions["wifi_policy_apply"] = {
+                "last_run_at": dt_util.utcnow(),
+                "result": result,
+                "success_count": ok_count,
+                "fail_count": fail_count,
+                "error_ips": error_ips,
+            }
+            async_dispatcher_send(
+                self.hass,
+                f"{SIGNAL_PLACE_WIFI_POLICY_APPLY_CHANGED}_{self._config_entry.entry_id}",
+            )
 
             _LOGGER.warning(
                 "Place Wi-Fi policy apply (%s): success=%s failed=%s",
