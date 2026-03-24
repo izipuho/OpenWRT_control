@@ -146,93 +146,82 @@ class OpenWRTUpdater:
 
     async def asu_upgrade(self):
         """Trigger ASU upgrade."""
-        ASU_BASE_URL = self.config["asu_base_url"]
+        asu_client = None
+        action = None
+        command = None
         try:
-            fw_file, cached = await self._check_cache()
-
-            sysupgrade_raw = None
-            exit_status = None
-            return_code = None
-            success = True  # be optimistic
-
-            if not cached:
-                # Cache built FW on master node
-                asu_client = ASUClient(base_url=ASU_BASE_URL)
-                target = self.data["target"]
-                board_name = self.data["board_name"]
-                req = await asu_client.build_request(
-                    version=self.available_os_version,
-                    target=target,
-                    board_name=board_name,
-                    packages=self.data["packages"],
-                    client_name=f"OpenWRT {self.place_name} {self.ip}",
+            asu_client = self.data.get("asu_client")
+            if not asu_client:
+                raise RuntimeError(
+                    "ASU update requires owut or auc on the router. Install it first and retry."
                 )
-                _LOGGER.debug("Build request: %s", req.get("request_hash"))
-                bin_dir, file_name = await asu_client.poll_build_request(
-                    request_hash=req.get("request_hash")
-                )
-                fw_url = f"{ASU_BASE_URL}store/{bin_dir}/{file_name}"
-                _LOGGER.debug("Build URL: %s", fw_url)
-                await self.cache_asu_firmware(firmware_url=fw_url)
-                fw_file, cached = await self._check_cache()
-                if not cached or not fw_file:
+
+            if asu_client == "owut":
+                action = "upgrade" if self.is_force else "download"
+                command = f"owut {action} -V {self.available_os_version}"
+            elif asu_client == "auc":
+                action = "upgrade"
+                if not self.is_force:
                     raise RuntimeError(
-                        "ASU firmware was built but is not available in cache"
+                        "Manual ASU download requires owut on the router. Install owut or enable immediate install."
                     )
+                command = f"auc -y -B {self.available_os_version}"
+            else:
+                raise RuntimeError(f"Unsupported ASU client on router: {asu_client}")
 
-            if not fw_file:
-                raise RuntimeError("Cached ASU firmware path is empty")
-
-            async with OpenWRTSSH(
-                ip=self.master_host,
-                username=self.master_username,
-                key_path=self.key_path,
-                agent_forwarding=True,
-            ) as master:
-                router = await master.connect_tunneled(
-                    host=self.ip, key_path=self.key_path
-                )
-                try:
-                    await scp(
-                        (master.conn, fw_file),
-                        (
-                            router,
-                            f"/tmp/openwrt-{self.available_os_version}-asu.bin",
-                        ),
-                        preserve=True,
-                    )
-                except Exception as e:
-                    _LOGGER.error("SCP failed with %s", e)
-                    success = False
-                finally:
-                    router.close()
-                    await router.wait_closed()
-
-            if success and self.is_force:
-                sysupgrade_raw = await self.sysupgrade(
-                    f"openwrt-{self.available_os_version}-asu.bin"
-                )
-                success, exit_status, return_code = self._status_from_output(
-                    sysupgrade_raw
-                )
-                if not success:
-                    if sysupgrade_raw is None:
-                        _LOGGER.error("Sysupgrade failed or timed out on %s", self.ip)
-                    else:
-                        _LOGGER.error(
-                            "Failed to sysupgrade %s: %s", self.ip, sysupgrade_raw
-                        )
+            _LOGGER.debug(
+                "Starting ASU on %s via %s (%s): %s",
+                self.ip,
+                asu_client,
+                action,
+                command,
+            )
+            async with OpenWRTSSH(self.ip, self.key_path) as client:
+                output = await client.exec_command(command, timeout=1800)
 
         except Exception as err:
-            _LOGGER.error("Failed to run ASU upgrade for %s: %s", self.ip, err)
+            _LOGGER.error(
+                "Failed to run ASU upgrade for %s via %s (%s): %s",
+                self.ip,
+                asu_client,
+                action,
+                err,
+            )
             return self._build_result("asu", False, message=err)
         else:
+            success, exit_status, return_code = self._status_from_output(output)
+            stdout = (getattr(output, "stdout", "") or "").strip()
+            stderr = (getattr(output, "stderr", "") or "").strip()
+            message = stdout or stderr or None
+            raw = {
+                "backend": asu_client,
+                "action": action,
+                "command": command,
+                "stdout": stdout,
+                "stderr": stderr,
+                "output": output,
+            }
+
+            if success:
+                _LOGGER.debug(
+                    "ASU finished for %s via %s (%s)", self.ip, asu_client, action
+                )
+            else:
+                _LOGGER.error(
+                    "ASU failed for %s via %s (%s): %s",
+                    self.ip,
+                    asu_client,
+                    action,
+                    stderr or stdout or output,
+                )
+
             return self._build_result(
                 "asu",
                 success,
+                message=message,
                 exit_status=exit_status,
                 return_code=return_code,
-                raw=sysupgrade_raw,
+                raw=raw,
             )
 
     async def _check_cache(self) -> tuple[str, bool]:

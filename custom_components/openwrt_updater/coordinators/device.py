@@ -116,6 +116,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 target,
                 board_name,
                 pkgs,
+                asu_client,
                 has_asu_client,
             ) = await client.async_get_device_info()
         except Exception as err:
@@ -146,6 +147,7 @@ class OpenWRTDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "distribution": distribution,
             "target": target,
             "board_name": board_name,
+            "asu_client": asu_client,
             "has_asu_client": has_asu_client,
             "packages": pkgs,
         }

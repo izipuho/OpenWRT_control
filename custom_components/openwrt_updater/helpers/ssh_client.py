@@ -254,6 +254,7 @@ class OpenWRTSSH:
         str | None,  # target
         str | None,  # board_name
         list[str],  # installed packages
+        str | None,  # asu_client
         bool,  # has_asu_client
     ]:
         """Get device info: OS, status, firmware info and installed packages."""
@@ -268,6 +269,7 @@ class OpenWRTSSH:
             None,  # target
             None,  # board_name
             [],  # installed packages
+            None,  # asu_client
             False,  # has_asu_client
         )
 
@@ -286,7 +288,8 @@ class OpenWRTSSH:
                 ) = await self._read_board()
 
                 pkgs = await self._list_installed_packages()
-                has_asu_client = "owut" in pkgs or "auc" in pkgs
+                asu_client = "owut" if "owut" in pkgs else "auc" if "auc" in pkgs else None
+                has_asu_client = asu_client is not None
 
         except (TimeoutError, asyncssh.Error, OSError, RuntimeError) as exc:
             # Expected runtime problems: SSH/transport issues, invalid board JSON, etc.
@@ -312,6 +315,7 @@ class OpenWRTSSH:
             target,
             board_name,
             pkgs,
+            asu_client,
             has_asu_client,
         )
 
