@@ -145,7 +145,7 @@ class OpenWRTUpdater:
             )
 
     async def asu_upgrade(self):
-        """Trigger ASU upgrade."""
+        """Run ASU via the router's own `owut` or `auc` client."""
         asu_client = None
         action = None
         command = None

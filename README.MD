@@ -10,7 +10,7 @@ Register your OpenWRT devices via config flow.
 ### Update
 - Look for available firmware updates and trigger upgrades.
 - Change configuration type (device model) dynamically (will be deprecated soon)
-- Select simple update with standart snapshot for your device or with custom image builder (ASU)
+- Select simple update with standard snapshot for your device or ASU update via the router's own `owut`/`auc` client
 - Choose between force update or soft one that requires manual sysupgrade launch.
 ### Monitoring
 Monitor device status (online/offline).
@@ -44,11 +44,11 @@ Then add devices by specifying:
 The integration supports two update mechanisms, both controlled by configuration options:
 
 ### ASU mode 
-If ASU support is enabled and available on the device:
-- The integration requests the build from ASU
-- Downloads the firmware image using the callback information
-- Transfers the image to the device
-- Performs `sysupgrade`
+If ASU support is enabled and an ASU client is available on the device:
+- The integration uses the router's local `owut` or `auc` client over SSH
+- `force_update` runs an install flow (`owut upgrade` or `auc`)
+- non-force mode uses `owut download`, which stores the image at `/tmp/firmware.bin`
+- if no ASU client is installed, the integration exposes an `Install ASU client` button
 
 ### Simple mode
 If enabled:

@@ -196,13 +196,15 @@ class OpenWRTSSH:
         return packages
 
     async def _find_downloaded_firmware(self) -> tuple[str | None, bool]:
-        """Check for a downloaded firmware image; adjust glob/path to your flow.
+        """Check for a downloaded firmware image left by simple update or `owut`.
 
         Returns:
             (firmware_file_path, firmware_downloaded_flag)
 
         """
-        res = await self.exec_command("ls -1 /tmp/openwrt*.bin 2>/dev/null | head -n1")
+        res = await self.exec_command(
+            "ls -1 /tmp/firmware.bin /tmp/openwrt*.bin 2>/dev/null | head -n1"
+        )
         if res is None or not res.stdout:
             return None, False
         fw_file = _first_line(res.stdout)
@@ -211,7 +213,7 @@ class OpenWRTSSH:
     async def install_asu_client(
         self, package_manager: str | None
     ) -> asyncssh.SSHCompletedProcess | None:
-        """Install owut using the package manager detected for the router."""
+        """Install `owut` using the package manager already detected for the router."""
         if package_manager == "apk":
             command = "apk update && apk add owut"
         elif package_manager == "opkg":
