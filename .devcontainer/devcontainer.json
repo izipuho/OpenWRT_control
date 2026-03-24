@@ -7,5 +7,12 @@
     "source=${localWorkspaceFolder}/custom_components,target=/config/custom_components,type=bind"
   ],
   "postCreateCommand": "python -m pip install --upgrade pip && pip install homeassistant==2025.12.3 colorlog --constraint https://raw.githubusercontent.com/home-assistant/core/2025.12.3/homeassistant/package_constraints.txt",
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "openai.chatgpt"
+      ]
+    }
+  }
 }
