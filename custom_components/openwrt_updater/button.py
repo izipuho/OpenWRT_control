@@ -6,6 +6,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinators.device import OpenWRTDeviceCoordinator
@@ -67,6 +68,26 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
                 result = await client.exec_command("reboot", timeout=1800)
                 _LOGGER.warning("Reboot command ended with %s", result)
             await self.coordinator.async_wait_for_alive()
+        elif self._key == "install_asu_client":
+            version = self.coordinator.data.get("current_os_version")
+            _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
+            async with OpenWRTSSH(self._ip, _key_path) as client:
+                result = await client.install_asu_client(version)
+
+            if result is None or result.exit_status != 0:
+                stderr = getattr(result, "stderr", "") if result is not None else ""
+                raise HomeAssistantError(stderr or "Failed to install ASU client")
+
+            await self.coordinator.async_request_refresh()
+
+    @property
+    def available(self):
+        """Return whether the button is currently available."""
+        if not self.coordinator.last_update_success:
+            return False
+        if self._key == "install_asu_client":
+            return not self.coordinator.data.get("asu_client")
+        return True
 
     def __repr__(self):
         """Return a debug string representation."""
@@ -101,6 +122,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
                     key="reboot",
                     entity_category=EntityCategory.DIAGNOSTIC,
                     entity_icon="mdi:reload",
+                ),
+                OpenWRTButton(
+                    coordinator=coordinator,
+                    config_entry=config_entry,
+                    ip=ip,
+                    name="Install ASU client",
+                    key="install_asu_client",
+                    entity_category=EntityCategory.CONFIG,
+                    entity_icon="mdi:package-variant-closed-plus",
                 ),
             ]
         )

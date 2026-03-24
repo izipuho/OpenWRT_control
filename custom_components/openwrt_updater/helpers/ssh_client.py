@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+import re
 import shlex
 
 import asyncssh
@@ -183,6 +184,28 @@ class OpenWRTSSH:
             return None, False
         fw_file = _first_line(res.stdout)
         return fw_file, bool(fw_file)
+
+    async def install_asu_client(
+        self, current_os_version: str
+    ) -> asyncssh.SSHCompletedProcess | None:
+        """Install owut using the package manager implied by the current OS version."""
+        if not current_os_version:
+            raise RuntimeError("Current OpenWrt version is unavailable")
+
+        version = current_os_version.strip()
+        match = re.match(r"^(\d+)\.(\d+)", version)
+        if not match:
+            raise RuntimeError(
+                f"Unsupported OpenWrt version format for ASU client install: {version}"
+            )
+
+        major, minor = (int(part) for part in match.groups())
+        if (major, minor) >= (25, 12):
+            command = "apk update && apk add owut"
+        else:
+            command = "opkg update && opkg install owut"
+
+        return await self.exec_command(command, timeout=1800)
 
     async def check_cached_firmware(
         self, builder_dir: str, os: str, filename: str
