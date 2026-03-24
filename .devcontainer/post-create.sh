@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HA_VERSION="2025.12.3"
+HA_VERSION="2026.3.1"
 CONSTRAINTS_URL="https://raw.githubusercontent.com/home-assistant/core/${HA_VERSION}/homeassistant/package_constraints.txt"
 
 python -m pip install --upgrade pip
