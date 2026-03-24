@@ -69,10 +69,10 @@ class OpenWRTButton(CoordinatorEntity, ButtonEntity):
                 _LOGGER.warning("Reboot command ended with %s", result)
             await self.coordinator.async_wait_for_alive()
         elif self._key == "install_asu_client":
-            version = self.coordinator.data.get("current_os_version")
+            package_manager = self.coordinator.data.get("package_manager")
             _key_path = self.hass.data[DOMAIN]["config"]["ssh_key_path"]
             async with OpenWRTSSH(self._ip, _key_path) as client:
-                result = await client.install_asu_client(version)
+                result = await client.install_asu_client(package_manager)
 
             if result is None or result.exit_status != 0:
                 stderr = getattr(result, "stderr", "") if result is not None else ""

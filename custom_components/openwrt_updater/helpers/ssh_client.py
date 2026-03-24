@@ -153,13 +153,36 @@ class OpenWRTSSH:
             connect_timeout=self.connect_timeout,
         )
 
-    async def _list_installed_packages(self) -> list[str]:
+    @staticmethod
+    def _detect_package_manager(os_version: str | None) -> str | None:
+        """Detect the router package manager from the current OpenWrt version."""
+        if not os_version:
+            return None
+
+        match = re.match(r"^(\d+)\.(\d+)", os_version.strip())
+        if not match:
+            return None
+
+        major, minor = (int(part) for part in match.groups())
+        return "apk" if (major, minor) >= (25, 12) else "opkg"
+
+    async def _list_installed_packages(self, package_manager: str | None) -> list[str]:
         """Return the list of installed package names on the device.
 
-        Uses `opkg list-installed` and strips versions, keeping only names.
+        Uses the active package manager and strips versions, keeping only names.
         Falls back to empty list if command fails.
         """
-        cmd = "opkg list-installed | cut -d' ' -f1"
+        if package_manager == "apk":
+            cmd = "apk list --installed | cut -d' ' -f1"
+        elif package_manager == "opkg":
+            cmd = "opkg list-installed | cut -d' ' -f1"
+        else:
+            _LOGGER.warning(
+                "Unknown package manager on %s, returning empty package list",
+                self.ip,
+            )
+            return []
+
         res = await self.exec_command(cmd)
         if res is None or not res.stdout:
             _LOGGER.warning(
@@ -186,24 +209,15 @@ class OpenWRTSSH:
         return fw_file, bool(fw_file)
 
     async def install_asu_client(
-        self, current_os_version: str
+        self, package_manager: str | None
     ) -> asyncssh.SSHCompletedProcess | None:
-        """Install owut using the package manager implied by the current OS version."""
-        if not current_os_version:
-            raise RuntimeError("Current OpenWrt version is unavailable")
-
-        version = current_os_version.strip()
-        match = re.match(r"^(\d+)\.(\d+)", version)
-        if not match:
-            raise RuntimeError(
-                f"Unsupported OpenWrt version format for ASU client install: {version}"
-            )
-
-        major, minor = (int(part) for part in match.groups())
-        if (major, minor) >= (25, 12):
+        """Install owut using the package manager detected for the router."""
+        if package_manager == "apk":
             command = "apk update && apk add owut"
-        else:
+        elif package_manager == "opkg":
             command = "opkg update && opkg install owut"
+        else:
+            raise RuntimeError("Package manager is unavailable for ASU client install")
 
         return await self.exec_command(command, timeout=1800)
 
@@ -276,6 +290,7 @@ class OpenWRTSSH:
         str | None,  # distribution
         str | None,  # target
         str | None,  # board_name
+        str | None,  # package_manager
         list[str],  # installed packages
         str | None,  # asu_client
         bool,  # has_asu_client
@@ -291,6 +306,7 @@ class OpenWRTSSH:
             None,  # distribution
             None,  # target
             None,  # board_name
+            None,  # package_manager
             [],  # installed packages
             None,  # asu_client
             False,  # has_asu_client
@@ -310,7 +326,8 @@ class OpenWRTSSH:
                     board_name,
                 ) = await self._read_board()
 
-                pkgs = await self._list_installed_packages()
+                package_manager = self._detect_package_manager(os_version)
+                pkgs = await self._list_installed_packages(package_manager)
                 asu_client = "owut" if "owut" in pkgs else "auc" if "auc" in pkgs else None
                 has_asu_client = asu_client is not None
 
@@ -337,6 +354,7 @@ class OpenWRTSSH:
             distribution,
             target,
             board_name,
+            package_manager,
             pkgs,
             asu_client,
             has_asu_client,
